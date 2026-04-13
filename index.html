@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>TRIBUNALIBRE — Deportes Argentina</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+/* ═══════════════════════════════════
+   THEME SYSTEM
+═══════════════════════════════════ */
+:root{
+  --bg:#08080E;--surf:#10101A;--card:#161622;--card2:#1D1D2C;--card3:#232335;
+  --acc:#E8262A;--acc2:#16A34A;--gold:#F59E0B;--blue:#3B82F6;--purple:#8B5CF6;
+  --tx:#EEEEF5;--tx2:#9090B8;--tx3:#444460;
+  --br:rgba(255,255,255,.06);--brm:rgba(255,255,255,.11);
+  --mn:#0D0D17;--mac:#E8262A;--mt:#5858A0;
+  --tbg:rgba(8,8,14,.96);--sh:0 8px 32px rgba(0,0,0,.5);
+  --r:10px;--rs:7px;--rl:16px;--fw:'DM Sans',sans-serif;--fd:'Oswald',sans-serif;
+}
+[data-theme=light]{
+  --bg:#F0F2F8;--surf:#FFF;--card:#FFF;--card2:#F5F7FC;--card3:#ECF0F8;
+  --tx:#12122A;--tx2:#4A4A7A;--tx3:#9999BB;
+  --br:rgba(0,0,0,.07);--brm:rgba(0,0,0,.13);
+  --mn:#FFF;--mac:#D42B2E;--mt:#8888AA;
+  --tbg:rgba(255,255,255,.97);--sh:0 4px 24px rgba(0,0,0,.1);
+}
+[data-theme=pastel]{
+  --bg:#EDF0FF;--surf:#FFF;--card:#FFF;--card2:#F0F3FF;--card3:#E8ECFF;
+  --acc:#6366F1;--acc2:#10B981;--tx:#1E1B4B;--tx2:#6060A0;--tx3:#9898C0;
+  --br:rgba(99,102,241,.1);--brm:rgba(99,102,241,.2);
+  --mn:#FFF;--mac:#6366F1;--mt:#9090C0;
+  --tbg:rgba(255,255,255,.96);--sh:0 4px 24px rgba(99,102,241,.15);
+}
+[data-theme=night]{
+  --bg:#030308;--surf:#08080F;--card:#0E0E18;--card2:#131320;--card3:#181827;
+  --acc:#C0392B;--tx:#D8D8F0;--tx2:#707090;--tx3:#303050;
+  --mn:#06060E;--mac:#C0392B;--mt:#404060;
+  --tbg:rgba(3,3,8,.98);
+}
+
+/* ═══════════════════════════════════ BASE ═══════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;
+  -webkit-font-smoothing:antialiased;overflow-x:hidden;font-size:14px}
+h1,h2,h3,h4{font-family:var(--fd)}
+button{cursor:pointer;border:none;outline:none;font-family:var(--fw)}
+input,textarea,select{outline:none;font-family:var(--fw);color:var(--tx);background:transparent}
+a{color:inherit;text-decoration:none}
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--brm);border-radius:3px}
+::selection{background:var(--acc);color:#fff}
+
+/* ═══════════════════════════════════ TOPBAR ═══════════════════════════════════ */
+.tb{position:fixed;top:0;left:0;right:0;height:50px;background:var(--tbg);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--br);
+  display:flex;align-items:center;padding:0 12px;gap:10px;z-index:300}
+.logo{font-family:var(--fd);font-size:19px;font-weight:700;letter-spacing:3px;
+  cursor:pointer;display:flex;align-items:center;gap:0;flex-shrink:0;user-select:none}
+.lr{color:var(--acc)}.lw{color:var(--tx)}
+.lbar{width:2px;height:15px;background:var(--acc);border-radius:2px;margin:0 3px}
+.ticker{flex:1;overflow:hidden;border-left:2px solid var(--acc);padding-left:8px;min-width:0}
+.tk-tr{display:flex;gap:28px;animation:tick 30s linear infinite;white-space:nowrap}
+@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tk-it{font-size:11px;color:var(--tx2);flex-shrink:0}
+.tk-it b{color:var(--acc);font-size:10px;margin-right:4px}
+.tb-r{display:flex;align-items:center;gap:5px;flex-shrink:0}
+.ib{width:30px;height:30px;border-radius:var(--rs);background:transparent;
+  color:var(--tx2);display:flex;align-items:center;justify-content:center;transition:.15s;position:relative}
+.ib:hover{background:var(--card2);color:var(--tx)}
+.ib svg{width:16px;height:16px}
+.ndot{position:absolute;top:5px;right:5px;width:6px;height:6px;border-radius:50%;
+  background:var(--acc);border:1.5px solid var(--tbg)}
+.av-sm{width:28px;height:28px;border-radius:50%;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;font-weight:700;
+  font-size:10px;cursor:pointer;font-family:var(--fd);letter-spacing:1px;color:#fff}
+.th-pick{height:26px;border-radius:20px;padding:0 10px;font-size:11px;font-weight:600;
+  background:var(--card2);border:1px solid var(--brm);color:var(--tx2);
+  display:flex;align-items:center;gap:5px;transition:.15s;position:relative}
+.th-pick:hover{border-color:var(--acc);color:var(--tx)}
+.th-drop{position:absolute;top:calc(100% + 5px);right:0;background:var(--surf);
+  border:1px solid var(--brm);border-radius:var(--r);padding:4px;z-index:400;
+  min-width:115px;box-shadow:var(--sh)}
+.th-opt{padding:6px 12px;border-radius:var(--rs);cursor:pointer;font-size:12px;
+  font-weight:500;transition:.12s}
+.th-opt:hover{background:var(--card2)}
+.th-opt.on{background:var(--card3)}
+
+/* ═══════════════════════════════════ SHELL ═══════════════════════════════════ */
+.shell{display:flex;margin-top:50px;min-height:calc(100vh - 50px)}
+
+/* LEFT SIDEBAR */
+.lsb{width:192px;flex-shrink:0;position:sticky;top:50px;height:calc(100vh - 50px);
+  overflow-y:auto;background:var(--mn);border-right:1px solid var(--br);
+  padding:10px 0;display:none;flex-direction:column;scrollbar-width:none}
+@media(min-width:860px){.lsb{display:flex}}
+.ng{padding:0 8px;margin-bottom:4px}
+.nlbl{font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:1.5px;
+  text-transform:uppercase;padding:0 5px;margin-bottom:3px}
+.nl{display:flex;align-items:center;gap:7px;padding:6px 7px;border-radius:var(--rs);
+  cursor:pointer;color:var(--mt);font-size:12.5px;font-weight:500;transition:.15s;margin-bottom:1px}
+.nl:hover{background:var(--card2);color:var(--tx)}
+.nl.on{background:var(--mac);color:#fff}
+.nl svg{width:14px;height:14px;flex-shrink:0}
+.nl-badge{margin-left:auto;background:var(--acc);color:#fff;
+  font-size:9px;border-radius:10px;padding:1px 5px;font-weight:700}
+.lsb-hr{height:1px;background:var(--br);margin:6px 10px}
+.lv-pill{display:flex;align-items:center;gap:6px;margin:4px 8px 6px;padding:7px 9px;
+  background:rgba(232,38,42,.1);border:1px solid rgba(232,38,42,.22);
+  border-radius:var(--rs);cursor:pointer;transition:.15s}
+.lv-pill:hover{border-color:rgba(232,38,42,.4)}
+.ldot{width:6px;height:6px;border-radius:50%;background:var(--acc);animation:pulse 1.4s infinite;flex-shrink:0}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
+.lv-txt{font-size:11px;font-weight:700;color:var(--acc);font-family:var(--fd);letter-spacing:.5px}
+.lv-ct{font-size:10px;color:rgba(232,38,42,.55);margin-left:auto}
+.tm-row{display:flex;align-items:center;gap:7px;padding:5px 7px;border-radius:var(--rs);cursor:pointer;transition:.15s}
+.tm-row:hover{background:var(--card2)}
+.tm-em{font-size:13px;width:20px;text-align:center}
+.tm-nm{font-size:11.5px;font-weight:500;color:var(--tx2);line-height:1.1}
+.tm-nm small{display:block;font-size:9px;color:var(--tx3);font-weight:400}
+
+/* MAIN */
+.main{flex:1;min-width:0;padding:18px 14px}
+@media(min-width:860px){.main{padding:20px 22px}}
+
+/* RIGHT SIDEBAR */
+.rsb{width:288px;flex-shrink:0;position:sticky;top:50px;height:calc(100vh - 50px);
+  overflow-y:auto;padding:16px 13px;border-left:1px solid var(--br);
+  display:none;background:var(--bg);scrollbar-width:none}
+@media(min-width:1200px){.rsb{display:block}}
+
+/* MOBILE NAV */
+.bnav{position:fixed;bottom:0;left:0;right:0;height:50px;background:var(--mn);
+  border-top:1px solid var(--br);display:flex;align-items:center;z-index:300}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px 2px;cursor:pointer;color:var(--mt);transition:.15s}
+.bni.on{color:var(--mac)}
+.bni svg{width:17px;height:17px}
+.bni span{font-size:9px;font-weight:600;font-family:var(--fd);letter-spacing:.3px}
+@media(min-width:860px){.bnav{display:none}}
+@media(max-width:859px){body{padding-bottom:50px}}
+
+/* ═══════════════════════════════════ ATOMS ═══════════════════════════════════ */
+.card{background:var(--card);border-radius:var(--r);border:1px solid var(--br)}
+.cp{padding:14px}.cs{padding:10px}
+.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.st{font-family:var(--fd);font-size:13px;font-weight:600;text-transform:uppercase;
+  letter-spacing:1.2px;display:flex;align-items:center;gap:7px;color:var(--tx)}
+.st::before{content:'';width:3px;height:13px;background:var(--acc);border-radius:2px;display:inline-block}
+.sl{font-size:11px;color:var(--tx2);cursor:pointer;transition:.15s}
+.sl:hover{color:var(--acc)}
+.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 7px;border-radius:20px;
+  font-size:9px;font-weight:700;font-family:var(--fd);letter-spacing:.8px;text-transform:uppercase}
+.br-b{background:rgba(232,38,42,.12);color:#FF6668;border:1px solid rgba(232,38,42,.25)}
+.bg-b{background:rgba(22,163,74,.12);color:#4ADE80;border:1px solid rgba(22,163,74,.25)}
+.bb-b{background:rgba(59,130,246,.12);color:#93C5FD;border:1px solid rgba(59,130,246,.25)}
+.bp-b{background:rgba(245,158,11,.12);color:#FCD34D;border:1px solid rgba(245,158,11,.25)}
+.bv-b{background:rgba(139,92,246,.12);color:#C4B5FD;border:1px solid rgba(139,92,246,.25)}
+.btn{padding:7px 14px;border-radius:var(--rs);font-size:12px;font-weight:500;transition:.15s;
+  cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn-r{background:var(--acc);color:#fff}.btn-r:hover{opacity:.88}
+.btn-g{background:transparent;border:1px solid var(--brm);color:var(--tx2)}
+.btn-g:hover{border-color:var(--acc);color:var(--tx)}
+.btn-bl{background:var(--blue);color:#fff}
+.btn-sm{padding:5px 10px;font-size:11px}
+.fi{background:var(--card2);border:1px solid var(--brm);border-radius:var(--rs);
+  padding:8px 11px;font-size:13px;color:var(--tx);width:100%;transition:.15s}
+.fi:focus{border-color:var(--acc)}
+.fi::placeholder{color:var(--tx3)}
+.fl{display:block;font-size:10px;font-weight:700;color:var(--tx3);
+  letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
+.div-hr{height:1px;background:var(--br);margin:12px 0}
+
+/* ═══════════════════════════════════ LIVE DOT ═══════════════════════════════════ */
+.ld-b{width:7px;height:7px;border-radius:50%;background:var(--acc);animation:pulse 1.4s infinite;flex-shrink:0}
+
+/* ═══════════════════════════════════ MODAL ═══════════════════════════════════ */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:16px;
+  backdrop-filter:blur(8px)}
+.mdl{background:var(--surf);border-radius:var(--rl);border:1px solid var(--brm);
+  padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto}
+.mdl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.mdl-t{font-family:var(--fd);font-size:18px;font-weight:600}
+.cls-btn{width:26px;height:26px;border-radius:50%;background:var(--card2);
+  display:flex;align-items:center;justify-content:center;color:var(--tx2)}
+.cls-btn:hover{background:var(--acc);color:#fff}
+.cls-btn svg{width:13px;height:13px}
+
+/* ═══════════════════════════════════ AUTH MODAL ═══════════════════════════════════ */
+.auth-tabs{display:flex;background:var(--card2);border-radius:var(--rs);padding:3px;margin-bottom:18px}
+.atab{flex:1;padding:7px;text-align:center;border-radius:var(--rs);font-size:12px;
+  font-weight:700;cursor:pointer;color:var(--tx2);transition:.15s;font-family:var(--fd)}
+.atab.on{background:var(--acc);color:#fff}
+.social-btn{width:100%;padding:10px;border-radius:var(--rs);border:1px solid var(--brm);
+  background:var(--card2);color:var(--tx);display:flex;align-items:center;
+  justify-content:center;gap:10px;font-size:13px;font-weight:500;margin-bottom:8px;transition:.15s}
+.social-btn:hover{border-color:var(--brm);background:var(--card3)}
+.or-div{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--tx3);font-size:11px}
+.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--br)}
+.guest-banner{background:linear-gradient(135deg,rgba(99,102,241,.1),rgba(59,130,246,.07));
+  border:1px solid rgba(99,102,241,.2);border-radius:var(--r);padding:12px 14px;
+  margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.gb-text{flex:1;font-size:12px;color:var(--tx2);min-width:140px;line-height:1.5}
+.gb-text b{color:var(--tx);font-size:13px;display:block;margin-bottom:2px}
+.user-badge{display:flex;align-items:center;gap:6px;padding:5px 10px;
+  background:var(--card2);border-radius:20px;border:1px solid var(--brm)}
+.ub-av{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;font-weight:700;font-size:9px;font-family:var(--fd);color:#fff}
+
+/* ═══════════════════════════════════ CARDS ═══════════════════════════════════ */
+.nc{background:var(--card);border-radius:var(--r);border:1px solid var(--br);
+  overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
+.nc:hover{border-color:rgba(232,38,42,.35);transform:translateY(-2px);box-shadow:var(--sh)}
+.nt{display:flex;align-items:center;justify-content:center;font-size:48px;
+  background:linear-gradient(135deg,var(--card2),var(--card3))}
+.nt.big{height:160px}.nt.sm{height:110px}
+.nb{padding:11px;flex:1;display:flex;flex-direction:column}
+.ntit{font-family:var(--fd);font-size:15px;font-weight:500;line-height:1.2;margin-bottom:5px}
+.nexc{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:8px;flex:1}
+.nft{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--tx3);padding-top:8px;border-top:1px solid var(--br);margin-top:auto}
+.nac{display:flex;gap:8px}
+.abt{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--tx2);background:none;transition:.15s;padding:0}
+.abt:hover,.abt.lk{color:var(--acc)}
+.abt svg{width:12px;height:12px}
+/* hero */
+.hero{position:relative;border-radius:var(--rl);overflow:hidden;cursor:pointer;
+  margin-bottom:16px;border:1px solid var(--br);transition:.2s}
+.hero:hover{border-color:rgba(232,38,42,.3)}
+.hero-img{height:340px;display:flex;align-items:center;justify-content:center;font-size:88px;
+  background:linear-gradient(135deg,var(--card2),var(--card3))}
+@media(min-width:860px){.hero-img{height:420px}}
+.hero-ov{position:absolute;bottom:0;left:0;right:0;padding:18px;
+  background:linear-gradient(transparent,rgba(4,4,10,.97))}
+.hero-tit{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.1;color:#fff;margin-bottom:7px}
+@media(min-width:860px){.hero-tit{font-size:34px}}
+
+/* ═══════════════════════════════════ LIVE CARDS ═══════════════════════════════════ */
+.lmc{background:var(--card);border:1px solid var(--br);border-radius:var(--r);
+  padding:10px 13px;cursor:pointer;flex-shrink:0;min-width:165px;transition:.15s}
+.lmc:hover,.lmc.sel{border-color:rgba(232,38,42,.4)}
+.lmc.lv{border-color:rgba(232,38,42,.25);background:rgba(232,38,42,.04)}
+.lms{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--tx3);margin-bottom:7px}
+.lms.lv{color:var(--acc)}
+.lmt{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.ltm{text-align:center;flex:1}
+.lem{font-size:20px;display:block;margin-bottom:2px}
+.lnm{font-size:10px;color:var(--tx2);font-weight:500}
+.lsc{font-family:var(--fd);font-size:24px;font-weight:700;min-width:40px;text-align:center}
+.lsc.lv{color:var(--acc)}
+
+/* ═══════════════════════════════════ CHAT ═══════════════════════════════════ */
+.chat-wrap{border-radius:var(--r);border:1px solid var(--br);overflow:hidden;background:var(--card)}
+.ch-hd{padding:10px 13px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:7px;background:var(--card2)}
+.ch-bd{height:260px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:5px}
+.cmsg{padding:6px 10px;border-radius:8px;max-width:80%;font-size:12px;line-height:1.4}
+.cmsg.own{background:var(--acc);margin-left:auto;border-bottom-right-radius:3px}
+.cmsg.other{background:var(--card3);border-bottom-left-radius:3px}
+.cmsg-u{font-size:9px;font-weight:700;opacity:.6;margin-bottom:2px}
+.cmsg-vid{border-radius:6px;overflow:hidden;margin-top:4px;max-width:220px}
+.cmsg-vid video{width:100%;display:block;border-radius:6px}
+.cmsg-vid-ph{background:rgba(0,0,0,.4);padding:8px;border-radius:6px;display:flex;align-items:center;gap:6px;font-size:11px}
+.ch-inp{padding:8px;border-top:1px solid var(--br);display:flex;gap:6px;background:var(--card2);flex-wrap:wrap}
+.ch-txt{flex:1;min-width:100px;background:var(--card);border:1px solid var(--brm);border-radius:var(--rs);padding:6px 10px;font-size:12px}
+.ch-txt:focus{border-color:var(--acc)}
+.ch-snd{background:var(--acc);border-radius:var(--rs);padding:6px 10px;color:#fff;display:flex;align-items:center;transition:.15s}
+.ch-snd:hover{opacity:.88}
+.ch-snd svg{width:14px;height:14px}
+.emoji-bar{padding:5px 7px;border-top:1px solid var(--br);background:var(--card2);display:flex;gap:3px;flex-wrap:wrap}
+.ej-btn{font-size:17px;background:none;padding:2px;border-radius:4px;transition:.15s}
+.ej-btn:hover{background:var(--card3);transform:scale(1.2)}
+
+/* ═══════════════════════════════════ POLL ═══════════════════════════════════ */
+.po{background:var(--card2);border-radius:var(--rs);padding:9px 12px;margin-bottom:6px;
+  cursor:pointer;border:1px solid var(--br);position:relative;overflow:hidden;transition:.15s}
+.po:hover{border-color:rgba(232,38,42,.3)}
+.po.voted{border-color:var(--acc2)}
+.po-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(232,38,42,.1);transition:width .7s ease}
+.po.voted .po-bar{background:rgba(22,163,74,.12)}
+.po-row{position:relative;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500}
+.po-pct{font-weight:700;font-size:11px;color:var(--tx2)}
+.po-pct.win{color:var(--acc2)}
+.po-meta{font-size:10px;color:var(--tx3);margin-top:6px}
+
+/* ═══════════════════════════════════ THREAD CARD ═══════════════════════════════════ */
+.tc{background:var(--card);border-radius:var(--r);border:1px solid var(--br);
+  padding:12px 13px;margin-bottom:8px;cursor:pointer;transition:.15s}
+.tc:hover{border-color:rgba(232,38,42,.3);transform:translateX(3px)}
+.tc-tit{font-family:var(--fd);font-size:15px;font-weight:500;margin-bottom:5px;line-height:1.2}
+.tc-mt{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--tx3)}
+.tc-st{display:flex;align-items:center;gap:3px}
+.tc-st svg{width:11px;height:11px}
+
+/* ═══════════════════════════════════ REP ═══════════════════════════════════ */
+.rep-card{background:var(--card);border:1px solid var(--br);border-radius:var(--r);padding:12px 14px;margin-bottom:8px}
+.rep-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.rep-tit{font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px}
+.rep-sc{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--gold)}
+.rep-bg{height:5px;background:var(--card3);border-radius:5px;overflow:hidden}
+.rep-fill{height:100%;border-radius:5px;background:linear-gradient(90deg,var(--acc),var(--gold));transition:width 1s}
+.rep-lv{display:flex;justify-content:space-between;font-size:9px;color:var(--tx3);margin-top:4px}
+
+/* ═══════════════════════════════════ TRENDING ═══════════════════════════════════ */
+.tri{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--br);cursor:pointer}
+.tri:last-child{border-bottom:none}
+.tri:hover .trn{color:var(--acc)}
+.trnum{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--tx3);width:18px}
+.trnum.hot{color:var(--acc)}
+.trn{font-size:11.5px;font-weight:500;transition:.15s}
+.trc{font-size:10px;color:var(--tx3);margin-top:1px}
+
+/* ═══════════════════════════════════ NEWS GRID ═══════════════════════════════════ */
+.ng-grid{display:grid;gap:12px;grid-template-columns:1fr}
+@media(min-width:540px){.ng-grid{grid-template-columns:1fr 1fr}}
+@media(min-width:1400px){.ng-grid{grid-template-columns:1fr 1fr 1fr}}
+
+/* TOAST */
+.toasts{position:fixed;top:58px;right:12px;z-index:600;display:flex;flex-direction:column;gap:6px}
+.toast{background:var(--card);border:1px solid var(--brm);border-radius:var(--r);
+  padding:9px 13px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:7px;
+  box-shadow:var(--sh);animation:tin .3s ease;min-width:190px}
+@keyframes tin{from{transform:translateX(50px);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ADMIN THEME EDITOR */
+.te-sect{margin-bottom:18px}
+.te-stit{font-family:var(--fd);font-size:12px;font-weight:600;text-transform:uppercase;
+  letter-spacing:.8px;color:var(--tx2);padding-bottom:7px;border-bottom:1px solid var(--br);margin-bottom:10px}
+.clr-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.clr-lbl{font-size:12px;color:var(--tx2);flex:1}
+.clr-in{width:32px;height:32px;border-radius:7px;border:2px solid var(--brm);cursor:pointer;padding:2px}
+.clr-txt{background:var(--card2);border:1px solid var(--brm);border-radius:6px;
+  padding:4px 8px;font-size:11px;color:var(--tx);width:86px}
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:7px;margin-bottom:12px}
+.preset-btn{border-radius:var(--rs);padding:8px 4px;font-size:9px;font-weight:700;
+  text-align:center;cursor:pointer;border:2px solid transparent;font-family:var(--fd);
+  letter-spacing:.5px;transition:.15s}
+.preset-btn:hover,.preset-btn.on{border-color:var(--tx)}
+.tog-row{display:flex;align-items:center;justify-content:space-between;padding:7px 0;border-bottom:1px solid var(--br)}
+.tog-row:last-child{border-bottom:none}
+.tog-lbl{font-size:12px}
+.tog{width:34px;height:18px;border-radius:18px;background:var(--card3);
+  position:relative;cursor:pointer;transition:.2s}
+.tog.on{background:var(--acc2)}
+.tog::after{content:'';position:absolute;width:12px;height:12px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:.2s}
+.tog.on::after{transform:translateX(16px)}
+
+/* TABS */
+.tabs{display:flex;gap:3px;background:var(--card);border-radius:var(--r);padding:3px;margin-bottom:14px}
+.tabx{flex:1;padding:6px;text-align:center;border-radius:var(--rs);font-size:11px;
+  font-weight:700;font-family:var(--fd);letter-spacing:.5px;cursor:pointer;color:var(--tx2);transition:.15s}
+.tabx.on{background:var(--acc);color:#fff}
+
+/* SPORT TABS */
+.stabs{display:flex;gap:5px;overflow-x:auto;padding-bottom:3px;margin-bottom:13px;scrollbar-width:none}
+.stab{padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;
+  flex-shrink:0;transition:.15s;border:1px solid var(--brm);color:var(--tx2);background:var(--card)}
+.stab.on{background:var(--acc);border-color:var(--acc);color:#fff}
+.stab:hover{border-color:var(--acc);color:var(--tx)}
+
+/* FEED ITEM */
+.fi-item{display:flex;align-items:center;gap:10px;padding:11px;
+  background:var(--card2);border-radius:var(--rs);margin-bottom:7px}
+.fi-ico{font-size:20px;width:32px;text-align:center}
+.fi-info{flex:1}
+.fi-name{font-weight:600;font-size:13px;margin-bottom:2px}
+.fi-url{font-size:10px;color:var(--tx3)}
+.fi-stat{font-size:10px;margin-top:3px;display:flex;align-items:center;gap:4px}
+.ftog{width:30px;height:17px;border-radius:17px;background:var(--card3);
+  position:relative;cursor:pointer;transition:.2s;flex-shrink:0}
+.ftog.on{background:var(--acc2)}
+.ftog::after{content:'';position:absolute;width:11px;height:11px;border-radius:50%;
+  background:#fff;top:3px;left:3px;transition:.2s}
+.ftog.on::after{transform:translateX(13px)}
+
+/* AI QUEUE */
+.aiq{background:var(--card2);border-radius:var(--r);border:1px solid var(--br);padding:13px;margin-bottom:9px}
+.aiq-tit{font-family:var(--fd);font-size:14px;font-weight:600;margin-bottom:4px}
+.aiq-sum{font-size:12px;color:var(--tx2);line-height:1.5;margin-bottom:9px}
+.aiq-acts{display:flex;gap:7px;flex-wrap:wrap}
+
+/* PROFILE HEADER */
+.ph{background:linear-gradient(135deg,rgba(232,38,42,.12),rgba(22,163,74,.06));
+  border-radius:var(--rl);padding:22px;text-align:center;border:1px solid var(--br);margin-bottom:14px}
+.pav{width:70px;height:70px;border-radius:50%;margin:0 auto 10px;
+  background:linear-gradient(135deg,var(--acc),var(--acc2));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--fd);font-size:26px;font-weight:700;border:2.5px solid rgba(232,38,42,.35);color:#fff}
+.pnm{font-family:var(--fd);font-size:22px;font-weight:600;margin-bottom:3px}
+.pbio{font-size:12px;color:var(--tx2);margin-bottom:10px}
+.psts{display:flex;gap:20px;justify-content:center}
+.psn{font-family:var(--fd);font-size:20px;font-weight:700}
+.psl{font-size:10px;color:var(--tx3)}
+
+/* Tactical board */
+.tac-ovr{position:fixed;inset:0;background:rgba(0,0,0,.87);z-index:600;
+  display:flex;align-items:center;justify-content:center;padding:12px}
+.tac-wrap{background:var(--surf);border-radius:var(--rl);border:1px solid var(--brm);
+  width:100%;max-width:560px;max-height:90vh;display:flex;flex-direction:column;overflow:hidden}
+.tac-h{padding:10px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px;background:var(--card2)}
+.tac-tools{padding:8px 10px;border-top:1px solid var(--br);display:flex;align-items:center;gap:6px;flex-wrap:wrap;background:var(--card2)}
+.tool-btn{padding:4px 10px;border-radius:var(--rs);font-size:11px;font-weight:600;
+  border:1px solid var(--brm);color:var(--tx2);background:var(--card);transition:.15s;cursor:pointer}
+.tool-btn:hover{border-color:var(--acc);color:var(--tx)}
+.tool-btn.on{background:var(--acc);border-color:var(--acc);color:#fff}
+
+/* ═══════════════════════════════════ DATA TABLE ═══════════════════════════════════ */
+.dt{width:100%;border-collapse:collapse;font-size:12px}
+.dt th{background:var(--card2);padding:9px 11px;text-align:left;font-size:9px;color:var(--tx3);font-weight:700;letter-spacing:.8px;text-transform:uppercase}
+.dt td{padding:9px 11px;border-bottom:1px solid var(--br)}
+.dt tr:last-child td{border-bottom:none}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const{useState,useEffect,useRef,useCallback}=React;
+
+/* ═══════════ ICONS ═══════════ */
+const Ic={
+  Home:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>,
+  News:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
+  Forum:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Live:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"/></svg>,
+  Stream:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  Var:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M9 8l2 2 4-4"/></svg>,
+  Profile:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Admin:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>,
+  Bell:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  Search:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+  Send:p=><svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="2,2 22,12 2,22 4,13 14,12 4,11"/></svg>,
+  Heart:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  Comment:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Share:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>,
+  X:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Plus:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Back:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Fire:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
+  Star:p=><svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  Eye:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Trophy:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4.8A5 5 0 0012 9a5 5 0 005-4.2"/><path d="M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"/></svg>,
+  Tactic:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="12" y1="2" x2="12" y2="22"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>,
+  Img:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>,
+  Video:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  Bot:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="10" rx="2"/><circle cx="12" cy="5" r="2"/><line x1="12" y1="7" x2="12" y2="11"/><line x1="8" y1="15" x2="8" y2="17"/><line x1="16" y1="15" x2="16" y2="17"/></svg>,
+  Pin:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+  Check:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+  Undo:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>,
+  Down:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>,
+  Eraser:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 20H7L3 16l14-14 7 7-4 4"/></svg>,
+  Globe:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>,
+  Chart:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>,
+  Users:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  Settings:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 010 2.83 2 2 0 01-2.83 0l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 01-4 0v-.09A1.65 1.65 0 009 19.4a1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 01-2.83 0 2 2 0 010-2.83l.06-.06A1.65 1.65 0 004.68 15a1.65 1.65 0 00-1.51-1H3a2 2 0 010-4h.09A1.65 1.65 0 004.6 9a1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 010-2.83 2 2 0 012.83 0l.06.06A1.65 1.65 0 009 4.68a1.65 1.65 0 001-1.51V3a2 2 0 014 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 012.83 0 2 2 0 010 2.83l-.06.06A1.65 1.65 0 0019.4 9a1.65 1.65 0 001.51 1H21a2 2 0 010 4h-.09a1.65 1.65 0 00-1.51 1z"/></svg>,
+  Palette:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="13.5" cy="6.5" r=".5"/><circle cx="17.5" cy="10.5" r=".5"/><circle cx="8.5" cy="7.5" r=".5"/><circle cx="6.5" cy="12.5" r=".5"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 011.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 6.012 17.461 2 12 2z"/></svg>,
+  Lock:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  Mail:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  User:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Refresh:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 102.13-9.36L1 10"/></svg>,
+  Flash:p=><svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>,
+};
+
+/* ═══════════ DATA ═══════════ */
+const REP_LEVELS=[
+  {name:'Visitante',min:0,max:100},{name:'Fanático',min:100,max:500},
+  {name:'Hincha Fiel',min:500,max:1500},{name:'Ultra Fan',min:1500,max:3000},
+  {name:'Leyenda',min:3000,max:99999}
+];
+function getLevel(rep){return REP_LEVELS.slice().reverse().find(l=>rep>=l.min)||REP_LEVELS[0]}
+function getRepPct(rep){const l=getLevel(rep);if(l.max===99999)return 100;return Math.min(100,Math.round((rep-l.min)/(l.max-l.min)*100))}
+
+const NEWS=[
+  {id:1,cat:'Fútbol',em:'⚽',title:'River aplasta a Boca en el Superclásico más vibrante del año',ex:'Doblete de Borja y golazo de Mammana. Monumental a reventar.',t:'Hace 2h',auth:'Redacción TL',c:148,l:432,hot:true,ai:true},
+  {id:2,cat:'Rugby',em:'🏉',title:'Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina',ex:'Matera convirtió el try decisivo en el Amalfitani desbordante.',t:'Hace 4h',auth:'P. Méndez',c:89,l:287,hot:true,ai:true},
+  {id:3,cat:'Tenis',em:'🎾',title:'Cerúndolo avanza a semis del Masters de Madrid tras vencer a Alcaraz',ex:'El bonaerense ganó en tres sets y hace historia en el torneo.',t:'Hace 6h',auth:'L. Torres',c:67,l:198,ai:false},
+  {id:4,cat:'Básquet',em:'🏀',title:'Obra gana la Liga Nacional con doble sobre la chicharra de Vildoza',ex:'78-77 definitivo en Mar del Plata. Emoción total.',t:'Hace 8h',auth:'M. Vidal',c:54,l:176,ai:true},
+  {id:5,cat:'Fútbol',em:'⚽',title:'Messi renovaría con Inter Miami hasta 2027 según ESPN',ex:'El rosarino seguiría en la MLS al menos dos temporadas más.',t:'Hace 10h',auth:'Redacción',c:203,l:519,ai:false},
+  {id:6,cat:'Automovilismo',em:'🏎️',title:'Colapinto lidera los libres de Mónaco con tiempo histórico',ex:'1:10.821 del argentino sacude el paddock de la F1.',t:'Hace 12h',auth:'D. Sosa',c:77,l:234,ai:true},
+];
+const LIVE_EV=[
+  {id:1,sp:'⚽',h:'River',a:'Racing',sh:2,sa:1,min:"67'",live:true},
+  {id:2,sp:'🏀',h:'Boca',a:'San L.',sh:45,sa:38,min:'3T',live:true},
+  {id:3,sp:'🏉',h:'Pumas',a:'Wallabies',sh:21,sa:14,min:"55'",live:true},
+  {id:4,sp:'⚽',h:'Independiente',a:'Estudiantes',sh:'',sa:'',min:'20:30',live:false},
+];
+const POLLS=[
+  {id:1,q:'¿Fue penal el derribo de Almada en el Superclásico?',opts:['Sí, penal claro','No era nada','Muy dudoso'],vs:[1240,880,420]},
+  {id:2,q:'¿Argentina llega al Mundial 2026 como favorita?',opts:['Somos candidatos','Depende del fixture','No al nivel'],vs:[3100,1800,600]},
+  {id:3,q:'¿Mejor 9 del fútbol argentino actual?',opts:['Julián Álvarez','Lautaro Martínez','Borja'],vs:[2200,1900,700]},
+];
+const THREADS=[
+  {id:1,cat:'futbol',title:'El VAR en Argentina: ¿solución o mayor caos?',body:'Después de otro fin de semana polémico, ¿creés que el VAR ayudó o empeoró todo? El problema no es la tecnología sino cómo la aplican...',r:87,v:1240,hot:true,author:{name:'Gonzalo_TL',av:'GT',color:'#E8262A',rep:1840,level:'Hincha Fiel'},t:'Hace 1h',pinned:true},
+  {id:2,cat:'rugby',title:'Los Pumas: formación ideal para el Mundial de Rugby 2027',body:'Con la victoria histórica contra los All Blacks fresca, ¿cuál es la formación que debería usar Cheika?',r:54,v:890,hot:true,author:{name:'ScrumMaster',av:'SM',color:'#16A34A',rep:2200,level:'Ultra Fan'},t:'Hace 3h',pinned:false},
+  {id:3,cat:'auto',title:'Colapinto 2025: ¿puede pelear el título de F1?',body:'El pibe está demostrando que es de primera línea. Con el auto correcto, ¿tiene nivel para luchar por el campeonato?',r:34,v:670,hot:false,author:{name:'SpeedFreak',av:'SF',color:'#F59E0B',rep:950,level:'Fanático'},t:'Hace 5h',pinned:false},
+  {id:4,cat:'basquet',title:'Vildoza: el mejor base argentino de la historia',body:'Tras su actuación en la Liga Nacional, ¿está al nivel de Ginóbili en su posición?',r:29,v:445,hot:false,author:{name:'LaVioleta',av:'LV',color:'#8B5CF6',rep:720,level:'Fanático'},t:'Hace 7h',pinned:false},
+  {id:5,cat:'futbol',title:'¿Cuál fue el mejor Boca de la historia?',body:'El Boca campeón de la Libertadores 2000 vs el de Palermo y Riquelme de 2007.',r:112,v:2100,hot:true,author:{name:'BosteroDeCorazon',av:'BC',color:'#003399',rep:3100,level:'Leyenda'},t:'Hace 9h',pinned:false},
+];
+const TOP_USERS=[
+  {name:'BosteroDeCorazon',av:'BC',color:'#003399',rep:3100,level:'Leyenda'},
+  {name:'ScrumMaster',av:'SM',color:'#16A34A',rep:2200,level:'Ultra Fan'},
+  {name:'Gonzalo_TL',av:'GT',color:'#E8262A',rep:1840,level:'Hincha Fiel'},
+  {name:'SpeedFreak',av:'SF',color:'#F59E0B',rep:950,level:'Fanático'},
+];
+const RSS_FEEDS=[
+  {id:'espn',name:'ESPN Deportes',url:'https://espndeportes.espn.com/rss',ico:'📡',on:true,last:'Hace 5m',new:3},
+  {id:'tyc',name:'TyC Sports',url:'https://tycsports.com/feed.xml',ico:'📺',on:true,last:'Hace 12m',new:1},
+  {id:'ole',name:'Olé',url:'https://ole.com.ar/rss.xml',ico:'📰',on:false,last:'Nunca',new:0},
+  {id:'infobae',name:'Infobae Deportes',url:'https://infobae.com/deportes/rss',ico:'🌐',on:true,last:'Hace 3m',new:7},
+];
+const AI_QUEUE=[
+  {id:1,title:'Messi hat-trick en MLS ante LAFC',cat:'Fútbol',src:'ESPN',score:92,sum:'Leo Messi volvió a brillar en la Major League Soccer con tres goles ante Los Angeles FC en un partido épico...',status:'pending'},
+  {id:2,title:'Los Pumitas derrotan a Nueva Zelanda en el Mundial Junior',cat:'Rugby',src:'Olé',score:88,sum:'Argentina sub-20 consiguió una histórica victoria ante los All Blacks Juniors...',status:'pending'},
+  {id:3,title:'Colapinto firma con Alpine para 2026',cat:'F1',src:'TyC',score:95,sum:'El piloto argentino aseguró su lugar en la grilla de largada de la Fórmula 1 por otra temporada...',status:'approved'},
+];
+const EMOJIS=['⚽','🏉','🏀','🎾','🏎️','🔥','😤','🎉','👏','💪','❤️','😱','🤔','👎','🏆','🇦🇷'];
+const PRESETS={
+  'Rojo Clásico':{'--bg':'#08080E','--surf':'#10101A','--card':'#161622','--acc':'#E8262A','--mn':'#0D0D17','--mac':'#E8262A'},
+  'Verde Cancha':{'--bg':'#040F08','--surf':'#091509','--card':'#0F200F','--acc':'#22C55E','--mn':'#071007','--mac':'#22C55E'},
+  'Oro Campeón':{'--bg':'#0A0805','--surf':'#141008','--card':'#1C160A','--acc':'#F59E0B','--mn':'#100D05','--mac':'#F59E0B'},
+  'Azul Selección':{'--bg':'#05080F','--surf':'#0A1020','--card':'#101828','--acc':'#3B82F6','--mn':'#07091A','--mac':'#3B82F6'},
+  'Violeta Arena':{'--bg':'#08060F','--surf':'#10091A','--card':'#160E22','--acc':'#8B5CF6','--mn':'#0A0615','--mac':'#8B5CF6'},
+};
+
+/* ═══════════ COMPONENTS ═══════════ */
+function Toast({toasts}){
+  return<div className="toasts">{toasts.map(t=><div key={t.id} className="toast"><span>{t.em||'✓'}</span>{t.msg}</div>)}</div>;
+}
+
+function Poll({poll}){
+  const[voted,setVoted]=useState(null);
+  const[vs,setVs]=useState([...poll.vs]);
+  const tot=vs.reduce((a,b)=>a+b,0);
+  function vote(i){if(voted!==null)return;setVoted(i);setVs(v=>v.map((x,j)=>j===i?x+1:x));}
+  return(
+    <div>
+      <div style={{fontWeight:600,fontSize:13,marginBottom:9,lineHeight:1.4,color:'var(--tx)'}}>{poll.q}</div>
+      {poll.opts.map((o,i)=>{
+        const pct=voted!==null?Math.round(vs[i]/tot*100):null;
+        const win=voted!==null&&vs[i]===Math.max(...vs);
+        return(
+          <div key={i} className={`po${voted===i?' voted':''}`} onClick={()=>vote(i)}>
+            {pct!==null&&<div className="po-bar" style={{width:pct+'%'}}/>}
+            <div className="po-row"><span>{o}</span>{pct!==null&&<span className={`po-pct${win?' win':''}`}>{pct}%</span>}</div>
+          </div>
+        );
+      })}
+      <div className="po-meta">{voted===null?`${tot.toLocaleString()} votos`:`✓ ${tot.toLocaleString()} votos`}</div>
+    </div>
+  );
+}
+
+function NewsCard({n,onClick,size='sm'}){
+  const[lk,setLk]=useState(false);
+  return(
+    <div className="nc" onClick={onClick}>
+      <div className={`nt ${size}`}>{n.em}</div>
+      <div className="nb">
+        <div style={{display:'flex',gap:5,marginBottom:7,flexWrap:'wrap'}}>
+          <span className="badge br-b">{n.cat}</span>
+          {n.ai&&<span className="badge bv-b">✦ IA</span>}
+        </div>
+        <div className="ntit">{n.title}</div>
+        {n.ex&&<div className="nexc">{n.ex}</div>}
+        <div className="nft">
+          <div>{n.auth} · {n.t}</div>
+          <div className="nac">
+            <button className={`abt${lk?' lk':''}`} onClick={e=>{e.stopPropagation();setLk(!lk)}}><Ic.Heart/>{n.l+(lk?1:0)}</button>
+            <button className="abt"><Ic.Comment/>{n.c}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ AUTH MODAL ═══════════ */
+function AuthModal({onClose,onLogin,addToast}){
+  const[tab,setTab]=useState('login');
+  const[email,setEmail]=useState('');
+  const[pass,setPass]=useState('');
+  const[user,setUser]=useState('');
+  const[loading,setLoading]=useState(false);
+
+  function handleLogin(e){
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(()=>{
+      setLoading(false);
+      onLogin({name:email.split('@')[0]||'Usuario',av:(email[0]||'U').toUpperCase(),color:'#E8262A',rep:320,isGuest:false,email});
+      addToast({msg:'¡Bienvenido de vuelta!',em:'🎉'});
+      onClose();
+    },900);
+  }
+  function handleRegister(e){
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(()=>{
+      setLoading(false);
+      onLogin({name:user||email.split('@')[0],av:(user[0]||'U').toUpperCase(),color:'#6366F1',rep:0,isGuest:false,email,isNew:true});
+      addToast({msg:'¡Cuenta creada! Bienvenido a Tribuna Libre 🇦🇷',em:'🎉'});
+      onClose();
+    },1200);
+  }
+  function enterGuest(){
+    onLogin({name:'Invitado',av:'?',color:'#888',rep:0,isGuest:true});
+    addToast({msg:'Entraste como invitado. Registrate para más funciones.',em:'👋'});
+    onClose();
+  }
+
+  return(
+    <div className="mbg" onClick={onClose}>
+      <div className="mdl" onClick={e=>e.stopPropagation()}>
+        <div className="mdl-h">
+          <div className="mdl-t" style={{display:'flex',alignItems:'center',gap:8}}>
+            <span style={{fontSize:22}}>🏟️</span>
+            <span style={{color:'var(--tx)'}}>Tribuna <span style={{color:'var(--acc)'}}>Libre</span></span>
+          </div>
+          <button className="cls-btn" onClick={onClose}><Ic.X/></button>
+        </div>
+        <div className="auth-tabs">
+          <div className={`atab${tab==='login'?' on':''}`} onClick={()=>setTab('login')}>Ingresar</div>
+          <div className={`atab${tab==='reg'?' on':''}`} onClick={()=>setTab('reg')}>Registrarse</div>
+        </div>
+
+        {/* Social login */}
+        <button className="social-btn" onClick={()=>{onLogin({name:'GoogleUser',av:'G',color:'#4285F4',rep:0,isGuest:false});onClose();addToast({msg:'Ingresaste con Google',em:'✓'})}}>
+          <span style={{fontSize:18}}>🔵</span> Continuar con Google
+        </button>
+        <button className="social-btn" onClick={()=>{onLogin({name:'FBUser',av:'F',color:'#1877F2',rep:0,isGuest:false});onClose();addToast({msg:'Ingresaste con Facebook',em:'✓'})}}>
+          <span style={{fontSize:18}}>📘</span> Continuar con Facebook
+        </button>
+        <div className="or-div">o con tu correo</div>
+
+        {tab==='login'?(
+          <form onSubmit={handleLogin}>
+            <div style={{marginBottom:10}}>
+              <label className="fl">Correo electrónico</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@correo.com" required style={{paddingLeft:34}}/>
+                <Ic.Mail style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label className="fl">Contraseña</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required style={{paddingLeft:34}}/>
+                <Ic.Lock style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+            <button type="submit" className="btn btn-r" style={{width:'100%',justifyContent:'center'}} disabled={loading}>
+              {loading?'Ingresando...':'Ingresar'}</button>
+          </form>
+        ):(
+          <form onSubmit={handleRegister}>
+            <div style={{marginBottom:10}}>
+              <label className="fl">Usuario</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" value={user} onChange={e=>setUser(e.target.value)} placeholder="mi_usuario" required style={{paddingLeft:34}}/>
+                <Ic.User style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:10}}>
+              <label className="fl">Correo electrónico</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="tu@correo.com" required style={{paddingLeft:34}}/>
+                <Ic.Mail style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+            <div style={{marginBottom:14}}>
+              <label className="fl">Contraseña</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="Mínimo 6 caracteres" required style={{paddingLeft:34}}/>
+                <Ic.Lock style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+            <button type="submit" className="btn btn-r" style={{width:'100%',justifyContent:'center'}} disabled={loading}>
+              {loading?'Creando cuenta...':'Crear cuenta gratis'}</button>
+          </form>
+        )}
+
+        <div className="div-hr"/>
+        <button onClick={enterGuest} className="btn btn-g" style={{width:'100%',justifyContent:'center',fontSize:12}}>
+          <Ic.User style={{width:13,height:13}}/> Entrar como invitado
+        </button>
+        <p style={{textAlign:'center',fontSize:10,color:'var(--tx3)',marginTop:10,lineHeight:1.5}}>
+          Como invitado podés leer y comentar. Registrate para crear hilos, subir imágenes y ganar reputación.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ TACTICAL BOARD ═══════════ */
+function TacticBoard({onSave,onClose}){
+  const cRef=useRef();const[tool,setTool]=useState('draw');const[color,setColor]=useState('#FF4444');
+  const[drawing,setDrawing]=useState(false);const[paths,setPaths]=useState([]);const[cur,setCur]=useState([]);
+  const COLORS=['#FF4444','#FFD700','#44FF88','#4488FF','#FF44AA','#FFFFFF'];
+  const TOOLS=[{id:'draw',l:'✏️ Trazar'},{id:'arrow',l:'→ Flecha'}];
+  function getXY(e){
+    const r=cRef.current.getBoundingClientRect();
+    const src=e.touches?.[0]||e;
+    return{x:src.clientX-r.left,y:src.clientY-r.top};
+  }
+  function onDown(e){setDrawing(true);const p=getXY(e);setCur([p]);}
+  function onMove(e){if(!drawing)return;const p=getXY(e);setCur(c=>[...c,p]);redraw();}
+  function onUp(){if(!drawing)return;setDrawing(false);if(cur.length>1)setPaths(p=>[...p,{pts:cur,color,type:tool}]);setCur([]);}
+  function redraw(){
+    const cv=cRef.current;if(!cv)return;
+    const ctx=cv.getContext('2d');const w=cv.width,h=cv.height;
+    ctx.clearRect(0,0,w,h);
+    ctx.fillStyle='#1a6b2a';ctx.fillRect(0,0,w,h);
+    ctx.strokeStyle='rgba(255,255,255,.5)';ctx.lineWidth=2;
+    ctx.strokeRect(8,8,w-16,h-16);
+    ctx.beginPath();ctx.arc(w/2,h/2,h*.12,0,Math.PI*2);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(w/2,8);ctx.lineTo(w/2,h-8);ctx.stroke();
+    [[{x:.5,y:.9}],[{x:.15,y:.72},{x:.35,y:.72},{x:.65,y:.72},{x:.85,y:.72}],[{x:.2,y:.5},{x:.5,y:.45},{x:.8,y:.5}],[{x:.25,y:.25},{x:.5,y:.18},{x:.75,y:.25}]].flat().forEach((p,i)=>{
+      const px=p.x*w,py=p.y*h;
+      ctx.beginPath();ctx.arc(px,py,w*.027,0,Math.PI*2);
+      ctx.fillStyle='#1D4ED8';ctx.fill();ctx.strokeStyle='#fff';ctx.lineWidth=1.5;ctx.stroke();
+      ctx.fillStyle='#fff';ctx.font=`bold ${w*.023}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText([1,2,5,4,3,8,10,6,11,9,7][i]||i,px,py);
+    });
+    [...paths,cur.length>1?{pts:cur,color,type:tool}:null].filter(Boolean).forEach(path=>{
+      if(path.pts.length<2)return;
+      ctx.beginPath();ctx.moveTo(path.pts[0].x,path.pts[0].y);
+      path.pts.forEach(pt=>ctx.lineTo(pt.x,pt.y));
+      ctx.strokeStyle=path.color;ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.stroke();
+      if(path.type==='arrow'){
+        const last=path.pts[path.pts.length-1];const prev=path.pts[Math.max(0,path.pts.length-2)];
+        const ang=Math.atan2(last.y-prev.y,last.x-prev.x);
+        ctx.beginPath();ctx.moveTo(last.x,last.y);
+        ctx.lineTo(last.x-13*Math.cos(ang-.4),last.y-13*Math.sin(ang-.4));
+        ctx.lineTo(last.x-13*Math.cos(ang+.4),last.y-13*Math.sin(ang+.4));
+        ctx.closePath();ctx.fillStyle=path.color;ctx.fill();
+      }
+    });
+  }
+  useEffect(()=>{redraw();},[paths,cur]);
+  useEffect(()=>{
+    const cv=cRef.current;if(!cv)return;
+    const resize=()=>{cv.width=cv.offsetWidth;cv.height=cv.offsetWidth*.62;redraw();};
+    resize();window.addEventListener('resize',resize);return()=>window.removeEventListener('resize',resize);
+  },[]);
+  return(
+    <div className="tac-ovr">
+      <div className="tac-wrap">
+        <div className="tac-h">
+          <Ic.Tactic style={{width:15,height:15,color:'var(--acc)'}}/>
+          <span style={{fontFamily:'var(--fd)',fontWeight:600,fontSize:14}}>Tablero Táctico</span>
+          <button onClick={onClose} style={{marginLeft:'auto',width:24,height:24,borderRadius:'50%',background:'var(--card3)',display:'flex',alignItems:'center',justifyContent:'center',color:'var(--tx2)'}}><Ic.X style={{width:12,height:12}}/></button>
+        </div>
+        <canvas ref={cRef} style={{display:'block',width:'100%',cursor:'crosshair',flex:1}}
+          onMouseDown={onDown} onMouseMove={onMove} onMouseUp={onUp} onMouseLeave={onUp}
+          onTouchStart={e=>{e.preventDefault();onDown(e)}} onTouchMove={e=>{e.preventDefault();onMove(e)}} onTouchEnd={onUp}/>
+        <div className="tac-tools">
+          {TOOLS.map(t=><button key={t.id} className={`tool-btn${tool===t.id?' on':''}`} onClick={()=>setTool(t.id)}>{t.l}</button>)}
+          <div style={{display:'flex',gap:4}}>{COLORS.map(c=><div key={c} onClick={()=>setColor(c)} style={{width:17,height:17,borderRadius:'50%',background:c,cursor:'pointer',border:`2px solid ${color===c?'#fff':'transparent'}`,transition:'.1s'}}/> )}</div>
+          <div style={{marginLeft:'auto',display:'flex',gap:5}}>
+            <button className="tool-btn" onClick={()=>setPaths(p=>p.slice(0,-1))}><Ic.Undo style={{width:12,height:12}}/></button>
+            <button className="tool-btn" onClick={()=>setPaths([])}><Ic.Eraser style={{width:12,height:12}}/></button>
+            <button className="btn btn-r btn-sm" onClick={()=>{const url=cRef.current.toDataURL('image/png');if(onSave)onSave(url);}}>
+              <Ic.Down style={{width:12,height:12}}/>Compartir
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ HOME PAGE ═══════════ */
+function HomePage({onNews,onNav,user}){
+  const[liveMin,setLiveMin]=useState(67);
+  useEffect(()=>{const t=setInterval(()=>setLiveMin(m=>m<90?m+1:m),12000);return()=>clearInterval(t);},[]);
+  const hero=NEWS[0];
+  const rest=NEWS.slice(1);
+
+  return(
+    <div>
+      {/* HERO */}
+      <div className="hero" onClick={()=>onNews(hero)}>
+        <div className="hero-img">{hero.em}</div>
+        <div className="hero-ov">
+          <div style={{display:'flex',gap:6,marginBottom:8,flexWrap:'wrap'}}>
+            <span className="badge br-b">{hero.cat}</span>
+            {hero.ai&&<span className="badge bv-b">✦ IA</span>}
+            <span className="badge" style={{background:'rgba(232,38,42,.15)',color:'#FF6668',border:'1px solid rgba(232,38,42,.3)',display:'flex',alignItems:'center',gap:3}}>
+              <div className="ld-b" style={{width:5,height:5}}/>EN VIVO
+            </span>
+          </div>
+          <div className="hero-tit">{hero.title}</div>
+          <div style={{fontSize:11,color:'rgba(255,255,255,.5)'}}>{hero.auth} · {hero.t} · ❤ {hero.l} · 💬 {hero.c}</div>
+          <div style={{display:'flex',gap:7,marginTop:10}}>
+            <button className="btn btn-r btn-sm" onClick={e=>{e.stopPropagation();onNews(hero)}}>Leer nota</button>
+            <button className="btn btn-g btn-sm" style={{border:'1px solid rgba(255,255,255,.2)',color:'rgba(255,255,255,.7)'}}>Compartir</button>
+          </div>
+        </div>
+      </div>
+
+      {/* LIVE STRIP */}
+      <div className="sh"><div className="st" style={{color:'var(--acc)'}}><div className="ld-b"/>En Vivo</div><span className="sl" onClick={()=>onNav('live')}>Ver todo →</span></div>
+      <div style={{display:'flex',gap:8,overflowX:'auto',marginBottom:16,paddingBottom:2,scrollbarWidth:'none'}}>
+        {LIVE_EV.map(e=>(
+          <div key={e.id} className={`lmc${e.live?' lv':''}`} onClick={()=>onNav('live')}>
+            <div className={`lms${e.live?' lv':''}`}>{e.live&&<><div className="ldot" style={{width:5,height:5,borderRadius:'50%',background:'var(--acc)',animation:'pulse 1.4s infinite',flexShrink:0}}/> EN VIVO · </>}{e.id===1?liveMin+"'":e.min}</div>
+            <div className="lmt">
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
+              {e.sh!==''?<div className={`lsc${e.live?' lv':''}`}>{e.id===1?`2-1`:e.sh+'-'+e.sa}</div>:<div style={{fontFamily:'var(--fd)',fontSize:11,color:'var(--tx3)',textAlign:'center'}}>vs</div>}
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* 2-col grid: NEWS + COMMUNITY */}
+      <div style={{display:'grid',gap:16,gridTemplateColumns:'1fr',marginBottom:16}}>
+        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(260px,1fr))',gap:10}}>
+          {rest.slice(0,4).map(n=><NewsCard key={n.id} n={n} onClick={()=>onNews(n)} size="sm"/>)}
+        </div>
+      </div>
+
+      {/* COMMUNITY LATEST */}
+      <div className="sh">
+        <div className="st">Últimos en la Comunidad</div>
+        <span className="sl" onClick={()=>onNav('community')}>Ver todos →</span>
+      </div>
+      <div style={{marginBottom:16}}>
+        {THREADS.slice(0,3).map(t=>(
+          <div key={t.id} className="tc" onClick={()=>onNav('community')}>
+            <div style={{display:'flex',gap:6,marginBottom:5,flexWrap:'wrap'}}>
+              {t.hot&&<span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+              <span className="badge bb-b" style={{fontSize:9}}>{t.cat}</span>
+              <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
+            </div>
+            <div className="tc-tit">{t.title}</div>
+            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4}}>
+              <div style={{width:20,height:20,borderRadius:'50%',background:t.author.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:9,color:'#fff'}}>{t.author.av}</div>
+              <span style={{fontSize:11,color:'var(--tx2)',fontWeight:600}}>{t.author.name}</span>
+              <span className="badge bp-b" style={{fontSize:8}}>{t.author.level}</span>
+            </div>
+            <div className="tc-mt">
+              <div className="tc-st"><Ic.Comment/>{t.r} respuestas</div>
+              <div className="tc-st"><Ic.Eye/>{t.v} vistas</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* POLL */}
+      <div className="sh"><div className="st">El VAR del Día</div><span className="badge br-b">IA</span></div>
+      <div className="card cp mb-3"><Poll poll={POLLS[0]}/></div>
+
+      {/* MORE NEWS */}
+      <div className="sh" style={{marginTop:16}}><div className="st">Más Noticias</div></div>
+      <div className="ng-grid">{rest.slice(0).map(n=><NewsCard key={n.id} n={n} onClick={()=>onNews(n)}/>)}</div>
+    </div>
+  );
+}
+
+/* ═══════════ LIVE PAGE ═══════════ */
+function LivePage(){
+  const[sel,setSel]=useState(0);const[chatMsg,setChatMsg]=useState('');
+  const[msgs,setMsgs]=useState([
+    {id:1,u:'GonzaB',text:'Que golazo!! 🔥',own:false},
+    {id:2,u:'MariaBoca',text:'Ese penal no existe 😤',own:false},
+    {id:3,u:'Vos',text:'¡Vamos River carajo!',own:true},
+  ]);
+  const[showEmoji,setShowEmoji]=useState(false);
+  const ref=useRef();
+  function send(){
+    if(!chatMsg.trim())return;
+    setMsgs(m=>[...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
+    setChatMsg('');setShowEmoji(false);
+    setTimeout(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight},50);
+  }
+  const ev=LIVE_EV[sel];
+  return(
+    <div>
+      <div className="sh"><div className="st" style={{color:'var(--acc)'}}><div className="ld-b"/>En Vivo</div></div>
+      <div style={{display:'flex',gap:8,overflowX:'auto',marginBottom:14,paddingBottom:2,scrollbarWidth:'none'}}>
+        {LIVE_EV.map((e,i)=>(
+          <div key={e.id} className={`lmc${e.live?' lv':''}${sel===i?' sel':''}`} onClick={()=>setSel(i)}>
+            <div className={`lms${e.live?' lv':''}`}>{e.live&&<><div style={{width:5,height:5,borderRadius:'50%',background:'var(--acc)',animation:'pulse 1.4s infinite',flexShrink:0,display:'inline-block',marginRight:3}}/>EN VIVO · </>}{e.min}</div>
+            <div className="lmt">
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
+              {e.sh!==''?<div className={`lsc${e.live?' lv':''}`}>{e.sh}-{e.sa}</div>:<div style={{fontFamily:'var(--fd)',fontSize:10,color:'var(--tx3)'}}>vs</div>}
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {ev.live&&(
+        <div className="card cp" style={{marginBottom:12}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:8}}>Eventos del partido</div>
+          {[{min:"23'",tp:'⚽',d:"GOL — Borja (River)"},{min:"45'",tp:'🟡',d:"Amarilla — Izquierdoz"},{min:"67'",tp:'⚽',d:"GOL — Mammana (River)"}].map((e,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'7px 0',borderBottom:'1px solid var(--br)'}}>
+              <span style={{fontFamily:'var(--fd)',fontWeight:700,color:'var(--tx3)',width:28,fontSize:12}}>{e.min}</span>
+              <span style={{fontSize:17}}>{e.tp}</span>
+              <span style={{fontSize:13}}>{e.d}</span>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="chat-wrap">
+        <div className="ch-hd"><div className="ld-b"/><span style={{fontWeight:600,fontSize:13}}>Chat en vivo</span><span className="badge bg-b" style={{marginLeft:'auto'}}>1.2k online</span></div>
+        <div ref={ref} className="ch-bd">
+          {msgs.map(m=>(
+            <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
+              {!m.own&&<div className="cmsg-u">{m.u}</div>}
+              {m.text&&<div>{m.text}</div>}
+              {m.video&&(
+                <div className="cmsg-vid"><div className="cmsg-vid-ph"><span>📹</span><span>{m.videoName||'Video'}</span></div></div>
+              )}
+            </div>
+          ))}
+        </div>
+        {showEmoji&&<div className="emoji-bar">{EMOJIS.map(e=><button key={e} className="ej-btn" onClick={()=>setChatMsg(c=>c+e)}>{e}</button>)}</div>}
+        <div className="ch-inp">
+          <button onClick={()=>setShowEmoji(!showEmoji)} style={{background:'none',color:'var(--tx2)',fontSize:17}}>😊</button>
+          <input className="ch-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Mensaje..."/>
+          <button className="ch-snd" onClick={send}><Ic.Send/></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ COMMUNITY PAGE (full) ═══════════ */
+function CommunityPage({user,addToast}){
+  const[view,setView]=useState('list');
+  const[activeThread,setActiveThread]=useState(null);
+  const[sport,setSport]=useState('Todos');
+  const[tab,setTab]=useState('threads');
+  const[newModal,setNewModal]=useState(false);
+  const[showTactic,setShowTactic]=useState(false);
+  const[tacImg,setTacImg]=useState(null);
+  const[chatMsg,setChatMsg]=useState('');
+  const[showEmoji,setShowEmoji]=useState(false);
+  const[chatMsgs,setChatMsgs]=useState([
+    {id:1,u:'GonzaB',av:'GT',c:'#E8262A',text:'¿Alguien más vio el golazo de Borja? 🔥',own:false},
+    {id:2,u:'ScrumMaster',av:'SM',c:'#16A34A',text:'Tremendo! Pero el penal en el 35 era clarísimo 😤',own:false},
+  ]);
+  const[rep,setRep]=useState(user.rep||0);
+  const cRef=useRef();
+
+  const SPORTS_TABS=['Todos','Fútbol','Básquet','Rugby','Tenis','Auto','Boxeo','Hockey'];
+  const SPORT_CATS={Fútbol:'futbol',Básquet:'basquet',Rugby:'rugby',Tenis:'tenis',Auto:'auto',Boxeo:'boxeo',Hockey:'hockey'};
+  const filtered=sport==='Todos'?THREADS:THREADS.filter(t=>t.cat===SPORT_CATS[sport]);
+
+  function sendChat(){
+    if(!chatMsg.trim()&&!tacImg)return;
+    setChatMsgs(m=>[...m,{id:Date.now(),u:'Vos',av:'YO',c:'#6366F1',text:chatMsg,own:true,tactic:tacImg}]);
+    setChatMsg('');setTacImg(null);setShowEmoji(false);
+    setTimeout(()=>{if(cRef.current)cRef.current.scrollTop=cRef.current.scrollHeight},60);
+  }
+  function openThread(t){setActiveThread(t);setView('thread');}
+
+  if(view==='thread'&&activeThread){
+    return<ThreadDetail thread={activeThread} onBack={()=>setView('list')} user={user} addToast={addToast} rep={rep} setRep={setRep}/>;
+  }
+
+  return(
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:4}}>
+        <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--acc)'}}>Tribuna Libre</span></h1>
+        {!user.isGuest&&<button className="btn btn-r btn-sm" onClick={()=>setNewModal(true)}><Ic.Plus style={{width:12,height:12}}/>Nuevo hilo</button>}
+      </div>
+      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:12,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+
+      {user.isGuest&&(
+        <div className="guest-banner">
+          <span style={{fontSize:20}}>👋</span>
+          <div className="gb-text"><b>Estás como invitado</b>Podés leer y comentar libremente. Registrate para crear grupos, subir imágenes y ganar reputación.</div>
+        </div>
+      )}
+
+      {!user.isGuest&&(
+        <div className="rep-card">
+          <div className="rep-h">
+            <div className="rep-tit"><Ic.Trophy style={{width:13,height:13,color:'var(--gold)'}}/> Tribuna Activa — <span className="badge bp-b">{getLevel(rep).name}</span></div>
+            <div className="rep-sc">{rep} pts</div>
+          </div>
+          <div className="rep-bg"><div className="rep-fill" style={{width:getRepPct(rep)+'%'}}/></div>
+          <div className="rep-lv"><span>{getLevel(rep).name}</span><span>Siguiente: {getLevel(rep).max} pts</span></div>
+        </div>
+      )}
+
+      <div className="tabs">
+        {['threads','chat','top','info'].map(t=><div key={t} className={`tabx${tab===t?' on':''}`} onClick={()=>setTab(t)}>{t==='threads'?'Hilos':t==='chat'?'Chat':t==='top'?'Ranking':'Cómo funciona'}</div>)}
+      </div>
+
+      {/* THREADS */}
+      {tab==='threads'&&(
+        <>
+          <div className="stabs">
+            {SPORTS_TABS.map(s=><div key={s} className={`stab${sport===s?' on':''}`} onClick={()=>setSport(s)}>{s}</div>)}
+          </div>
+          <div style={{display:'grid',gap:7,gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',marginBottom:12}}>
+            {[{id:'futbol',em:'⚽',n:342},{id:'rugby',em:'🏉',n:124},{id:'basquet',em:'🏀',n:89},{id:'auto',em:'🏎️',n:77}].map(c=>(
+              <div key={c.id} className="card cs" style={{cursor:'pointer',textAlign:'center'}} onClick={()=>{}}>
+                <div style={{fontSize:20,marginBottom:3}}>{c.em}</div>
+                <div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600}}>{c.n}</div>
+                <div style={{fontSize:10,color:'var(--tx3)'}}>{c.id}</div>
+              </div>
+            ))}
+          </div>
+          {filtered.map(t=>(
+            <div key={t.id} className="tc" onClick={()=>openThread(t)}>
+              <div style={{display:'flex',gap:5,marginBottom:5,flexWrap:'wrap'}}>
+                {t.pinned&&<span className="badge bb-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Pin style={{width:9,height:9}}/>Fijado</span>}
+                {t.hot&&<span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+                <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
+              </div>
+              <div className="tc-tit">{t.title}</div>
+              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5}}>
+                <div style={{width:22,height:22,borderRadius:'50%',background:t.author.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:9,color:'#fff'}}>{t.author.av}</div>
+                <span style={{fontSize:11,fontWeight:600}}>{t.author.name}</span>
+                <span className="badge bp-b" style={{fontSize:8}}>{t.author.level}</span>
+                <span style={{fontSize:10,color:'var(--gold)',marginLeft:'auto',display:'flex',alignItems:'center',gap:2}}><Ic.Star style={{width:10,height:10}}/>{t.author.rep}</span>
+              </div>
+              <div className="tc-mt">
+                <div className="tc-st"><Ic.Comment/>{t.r}</div>
+                <div className="tc-st"><Ic.Eye/>{t.v}</div>
+              </div>
+            </div>
+          ))}
+        </>
+      )}
+
+      {/* CHAT con soporte de video */}
+      {tab==='chat'&&(
+        <>
+          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:10,padding:'8px 11px',background:'rgba(232,38,42,.08)',border:'1px solid rgba(232,38,42,.2)',borderRadius:'var(--rs)'}}>
+            <div className="ld-b"/><span style={{fontSize:12,fontWeight:600,color:'var(--acc)'}}>Chat en vivo</span>
+            <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>234 conectados</span>
+          </div>
+          <div className="chat-wrap">
+            <div ref={cRef} className="ch-bd">
+              {chatMsgs.map(m=>(
+                <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
+                  {!m.own&&<div className="cmsg-u">{m.u}</div>}
+                  {m.text&&<div>{m.text}</div>}
+                  {m.tactic&&<img src={m.tactic} alt="táctica" style={{maxWidth:200,borderRadius:6,marginTop:4,display:'block',width:'100%'}}/>}
+                  {m.video&&(
+                    <div className="cmsg-vid">
+                      <div className="cmsg-vid-ph"><Ic.Video style={{width:14,height:14,flexShrink:0}}/><span>{m.videoName||'video.mp4'}</span></div>
+                    </div>
+                  )}
+                </div>
+              ))}
+              {tacImg&&<div style={{alignSelf:'flex-end',marginBottom:4}}>
+                <img src={tacImg} alt="preview" style={{maxWidth:120,borderRadius:6,border:'2px solid var(--acc)'}}/>
+              </div>}
+            </div>
+            {showEmoji&&<div className="emoji-bar">{EMOJIS.map(e=><button key={e} className="ej-btn" onClick={()=>setChatMsg(c=>c+e)}>{e}</button>)}</div>}
+            <div className="ch-inp">
+              <button onClick={()=>setShowEmoji(!showEmoji)} style={{background:'none',color:'var(--tx2)',fontSize:17,padding:'0 2px'}}>😊</button>
+              <button onClick={()=>setShowTactic(true)} style={{background:'none',color:'var(--tx2)',display:'flex',alignItems:'center',padding:'0 2px'}}><Ic.Tactic style={{width:15,height:15}}/></button>
+              {/* Video upload trigger */}
+              <label style={{background:'none',color:'var(--tx2)',display:'flex',alignItems:'center',cursor:'pointer',padding:'0 2px'}}>
+                <Ic.Video style={{width:15,height:15}}/>
+                <input type="file" accept="video/*" style={{display:'none'}} onChange={e=>{
+                  const f=e.target.files?.[0];if(!f)return;
+                  setChatMsgs(m=>[...m,{id:Date.now(),u:'Vos',own:true,video:true,videoName:f.name}]);
+                  addToast({msg:'Video listo para enviar',em:'📹'});
+                }}/>
+              </label>
+              <input className="ch-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Mensaje, emoji o táctica..."/>
+              <button className="ch-snd" onClick={sendChat}><Ic.Send/></button>
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* RANKING */}
+      {tab==='top'&&(
+        <div>
+          <div style={{padding:'10px 12px',background:'linear-gradient(135deg,rgba(245,158,11,.1),rgba(245,158,11,.05))',border:'1px solid rgba(245,158,11,.2)',borderRadius:'var(--rs)',marginBottom:12,display:'flex',alignItems:'center',gap:8}}>
+            <Ic.Trophy style={{width:15,height:15,color:'var(--gold)'}}/>
+            <span style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600}}>Ranking Tribuna Activa</span>
+          </div>
+          {TOP_USERS.map((u,i)=>(
+            <div key={i} className="card cp" style={{marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,color:i===0?'#FFD700':i===1?'#C0C0C0':i===2?'#CD7F32':'var(--tx3)',width:26,textAlign:'center'}}>{i+1}</div>
+              <div style={{width:38,height:38,borderRadius:'50%',background:u.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:13,color:'#fff',flexShrink:0}}>{u.av}</div>
+              <div style={{flex:1}}>
+                <div style={{fontWeight:600,fontSize:13,marginBottom:2}}>{u.name}</div>
+                <span className="badge bp-b" style={{fontSize:8}}>{u.level}</span>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:18,fontWeight:700,color:'var(--gold)'}}>{u.rep}</div>
+                <div style={{fontSize:9,color:'var(--tx3)'}}>pts</div>
+              </div>
+            </div>
+          ))}
+          <div className="card cp" style={{marginTop:6}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:8}}>¿Cómo ganás puntos?</div>
+            {[['Publicar un hilo','+20 pts'],['Comentar','+5 pts'],['Recibir likes','+2 pts'],['Compartir táctica','+10 pts'],['Post viral (100+ likes)','+50 pts']].map(([a,b],i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',padding:'5px 0',borderBottom:'1px solid var(--br)',fontSize:12}}>
+                <span style={{color:'var(--tx2)'}}>{a}</span><span style={{color:'var(--gold)',fontWeight:600}}>{b}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab==='info'&&(
+        <div>
+          {[
+            {em:'👁️',t:'Acceso libre',b:'Todos pueden leer y comentar sin cuenta. El foro es abierto.'},
+            {em:'✍️',t:'Registrate para más',b:'Con cuenta podés crear hilos, subir imágenes, videos, dibujar tácticas y ganar reputación.'},
+            {em:'📹',t:'Videos en el chat',b:'Podés subir videos directamente al chat del foro. Se visualizan inline para todos los usuarios.'},
+            {em:'🏟️',t:'Tablero Táctico',b:'Dibujá jugadas con flechas y marcadores. Compartí como imagen en el chat o en un hilo.'},
+            {em:'⭐',t:'Reputación',b:'5 niveles: Visitante → Fanático → Hincha Fiel → Ultra Fan → Leyenda. Ganás puntos participando.'},
+            {em:'🛡️',t:'Moderación IA',b:'Claude API modera comentarios en tiempo real. Podés reportar con el botón correspondiente.'},
+          ].map((item,i)=>(
+            <div key={i} className="card cp" style={{marginBottom:8,display:'flex',gap:10}}>
+              <span style={{fontSize:22,flexShrink:0}}>{item.em}</span>
+              <div><div style={{fontFamily:'var(--fd)',fontWeight:600,fontSize:14,marginBottom:3}}>{item.t}</div>
+              <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.5}}>{item.b}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showTactic&&<TacticBoard onSave={url=>{setTacImg(url);setShowTactic(false);addToast({msg:'Táctica lista para enviar',em:'🏟️'})}} onClose={()=>setShowTactic(false)}/>}
+
+      {newModal&&(
+        <div className="mbg" onClick={()=>setNewModal(false)}>
+          <div className="mdl" onClick={e=>e.stopPropagation()}>
+            <div className="mdl-h"><div className="mdl-t">Nuevo Hilo</div><button className="cls-btn" onClick={()=>setNewModal(false)}><Ic.X/></button></div>
+            <div style={{marginBottom:11}}><label className="fl">Sección</label>
+              <div className="stabs">{['Fútbol','Rugby','Básquet','Tenis','Auto','Boxeo'].map(s=><div key={s} className="stab">{s}</div>)}</div>
+            </div>
+            <div style={{marginBottom:11}}><label className="fl">Título</label><input className="fi" placeholder="¿Sobre qué querés debatir?"/></div>
+            <div style={{marginBottom:11}}><label className="fl">Contenido</label><textarea className="fi" style={{minHeight:80,resize:'vertical'}} placeholder="Arrancá el debate..."/></div>
+            <div style={{display:'flex',gap:7,marginBottom:13}}>
+              <button className="btn btn-g btn-sm" onClick={()=>setShowTactic(true)}><Ic.Tactic style={{width:12,height:12}}/>Táctica</button>
+              <button className="btn btn-g btn-sm"><Ic.Img style={{width:12,height:12}}/>Imagen</button>
+              <label className="btn btn-g btn-sm" style={{cursor:'pointer'}}><Ic.Video style={{width:12,height:12}}/>Video<input type="file" accept="video/*" style={{display:'none'}}/></label>
+            </div>
+            <button className="btn btn-r" style={{width:'100%',justifyContent:'center'}} onClick={()=>{setNewModal(false);setRep(r=>r+20);addToast({msg:'Hilo publicado! +20 pts',em:'🎉'});}}>Publicar hilo</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════ THREAD DETAIL ═══════════ */
+function ThreadDetail({thread,onBack,user,addToast,rep,setRep}){
+  const[comment,setComment]=useState('');
+  const[comments,setComments]=useState([
+    {id:1,user:'ScrumMaster',av:'SM',color:'#16A34A',text:'Totalmente de acuerdo. El VAR debería tener un árbitro neutral.',likes:18,t:'Hace 45m',level:'Ultra Fan'},
+    {id:2,user:'BosteroDeCorazon',av:'BC',color:'#003399',text:'El problema es cultural, no tecnológico. En Europa funciona mucho mejor.',likes:24,t:'Hace 2h',level:'Leyenda'},
+  ]);
+  const[liked,setLiked]=useState({});
+  const[showTactic,setShowTactic]=useState(false);
+  const[tacImg,setTacImg]=useState(null);
+  function addComment(){
+    if(!comment.trim())return;
+    setComments(c=>[{id:Date.now(),user:user.name||'Vos',av:user.av||'?',color:user.color||'#888',text:comment,likes:0,t:'Ahora',level:getLevel(rep).name},...c]);
+    setComment('');setTacImg(null);
+    setRep(r=>r+5);
+    addToast({msg:'Comentario publicado! +5 pts',em:'💬'});
+  }
+  return(
+    <div>
+      <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--tx2)',marginBottom:13,fontSize:12}}><Ic.Back style={{width:13,height:13}}/>Volver al foro</button>
+      <div className="card cp" style={{marginBottom:13}}>
+        <div style={{display:'flex',gap:5,marginBottom:8,flexWrap:'wrap'}}>
+          {thread.pinned&&<span className="badge bb-b"><Ic.Pin style={{width:9,height:9}}/>Fijado</span>}
+          {thread.hot&&<span className="badge br-b"><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+          <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{thread.t}</span>
+        </div>
+        <h2 style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:600,lineHeight:1.2,marginBottom:9}}>{thread.title}</h2>
+        <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9}}>
+          <div style={{width:28,height:28,borderRadius:'50%',background:thread.author.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:10,color:'#fff'}}>{thread.author.av}</div>
+          <div>
+            <div style={{fontWeight:600,fontSize:12}}>{thread.author.name}</div>
+            <div style={{display:'flex',gap:5}}><span className="badge bp-b" style={{fontSize:8}}>{thread.author.level}</span><span style={{fontSize:9,color:'var(--gold)'}}>⭐ {thread.author.rep}</span></div>
+          </div>
+        </div>
+        <p style={{fontSize:13,lineHeight:1.65,color:'var(--tx2)',marginBottom:10}}>{thread.body}</p>
+        <div style={{display:'flex',gap:10,paddingTop:9,borderTop:'1px solid var(--br)'}}>
+          <span style={{fontSize:10,color:'var(--tx3)'}}><Ic.Comment style={{width:11,height:11,verticalAlign:'middle',marginRight:2}}/>{thread.r}</span>
+          <span style={{fontSize:10,color:'var(--tx3)'}}><Ic.Eye style={{width:11,height:11,verticalAlign:'middle',marginRight:2}}/>{thread.v}</span>
+        </div>
+      </div>
+      {/* Comment box */}
+      <div className="card cp" style={{marginBottom:12}}>
+        <textarea value={comment} onChange={e=>setComment(e.target.value)} placeholder={user.isGuest?"Comentá como invitado...":"Sumate al debate..."} className="fi" style={{minHeight:65,marginBottom:8}}/>
+        {tacImg&&<div style={{marginBottom:8}}><img src={tacImg} alt="tac" style={{maxWidth:120,borderRadius:6,border:'2px solid var(--acc)'}}/></div>}
+        <div style={{display:'flex',gap:6,justifyContent:'space-between',flexWrap:'wrap'}}>
+          <div style={{display:'flex',gap:6}}>
+            <button className="btn btn-g btn-sm" onClick={()=>setShowTactic(true)}><Ic.Tactic style={{width:12,height:12}}/>Táctica</button>
+            <label className="btn btn-g btn-sm" style={{cursor:'pointer'}}><Ic.Video style={{width:12,height:12}}/>Video<input type="file" accept="video/*" style={{display:'none'}} onChange={e=>addToast({msg:'Video adjunto!',em:'📹'})}/></label>
+          </div>
+          <button className="btn btn-r btn-sm" onClick={addComment}>Publicar</button>
+        </div>
+      </div>
+      <div className="sh"><div className="st">Respuestas</div><span style={{fontSize:11,color:'var(--tx3)'}}>{comments.length}</span></div>
+      {comments.map(c=>(
+        <div key={c.id} style={{borderBottom:'1px solid var(--br)',paddingBottom:12,marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
+            <div style={{width:26,height:26,borderRadius:'50%',background:c.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:9,color:'#fff'}}>{c.av}</div>
+            <div><div style={{fontWeight:600,fontSize:12,display:'flex',alignItems:'center',gap:5}}>{c.user}<span className="badge bp-b" style={{fontSize:8}}>{c.level}</span></div><div style={{fontSize:10,color:'var(--tx3)'}}>{c.t}</div></div>
+          </div>
+          <div style={{fontSize:13,lineHeight:1.55,color:'var(--tx2)',marginBottom:7}}>{c.text}</div>
+          <div style={{display:'flex',gap:10}}>
+            <button className={`abt${liked[c.id]?' lk':''}`} onClick={()=>setLiked(l=>({...l,[c.id]:!l[c.id]}))}><Ic.Heart/>{c.likes+(liked[c.id]?1:0)}</button>
+            <button className="abt" style={{fontSize:11}}>Responder</button>
+            <button className="abt" style={{fontSize:11,color:'var(--tx3)'}}>Reportar</button>
+          </div>
+        </div>
+      ))}
+      {showTactic&&<TacticBoard onSave={url=>{setTacImg(url);setShowTactic(false)}} onClose={()=>setShowTactic(false)}/>}
+    </div>
+  );
+}
+
+/* ═══════════ ADMIN PAGE ═══════════ */
+function AdminPage({addToast}){
+  const[tab,setTab]=useState('dash');
+  const[feeds,setFeeds]=useState(RSS_FEEDS);
+  const[queue,setQueue]=useState(AI_QUEUE);
+  const[activePreset,setActivePreset]=useState('Rojo Clásico');
+  const[customVars,setCustomVars]=useState({'--acc':'#E8262A','--acc2':'#16A34A','--bg':'#08080E','--surf':'#10101A','--card':'#161622','--mn':'#0D0D17','--mac':'#E8262A'});
+  const[rounded,setRounded]=useState(true);
+  const[compact,setCompact]=useState(false);
+  const[sidebarBlur,setSidebarBlur]=useState(false);
+
+  function applyPreset(name){
+    setActivePreset(name);
+    const vars=PRESETS[name];
+    Object.entries(vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+    setCustomVars(c=>({...c,...vars}));
+    addToast({msg:`Tema "${name}" aplicado`,em:'🎨'});
+  }
+  function applyColor(key,val){
+    setCustomVars(c=>({...c,[key]:val}));
+    document.documentElement.style.setProperty(key,val);
+  }
+  function toggleFeed(id){setFeeds(f=>f.map(feed=>feed.id===id?{...feed,on:!feed.on}:feed));}
+  function approvePost(id){setQueue(q=>q.map(p=>p.id===id?{...p,status:'approved'}:p));addToast({msg:'Noticia aprobada y publicada',em:'✅'});}
+  function rejectPost(id){setQueue(q=>q.filter(p=>p.id!==id));addToast({msg:'Noticia rechazada',em:'🗑️'});}
+
+  const ADMIN_TABS=[
+    {id:'dash',l:'Dashboard',icon:'Chart'},{id:'feeds',l:'RSS Feeds',icon:'Globe'},
+    {id:'queue',l:'Cola IA',icon:'Bot'},{id:'users',l:'Usuarios',icon:'Users'},
+    {id:'theme',l:'Diseño',icon:'Palette'},{id:'config',l:'Config',icon:'Settings'},
+  ];
+
+  return(
+    <div>
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14,padding:'12px 14px',background:'rgba(232,38,42,.1)',border:'1px solid rgba(232,38,42,.2)',borderRadius:'var(--r)'}}>
+        <span style={{fontSize:24}}>⚙️</span>
+        <div><div style={{fontFamily:'var(--fd)',fontSize:17,fontWeight:600}}>Panel Admin</div><div style={{fontSize:11,color:'var(--tx2)'}}>TRIBUNALIBRE · Control total</div></div>
+        <span className="badge br-b" style={{marginLeft:'auto'}}>ADMIN</span>
+      </div>
+      <div style={{display:'flex',gap:4,overflowX:'auto',marginBottom:14,scrollbarWidth:'none'}}>
+        {ADMIN_TABS.map(t=>{const Icon=Ic[t.icon];return(
+          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} style={{flexShrink:0,padding:'7px 12px'}} onClick={()=>setTab(t.id)}>
+            {t.l}
+          </div>
+        );})}
+      </div>
+
+      {tab==='dash'&&(
+        <div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9,marginBottom:16}}>
+            {[{n:'12,481',l:'Usuarios',c:'var(--acc2)'},{n:'3,892',l:'Noticias',c:'var(--acc)'},{n:'24,100',l:'Comentarios',c:'var(--gold)'},{n:'8,940',l:'Votos',c:'var(--blue)'}].map((k,i)=>(
+              <div key={i} className="card cp">
+                <div style={{fontFamily:'var(--fd)',fontSize:28,fontWeight:700,color:k.c,marginBottom:2}}>{k.n}</div>
+                <div style={{fontSize:11,color:'var(--tx2)'}}>{k.l}</div>
+              </div>
+            ))}
+          </div>
+          <div className="card cp">
+            <div style={{fontFamily:'var(--fd)',fontWeight:600,fontSize:13,marginBottom:10}}>Actividad reciente</div>
+            {['📡 RSS importó 7 noticias nuevas de Infobae','🤖 Claude generó 3 encuestas automáticas','⚠️ Comentario reportado en nota Superclásico','✅ 5 noticias de la cola IA aprobadas','👤 12 nuevos usuarios registrados hoy'].map((a,i)=>(
+              <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 0',borderBottom:'1px solid var(--br)',fontSize:12}}>
+                <span>{a}</span><span style={{marginLeft:'auto',color:'var(--tx3)',fontSize:10,flexShrink:0}}>Hace {(i+1)*15}m</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {tab==='feeds'&&(
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+            <span style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600}}>RSS Feeds</span>
+            <button className="btn btn-r btn-sm"><Ic.Plus style={{width:12,height:12}}/>Agregar</button>
+          </div>
+          <div style={{background:'rgba(22,163,74,.08)',border:'1px solid rgba(22,163,74,.2)',borderRadius:'var(--rs)',padding:'9px 12px',marginBottom:12,fontSize:11,color:'var(--acc2)'}}>
+            ⏰ Cron: cada 10 minutos · Último fetch: Hace 3m · 11 noticias importadas hoy
+          </div>
+          {feeds.map(f=>(
+            <div key={f.id} className="fi-item">
+              <span className="fi-ico">{f.ico}</span>
+              <div className="fi-info">
+                <div className="fi-name">{f.name}</div>
+                <div className="fi-url">{f.url}</div>
+                <div className="fi-stat">
+                  <div style={{width:6,height:6,borderRadius:'50%',background:f.on?'var(--acc2)':'var(--tx3)'}}/>
+                  <span style={{color:f.on?'var(--acc2)':'var(--tx3)'}}>{f.on?`Activo · ${f.last} · +${f.new} nuevas`:'Inactivo'}</span>
+                </div>
+              </div>
+              <div className={`ftog${f.on?' on':''}`} onClick={()=>toggleFeed(f.id)}/>
+            </div>
+          ))}
+          <div className="card cp" style={{marginTop:12}}>
+            <div style={{fontFamily:'var(--fd)',fontWeight:600,fontSize:13,marginBottom:9}}>Configurar cron job</div>
+            <div style={{marginBottom:10}}>
+              <label className="fl">Intervalo</label>
+              <select className="fi" style={{background:'var(--card2)'}}>
+                <option>Cada 5 minutos</option><option>Cada 10 minutos</option><option>Cada 30 minutos</option>
+              </select>
+            </div>
+            <div className="tog-row"><span className="tog-lbl">Auto-publicar relevancia ≥ 85</span><div className="tog on"/></div>
+            <div className="tog-row"><span className="tog-lbl">Requerir revisión manual</span><div className="tog on"/></div>
+          </div>
+        </div>
+      )}
+
+      {tab==='queue'&&(
+        <div>
+          <div style={{display:'flex',justifyContent:'space-between',marginBottom:12,alignItems:'center'}}>
+            <span style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600}}>Cola de revisión IA</span>
+            <span className="badge bv-b">{queue.filter(p=>p.status==='pending').length} pendientes</span>
+          </div>
+          <div style={{background:'rgba(139,92,246,.08)',border:'1px solid rgba(139,92,246,.2)',borderRadius:'var(--rs)',padding:'9px 12px',marginBottom:12,fontSize:11,color:'#C4B5FD'}}>
+            ✦ Claude procesó estas noticias automáticamente desde los RSS feeds.
+          </div>
+          {queue.map(p=>(
+            <div key={p.id} className="aiq">
+              <div style={{display:'flex',gap:5,marginBottom:7,flexWrap:'wrap'}}>
+                <span className="badge br-b">{p.cat}</span>
+                <span className="badge bb-b">Fuente: {p.src}</span>
+                <span className="badge bp-b">Score: {p.score}%</span>
+                {p.status==='approved'&&<span className="badge bg-b">✓ Aprobado</span>}
+              </div>
+              <div className="aiq-tit">{p.title}</div>
+              <div className="aiq-sum"><span style={{color:'#C4B5FD',fontSize:10,fontWeight:700}}>✦ Resumen IA: </span>{p.sum}</div>
+              {p.status==='pending'&&(
+                <div className="aiq-acts">
+                  <button className="btn btn-r btn-sm" onClick={()=>approvePost(p.id)}><Ic.Check style={{width:11,height:11}}/>Aprobar</button>
+                  <button className="btn btn-g btn-sm">✏️ Editar</button>
+                  <button style={{background:'rgba(232,38,42,.12)',border:'1px solid rgba(232,38,42,.25)',color:'var(--acc)',borderRadius:'var(--rs)',padding:'5px 10px',fontSize:11,cursor:'pointer'}} onClick={()=>rejectPost(p.id)}>Rechazar</button>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {tab==='users'&&(
+        <div className="card" style={{overflowX:'auto'}}>
+          <table className="dt">
+            <thead><tr><th>Usuario</th><th>Rol</th><th>Posts</th><th>Estado</th><th>Acción</th></tr></thead>
+            <tbody>
+              {[{u:'GonzaB',r:'user',p:34,s:'activo'},{u:'ScrumMaster',r:'mod',p:89,s:'activo'},{u:'SpeedFreak',r:'user',p:12,s:'suspendido'},{u:'MariaF',r:'admin',p:210,s:'activo'}].map((u,i)=>(
+                <tr key={i}>
+                  <td style={{fontWeight:600}}>@{u.u}</td>
+                  <td><span className={`badge ${u.r==='admin'?'br-b':u.r==='mod'?'bp-b':'bb-b'}`}>{u.r}</span></td>
+                  <td>{u.p}</td>
+                  <td><span className={`badge ${u.s==='activo'?'bg-b':'br-b'}`}>{u.s}</span></td>
+                  <td><button style={{background:'var(--card3)',border:'1px solid var(--brm)',borderRadius:'var(--rs)',padding:'3px 9px',fontSize:10,color:'var(--tx2)',cursor:'pointer'}}>Gestionar</button></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab==='theme'&&(
+        <div>
+          <div className="te-sect">
+            <div className="te-stit">🎨 Temas predefinidos</div>
+            <div className="preset-grid">
+              {Object.entries(PRESETS).map(([name,vars])=>(
+                <div key={name} className={`preset-btn${activePreset===name?' on':''}`}
+                  style={{background:vars['--card']||'#161622',border:`2px solid ${activePreset===name?vars['--acc']||'#E8262A':'transparent'}`}}
+                  onClick={()=>applyPreset(name)}>
+                  <div style={{width:22,height:22,borderRadius:'50%',background:vars['--acc'],margin:'0 auto 5px'}}/>
+                  <div style={{fontSize:8,color:'#ccc',fontFamily:'var(--fd)'}}>{name}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="te-sect">
+            <div className="te-stit">🔴 Colores principales</div>
+            {[{k:'--acc',l:'Color de acento'},{k:'--acc2',l:'Color secundario'},{k:'--mac',l:'Activo del menú'}].map(({k,l})=>(
+              <div key={k} className="clr-row">
+                <span className="clr-lbl">{l}</span>
+                <input type="color" className="clr-in" value={customVars[k]||'#E8262A'} onChange={e=>applyColor(k,e.target.value)}/>
+                <input className="clr-txt" value={customVars[k]||''} onChange={e=>applyColor(k,e.target.value)}/>
+              </div>
+            ))}
+          </div>
+          <div className="te-sect">
+            <div className="te-stit">🖤 Fondos</div>
+            {[{k:'--bg',l:'Fondo principal'},{k:'--surf',l:'Topbar/Sidebar'},{k:'--card',l:'Cards'},{k:'--mn',l:'Fondo menú'}].map(({k,l})=>(
+              <div key={k} className="clr-row">
+                <span className="clr-lbl">{l}</span>
+                <input type="color" className="clr-in" value={customVars[k]||'#111'} onChange={e=>applyColor(k,e.target.value)}/>
+                <input className="clr-txt" value={customVars[k]||''} onChange={e=>applyColor(k,e.target.value)}/>
+              </div>
+            ))}
+          </div>
+          <div className="te-sect">
+            <div className="te-stit">⚙️ Opciones</div>
+            <div className="tog-row"><span className="tog-lbl">Esquinas redondeadas</span>
+              <div className={`tog${rounded?' on':''}`} onClick={()=>{setRounded(!rounded);document.documentElement.style.setProperty('--r',!rounded?'10px':'4px');}}/>
+            </div>
+            <div className="tog-row"><span className="tog-lbl">Modo compacto</span>
+              <div className={`tog${compact?' on':''}`} onClick={()=>setCompact(!compact)}/>
+            </div>
+            <div className="tog-row"><span className="tog-lbl">Sidebar translúcido</span>
+              <div className={`tog${sidebarBlur?' on':''}`} onClick={()=>{setSidebarBlur(!sidebarBlur);applyColor('--mn',!sidebarBlur?'rgba(8,8,14,.6)':'var(--surf)')}}/>
+            </div>
+          </div>
+          <button className="btn btn-r" style={{width:'100%',justifyContent:'center',marginTop:4}} onClick={()=>addToast({msg:'Tema guardado permanentemente',em:'✅'})}>
+            Guardar tema
+          </button>
+          <button className="btn btn-g" style={{width:'100%',justifyContent:'center',marginTop:7}} onClick={()=>applyPreset('Rojo Clásico')}>
+            Restaurar defaults
+          </button>
+        </div>
+      )}
+
+      {tab==='config'&&(
+        <div>
+          {[{l:'Nombre del sitio',v:'TRIBUNALIBRE'},{l:'Tagline',v:'Deportes Argentina — Noticias, Debate y Comunidad'},{l:'Email de contacto',v:'hola@tribunalibre.com.ar'},{l:'URL del sitio',v:'https://tribunalibre.com.ar'}].map((f,i)=>(
+            <div key={i} style={{marginBottom:11}}><label className="fl">{f.l}</label><input className="fi" defaultValue={f.v}/></div>
+          ))}
+          <div className="div-hr"/>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:9}}>Integración IA — Claude API</div>
+          <div style={{marginBottom:11}}><label className="fl">Anthropic API Key</label><input className="fi" type="password" placeholder="sk-ant-api03-..."/></div>
+          <div style={{marginBottom:11}}><label className="fl">Modelo</label>
+            <select className="fi" style={{background:'var(--card2)'}}>
+              <option>claude-sonnet-4-6 (recomendado)</option>
+              <option>claude-opus-4-6 (más potente)</option>
+              <option>claude-haiku-4-5-20251001 (más rápido)</option>
+            </select>
+          </div>
+          <div className="div-hr"/>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:9}}>Moderación</div>
+          {['Filtro automático toxicidad','Detección de spam','Bloqueo de links','Auto-ban reincidentes'].map((o,i)=>(
+            <div key={i} className="tog-row"><span className="tog-lbl">{o}</span><div className={`tog${i<2?' on':''}`}/></div>
+          ))}
+          <button className="btn btn-r" style={{marginTop:14}} onClick={()=>addToast({msg:'Configuración guardada',em:'✅'})}>Guardar todo</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══════════ RIGHT SIDEBAR ═══════════ */
+function RightSidebar({onNav}){
+  return(
+    <div style={{display:'flex',flexDirection:'column',gap:15}}>
+      <div>
+        <div className="sh"><div className="st">Trending Ahora</div></div>
+        <div className="card cs">
+          {['#SuperclásicoPasión','#LosPumas','#Colapinto2025','#LigaProfesional','#CopaArgentina','#MundialF1'].map((tag,i)=>(
+            <div key={i} className="tri">
+              <div className={`trnum${i<2?' hot':''}`}>#{i+1}</div>
+              <div><div className="trn">{tag}{i<2&&' 🔥'}</div><div className="trc">{Math.round((8000-i*900)/100)*100} posts</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="sh"><div className="st">El VAR del Día</div><span className="badge bv-b">IA</span></div>
+        <div className="card cp"><Poll poll={POLLS[0]}/></div>
+      </div>
+      <div>
+        <div className="sh"><div className="st" style={{color:'var(--acc)'}}><div className="ld-b"/>En Vivo</div></div>
+        {LIVE_EV.filter(e=>e.live).map(e=>(
+          <div key={e.id} className="card cs" style={{cursor:'pointer',marginBottom:7}} onClick={()=>{}}>
+            <div style={{fontSize:9,color:'var(--acc)',fontWeight:700,marginBottom:4,display:'flex',alignItems:'center',gap:3}}><div style={{width:5,height:5,borderRadius:'50%',background:'var(--acc)',animation:'pulse 1.4s infinite'}}/>EN VIVO · {e.min}</div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:12,fontWeight:500}}>{e.sp} {e.h}</span>
+              <span style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'var(--acc)'}}>{e.sh}-{e.sa}</span>
+              <span style={{fontSize:12,fontWeight:500}}>{e.a}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="sh"><div className="st">Debates Activos</div></div>
+        <div className="card cs">
+          {THREADS.filter(t=>t.hot).map(t=>(
+            <div key={t.id} style={{paddingBottom:9,marginBottom:9,borderBottom:'1px solid var(--br)'}}>
+              <div style={{fontSize:12,fontWeight:500,lineHeight:1.3,marginBottom:3}}>{t.title}</div>
+              <div style={{fontSize:10,color:'var(--tx3)'}}>{t.r} respuestas · {t.cat}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="sh"><div className="st">Top Usuarios</div></div>
+        {TOP_USERS.slice(0,3).map((u,i)=>(
+          <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'7px 9px',background:'var(--card)',border:'1px solid var(--br)',borderRadius:'var(--rs)',marginBottom:6}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:i===0?'#FFD700':i===1?'#C0C0C0':'#CD7F32',width:18,textAlign:'center'}}>{i+1}</div>
+            <div style={{width:32,height:32,borderRadius:'50%',background:u.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:11,color:'#fff',flexShrink:0}}>{u.av}</div>
+            <div style={{flex:1}}><div style={{fontWeight:600,fontSize:12}}>{u.name}</div><div style={{fontSize:9,color:'var(--gold)'}}>⭐ {u.rep} pts</div></div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ═══════════ MAIN APP ═══════════ */
+const NAV=[
+  {id:'home',l:'Inicio',icon:'Home'},{id:'news',l:'Noticias',icon:'News'},
+  {id:'community',l:'Comunidad',icon:'Forum'},{id:'live',l:'En Vivo',icon:'Live'},
+  {id:'stream',l:'Stream',icon:'Stream'},{id:'var',l:'El VAR',icon:'Var'},
+  {id:'profile',l:'Perfil',icon:'Profile'},{id:'admin',l:'Admin',icon:'Admin'},
+];
+const MOBILE_NAV=[
+  {id:'home',l:'Inicio',icon:'Home'},{id:'news',l:'Noticias',icon:'News'},
+  {id:'community',l:'Comunidad',icon:'Forum'},{id:'live',l:'En Vivo',icon:'Live'},
+  {id:'profile',l:'Perfil',icon:'Profile'},
+];
+const TICKER=[
+  {l:'RIVER',t:"2-1 Racing · 67'"},{l:'PUMAS',t:'28-20 All Blacks'},
+  {l:'COLAPINTO',t:'lidera libres Mónaco'},{l:'CERÚNDOLO',t:'semis Madrid'},
+  {l:'VILDOZA',t:'Liga Nac. campeón'},{l:'MESSI',t:'renovaría con Miami'},
+];
+
+function App(){
+  const[page,setPage]=useState('home');
+  const[article,setArticle]=useState(null);
+  const[theme,setTheme]=useState('dark');
+  const[themeOpen,setThemeOpen]=useState(false);
+  const[toasts,setToasts]=useState([]);
+  const[authOpen,setAuthOpen]=useState(false);
+  const[user,setUser]=useState({name:'Invitado',av:'?',color:'#888',rep:0,isGuest:true});
+
+  function addToast({msg,em='✓'}){
+    const id=Date.now();
+    setToasts(t=>[...t,{id,msg,em}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)),3000);
+  }
+  function nav(p){setPage(p);setArticle(null);window.scrollTo(0,0);}
+  function openNews(n){setArticle(n);setPage('article');window.scrollTo(0,0);}
+  function changeTheme(t){
+    setTheme(t);setThemeOpen(false);
+    document.documentElement.setAttribute('data-theme',t);
+  }
+
+  const THEMES=[{id:'dark',l:'🌙 Oscuro'},{id:'light',l:'☀️ Claro'},{id:'pastel',l:'🎨 Pastel'},{id:'night',l:'🌑 Noche'}];
+  const curTheme=THEMES.find(t=>t.id===theme)||THEMES[0];
+
+  return(
+    <>
+      <Toast toasts={toasts}/>
+
+      {/* TOPBAR */}
+      <div className="tb">
+        <div className="logo" onClick={()=>nav('home')}>
+          <span className="lr">TRIBUNA</span><div className="lbar"/><span className="lw">LIBRE</span>
+        </div>
+        <div className="ticker">
+          <div className="tk-tr">
+            {[...TICKER,...TICKER].map((t,i)=><div key={i} className="tk-it"><b>{t.l}</b>{t.t}</div>)}
+          </div>
+        </div>
+        <div className="tb-r">
+          {/* Theme */}
+          <div style={{position:'relative'}}>
+            <button className="th-pick" onClick={()=>setThemeOpen(!themeOpen)}>{curTheme.l}</button>
+            {themeOpen&&(
+              <div className="th-drop" onClick={e=>e.stopPropagation()}>
+                {THEMES.map(t=><div key={t.id} className={`th-opt${theme===t.id?' on':''}`} onClick={()=>changeTheme(t.id)}>{t.l}</div>)}
+              </div>
+            )}
+          </div>
+          <button className="ib" onClick={()=>addToast({msg:'Sin notificaciones nuevas',em:'🔔'})}><Ic.Bell/><div className="ndot"/></button>
+          {user.isGuest?(
+            <button className="btn btn-r btn-sm" style={{padding:'4px 10px',fontSize:11}} onClick={()=>setAuthOpen(true)}>Ingresar</button>
+          ):(
+            <div className="av-sm" onClick={()=>nav('profile')} style={{background:user.color}}>{user.av}</div>
+          )}
+        </div>
+      </div>
+
+      <div className="shell" onClick={()=>setThemeOpen(false)}>
+        {/* LEFT SIDEBAR */}
+        <aside className="lsb">
+          <div className="lv-pill" onClick={()=>nav('live')}>
+            <div className="ldot"/><span className="lv-txt">EN VIVO</span><span className="lv-ct">3</span>
+          </div>
+          <div className="ng">
+            <div className="nlbl">Navegación</div>
+            {NAV.map(n=>{const Icon=Ic[n.icon];return(
+              <div key={n.id} className={`nl${page===n.id||page==='article'&&n.id==='news'?' on':''}`} onClick={()=>nav(n.id)}>
+                <Icon/><span>{n.l}</span>
+                {n.id==='community'&&<span className="nl-badge">5</span>}
+                {n.id==='live'&&<span className="nl-badge">3</span>}
+              </div>
+            );})}
+          </div>
+          <div className="lsb-hr"/>
+          <div className="ng">
+            <div className="nlbl">Mis equipos</div>
+            {[{em:'🔴',n:'River Plate',s:'ARS'},{em:'🔵',n:'Boca Juniors',s:'ARS'},{em:'⚡',n:'Racing Club',s:'ARS'},{em:'🟡',n:'Peñarol',s:'URU'}].map((t,i)=>(
+              <div key={i} className="tm-row"><span className="tm-em">{t.em}</span><div className="tm-nm">{t.n}<small>{t.s}</small></div></div>
+            ))}
+          </div>
+          {!user.isGuest&&(
+            <>
+              <div className="lsb-hr"/>
+              <div className="ng">
+                <div className="nlbl">Mi cuenta</div>
+                <div className="nl" style={{padding:'5px 7px'}}>
+                  <div style={{width:20,height:20,borderRadius:'50%',background:user.color,display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:9,color:'#fff',flexShrink:0}}>{user.av}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{fontSize:11,fontWeight:600,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{user.name}</div>
+                    <div style={{fontSize:9,color:'var(--gold)'}}>{getLevel(user.rep||0).name}</div>
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </aside>
+
+        {/* MAIN */}
+        <main className="main">
+          <div style={{maxWidth:760,margin:'0 auto'}}>
+            {page==='home'&&<HomePage onNews={openNews} onNav={nav} user={user}/>}
+            {page==='news'&&(
+              <div>
+                <div className="sh"><div className="st">Noticias</div></div>
+                <div className="ng-grid">{NEWS.map(n=><NewsCard key={n.id} n={n} onClick={()=>openNews(n)} size="big"/>)}</div>
+              </div>
+            )}
+            {page==='article'&&article&&(
+              <div>
+                <button onClick={()=>nav('news')} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--tx2)',marginBottom:13,fontSize:12}}><Ic.Back style={{width:13,height:13}}/>Volver</button>
+                <div style={{height:240,background:'var(--card2)',borderRadius:'var(--rl)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:72,marginBottom:12,border:'1px solid var(--br)'}}>{article.em}</div>
+                <div style={{display:'flex',gap:6,marginBottom:9,flexWrap:'wrap'}}>
+                  <span className="badge br-b">{article.cat}</span>
+                  {article.ai&&<span className="badge bv-b">✦ Resumen IA</span>}
+                </div>
+                <h1 style={{fontFamily:'var(--fd)',fontSize:26,fontWeight:700,lineHeight:1.1,marginBottom:9}}>{article.title}</h1>
+                <div style={{fontSize:12,color:'var(--tx2)',marginBottom:16}}>{article.auth} · {article.t} · ❤ {article.l} · 💬 {article.c}</div>
+                <p style={{fontSize:14,lineHeight:1.75,color:'var(--tx2)',marginBottom:16}}>{article.ex} Lorem ipsum dolor sit amet, consectetur adipiscing elit. El partido fue un espectáculo con momentos históricos que quedarán en la memoria colectiva del deporte argentino.</p>
+                <div className="card cp"><Poll poll={POLLS[0]}/></div>
+              </div>
+            )}
+            {page==='community'&&<CommunityPage user={user} addToast={addToast}/>}
+            {page==='live'&&<LivePage/>}
+            {page==='stream'&&(
+              <div>
+                <div className="sh"><div className="st">Streaming</div></div>
+                <div style={{display:'grid',gap:11,gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))'}}>
+                  {['River vs Racing ⚽','Los Pumas Analysis 🏉','F1 Mónaco 🏎️','NBA Playoffs 🏀','Wimbledon 🎾','Copa Argentina ⚽'].map((s,i)=>(
+                    <div key={i} className="nc">
+                      <div className="nt big" style={{position:'relative'}}>
+                        <span style={{fontSize:40}}>{s.slice(-2)}</span>
+                        {i<4&&<div style={{position:'absolute',top:8,left:8,background:'var(--acc)',color:'#fff',fontSize:9,fontWeight:700,padding:'2px 7px',borderRadius:20,display:'flex',alignItems:'center',gap:3}}><div style={{width:5,height:5,borderRadius:'50%',background:'#fff',animation:'pulse 1.4s infinite'}}/>LIVE</div>}
+                      </div>
+                      <div className="nb">
+                        <div className="ntit">{s.slice(0,-2)}</div>
+                        <div style={{fontSize:11,color:'var(--tx3)'}}>{(12000+i*3000).toLocaleString()} viendo</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {page==='var'&&(
+              <div>
+                <div className="sh"><div className="st">El VAR</div><span className="badge bv-b">IA</span></div>
+                <p style={{fontSize:12,color:'var(--tx2)',marginBottom:13,lineHeight:1.5}}>Votá las jugadas polémicas detectadas por nuestra IA en tiempo real.</p>
+                {POLLS.map(p=>(
+                  <div key={p.id} className="card cp" style={{marginBottom:12}}>
+                    <div style={{marginBottom:8,display:'flex',gap:6,flexWrap:'wrap'}}>
+                      <span className="badge br-b">🎥 VAR</span>
+                      <span className="badge bv-b">✦ IA detectó esta jugada</span>
+                    </div>
+                    <Poll poll={p}/>
+                  </div>
+                ))}
+              </div>
+            )}
+            {page==='profile'&&(
+              <div>
+                <div className="ph">
+                  <div className="pav" style={{background:user.isGuest?'#888':user.color}}>{user.isGuest?'?':user.av}</div>
+                  <div className="pnm">{user.isGuest?'Invitado':user.name}</div>
+                  <div className="pbio">{user.isGuest?'Registrate para personalizar tu perfil':'Fanático del deporte argentino 🇦🇷'}</div>
+                  {user.isGuest?(
+                    <button className="btn btn-r btn-sm" onClick={()=>setAuthOpen(true)}>Crear cuenta gratis</button>
+                  ):(
+                    <div style={{display:'flex',gap:6,justifyContent:'center',flexWrap:'wrap',marginBottom:12}}>
+                      <span className="badge bp-b">⭐ Verificado</span>
+                      <span className="badge bg-b">{getLevel(user.rep||0).name}</span>
+                    </div>
+                  )}
+                  {!user.isGuest&&(
+                    <div className="psts">
+                      {[{n:'234',l:'Posts'},{n:'1.8k',l:'Seguidores'},{n:user.rep||0,l:'Reputación'},{n:'48',l:'Hilos'}].map((s,i)=>(
+                        <div key={i}><div className="psn" style={{color:i===0?'var(--acc)':i===2?'var(--gold)':'var(--tx)'}}>{s.n}</div><div className="psl">{s.l}</div></div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                {!user.isGuest&&(
+                  <div className="rep-card">
+                    <div className="rep-h"><div className="rep-tit"><Ic.Trophy style={{width:12,height:12,color:'var(--gold)'}}/>Tribuna Activa</div><div className="rep-sc">{user.rep||0} pts</div></div>
+                    <div className="rep-bg"><div className="rep-fill" style={{width:getRepPct(user.rep||0)+'%'}}/></div>
+                    <div className="rep-lv"><span>{getLevel(user.rep||0).name}</span><span>Próx: {getLevel(user.rep||0).max} pts</span></div>
+                  </div>
+                )}
+                <div style={{display:'flex',gap:8}}>
+                  <button className="btn btn-g" style={{flex:1,justifyContent:'center'}}>Editar perfil</button>
+                  <button className="btn btn-r" style={{flex:1,justifyContent:'center'}} onClick={()=>nav('admin')}>Admin</button>
+                </div>
+              </div>
+            )}
+            {page==='admin'&&<AdminPage addToast={addToast}/>}
+          </div>
+        </main>
+
+        {/* RIGHT SIDEBAR */}
+        <aside className="rsb"><RightSidebar onNav={nav}/></aside>
+      </div>
+
+      {/* MOBILE BOTTOM NAV */}
+      <div className="bnav">
+        {MOBILE_NAV.map(n=>{const Icon=Ic[n.icon];return(
+          <div key={n.id} className={`bni${page===n.id?' on':''}`} onClick={()=>nav(n.id)}>
+            <Icon/><span>{n.l}</span>
+          </div>
+        );})}
+      </div>
+
+      {/* AUTH MODAL */}
+      {authOpen&&<AuthModal onClose={()=>setAuthOpen(false)} onLogin={setUser} addToast={addToast}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
