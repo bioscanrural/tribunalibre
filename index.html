@@ -5,89 +5,98 @@
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>Tribuna Libre · Periodismo Deportivo Argentina</title>
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=Merriweather:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script></script>
 
-<!-- ═══ FIREBASE ══════════════════════════════════════ -->
+<!-- ═══ REACT + BABEL ══════════════════════════════════ -->
+<!-- FIX: tags de cierre dobles corregidos, CDN confiable -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+<!-- ═══ FIREBASE — CARGA SEGURA ═══════════════════════
+  PARA GITHUB PAGES: agregá tu dominio en Firebase Console:
+  Authentication → Settings → Authorized domains
+  → Agregar: TUUSUARIO.github.io
+  Si no tenés Firebase, dejalo así y usa login con email local.
+════════════════════════════════════════════════════════ -->
 <script>
-// Carga Firebase de forma segura y secuencial
-window.__fbReady         = false;
-window.__fbSignIn        = function(){ return Promise.reject(new Error('Firebase cargando...')); };
-window.__fbRegister      = window.__fbSignIn;
-window.__fbGoogleSignIn  = window.__fbSignIn;
-window.__fbSignOut       = function(){ return Promise.resolve(); };
-window.__fbOnAuthChange  = function(){};
+// Stubs por defecto — nunca tiran error aunque Firebase falle
+window.__fbReady        = false;
+window.__fbSignIn       = function(){ return Promise.reject(new Error('Autenticando...')); };
+window.__fbRegister     = window.__fbSignIn;
+window.__fbGoogleSignIn = window.__fbSignIn;
+window.__fbSignOut      = function(){ return Promise.resolve(); };
+window.__fbOnAuthChange = function(cb){ /* no-op */ };
 
-function __initFirebase() {
-  try {
-    var firebaseConfig = {
-      apiKey:            "AIzaSyBSGW1Fw2ZwAz8GEXmhGu9nqt8hiCgzkd8",
-      authDomain:        "tribunalibre.firebaseapp.com",
-      projectId:         "tribunalibre",
-      storageBucket:     "tribunalibre.firebasestorage.app",
-      messagingSenderId: "502168463964",
-      appId:             "1:502168463964:web:47ccf03ee592035bcd5499",
-      measurementId:     "G-CWK2L4HDR2"
-    };
-    firebase.initializeApp(firebaseConfig);
-    var auth = firebase.auth();
-    var gp   = new firebase.auth.GoogleAuthProvider();
-    window.__fbAuth          = auth;
-    window.__fbReady         = true;
-    window.__fbSignIn        = function(e,p){ return auth.signInWithEmailAndPassword(e,p); };
-    window.__fbRegister      = function(e,p){ return auth.createUserWithEmailAndPassword(e,p); };
-    window.__fbSignOut       = function(){    return auth.signOut(); };
-    window.__fbGoogleSignIn  = function(){    return auth.signInWithPopup(gp); };
-    window.__fbOnAuthChange  = function(cb){  return auth.onAuthStateChanged(cb); };
-    console.log('Firebase listo ✓');
-  } catch(e) {
-    console.warn('Firebase error (no critico):', e.message);
+// FIX: Firebase se carga de forma completamente segura
+// Si falla (dominio no autorizado, sin internet, etc.) la app sigue funcionando
+(function loadFirebase() {
+  // ── REEMPLAZÁ ESTOS VALORES CON LOS DE TU PROYECTO FIREBASE ──
+  var FB_CONFIG = {
+    apiKey:            "AIzaSyBSGW1Fw2ZwAz8GEXmhGu9nqt8hiCgzkd8",
+    authDomain:        "tribunalibre.firebaseapp.com",
+    projectId:         "tribunalibre",
+    storageBucket:     "tribunalibre.firebasestorage.app",
+    messagingSenderId: "502168463964",
+    appId:             "1:502168463964:web:47ccf03ee592035bcd5499"
+  };
+  // ─────────────────────────────────────────────────────────────
+
+  function initFb() {
+    try {
+      if (typeof firebase === 'undefined') { return; }
+      if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
+      var auth = firebase.auth();
+      var gp   = new firebase.auth.GoogleAuthProvider();
+      window.__fbAuth         = auth;
+      window.__fbReady        = true;
+      window.__fbSignIn       = function(e,p){ return auth.signInWithEmailAndPassword(e,p); };
+      window.__fbRegister     = function(e,p){ return auth.createUserWithEmailAndPassword(e,p); };
+      window.__fbSignOut      = function(){    return auth.signOut(); };
+      window.__fbGoogleSignIn = function(){    return auth.signInWithPopup(gp); };
+      window.__fbOnAuthChange = function(cb){  return auth.onAuthStateChanged(cb); };
+      console.info('Firebase listo ✓');
+    } catch(e) {
+      console.warn('Firebase no disponible (no crítico):', e.message);
+    }
   }
-}
 
-// Carga firebase-app primero, luego firebase-auth, luego init
-(function() {
   var s1 = document.createElement('script');
   s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
   s1.onload = function() {
     var s2 = document.createElement('script');
     s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
-    s2.onload = function() {
-      __initFirebase();
-    };
-    s2.onerror = function() { console.warn('No se pudo cargar firebase-auth'); };
+    s2.onload = initFb;
+    s2.onerror = function(){ console.warn('firebase-auth no cargó'); };
     document.head.appendChild(s2);
   };
-  s1.onerror = function() { console.warn('No se pudo cargar firebase-app'); };
+  s1.onerror = function(){ console.warn('firebase-app no cargó'); };
   document.head.appendChild(s1);
 })();
 </script>
 
 <script>
-// ═══ API URL ════════════════════════════════════════
+// ═══ API URL ═══════════════════════════════════════════
+// FIX: Para GitHub Pages, cambiá esto por tu backend en Railway/Render
+// Si no tenés backend, la app usa datos de ejemplo automáticamente
 // LOCAL:      http://localhost:3000
-// PRODUCCIÓN: https://tu-backend.railway.app
+// PRODUCCIÓN: https://tu-proyecto.railway.app  ← CAMBIAR
 window.API_URL = 'http://localhost:3000';
-// ════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 </script>
 
 <style>
-/* ══════════════════════════════════════════
-   TOKENS — CELESTE Y BLANCO ARGENTINA
-══════════════════════════════════════════ */
 :root{
   --cel:#4A90D9;--cel-d:#2E6FB5;--cel-l:#74ACDF;
-  --cel-xl:#E8F4FF;--cel-bg:#F0F7FF;
-  --bg:#F0F7FF;--white:#FFFFFF;
+  --cel-xl:#E8F4FF;--bg:#F0F7FF;--white:#FFFFFF;
   --red:#C0392B;--sun:#F6B40E;--green:#27AE60;
-  --purple:#8B5CF6;--pink:#EC4899;
+  --purple:#8B5CF6;--pink:#EC4899;--teal:#0891B2;
   --tx:#1A2744;--tx2:#4A5568;--tx3:#9FAEC0;
   --br:rgba(74,144,217,.18);--brm:rgba(74,144,217,.32);
   --sh:0 4px 20px rgba(74,144,217,.14);
   --sh2:0 8px 36px rgba(74,144,217,.22);
   --r:11px;--rs:7px;--rl:17px;
   --fd:'Oswald',sans-serif;--fw:'DM Sans',sans-serif;
-  --fs:'Merriweather',serif;--h:60px;
+  --h:60px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased}
@@ -99,17 +108,15 @@ img{max-width:100%;height:auto;display:block}
 ::-webkit-scrollbar-thumb{background:var(--cel-l);border-radius:3px}
 ::selection{background:var(--cel);color:#fff}
 
-/* FLAG STRIPE */
+/* LAYOUT */
 .flag-stripe{height:5px;background:linear-gradient(90deg,var(--cel) 33%,var(--white) 33%,var(--white) 66%,var(--cel) 66%);position:fixed;top:0;left:0;right:0;z-index:400}
-
-/* TOPBAR */
 .hdr{position:fixed;top:5px;left:0;right:0;height:var(--h);background:var(--white);border-bottom:2px solid var(--cel);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:300;box-shadow:var(--sh)}
 .logo-w{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0;user-select:none}
 .logo-img{height:42px;width:42px;border-radius:50%;border:2px solid var(--cel);object-fit:cover;background:var(--cel-xl);flex-shrink:0}
-.logo-fb{height:42px;width:42px;border-radius:50%;border:2px solid var(--cel);background:var(--cel);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:700;color:white;flex-shrink:0;letter-spacing:1px}
+.logo-fb{height:42px;width:42px;border-radius:50%;border:2px solid var(--cel);background:var(--cel);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:700;color:white;flex-shrink:0}
 .logo-txt{display:flex;flex-direction:column;line-height:1.1}
 .logo-main{font-family:var(--fd);font-size:19px;font-weight:700;color:var(--cel-d);letter-spacing:1px}
-.logo-sub{font-size:10px;color:var(--tx3);letter-spacing:.4px}
+.logo-sub{font-size:10px;color:var(--tx3)}
 .logo-sub b{color:var(--cel)}
 .ticker{flex:1;overflow:hidden;border-left:3px solid var(--cel);padding-left:8px;min-width:0;display:none}
 @media(min-width:600px){.ticker{display:block}}
@@ -125,8 +132,6 @@ img{max-width:100%;height:auto;display:block}
 .usr-av{width:26px;height:26px;border-radius:50%;background:var(--cel);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:white;font-family:var(--fd);flex-shrink:0}
 .usr-nm{font-size:11px;font-weight:600;color:var(--cel-d)}
 .usr-btn:hover .usr-nm{color:white}
-
-/* SHELL */
 .shell{display:flex;margin-top:calc(var(--h)+5px);min-height:calc(100vh - var(--h) - 5px)}
 .lnav{width:200px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;scrollbar-width:none;background:var(--white);border-right:1px solid var(--br);padding:10px 0;display:none;flex-direction:column}
 @media(min-width:860px){.lnav{display:flex}}
@@ -138,14 +143,14 @@ img{max-width:100%;height:auto;display:block}
 .nl svg{width:14px;height:14px;flex-shrink:0}
 .nl-badge{margin-left:auto;background:var(--red);color:white;font-size:9px;border-radius:10px;padding:1px 5px;font-weight:700}
 .nav-hr{height:1px;background:var(--br);margin:6px 10px}
-.nl-live{display:flex;align-items:center;gap:6px;margin:4px 8px 7px;padding:7px 9px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:var(--rs);cursor:pointer;transition:.15s}
+.nl-live{display:flex;align-items:center;gap:6px;margin:4px 8px 7px;padding:7px 9px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:var(--rs);cursor:pointer}
 .ldot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;flex-shrink:0}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
 .nl-live-t{font-size:11px;font-weight:700;color:var(--red);font-family:var(--fd);letter-spacing:.5px}
 .nl-live-c{font-size:10px;color:rgba(192,57,43,.5);margin-left:auto}
 .main{flex:1;min-width:0;padding:18px 14px}
 @media(min-width:860px){.main{padding:22px 20px}}
-.rsb{width:285px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;padding:16px 13px;border-left:1px solid var(--br);background:var(--white);display:none;scrollbar-width:none}
+.rsb{width:280px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;padding:16px 13px;border-left:1px solid var(--br);background:var(--white);display:none;scrollbar-width:none}
 @media(min-width:1200px){.rsb{display:block}}
 .bnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:var(--white);border-top:2px solid var(--cel);display:flex;align-items:center;z-index:300}
 .bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;cursor:pointer;color:var(--tx3);transition:.15s}
@@ -172,17 +177,17 @@ img{max-width:100%;height:auto;display:block}
 .bp{background:rgba(236,72,153,.12);color:#9D174D;border:1px solid rgba(236,72,153,.25)}
 .btn{padding:7px 16px;border-radius:30px;font-size:12px;font-weight:600;transition:.15s;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
 .btn-c{background:var(--cel);color:white;border:2px solid var(--cel)}
-.btn-c:hover{background:var(--cel-d);box-shadow:var(--sh)}
+.btn-c:hover{background:var(--cel-d)}
 .btn-o{background:transparent;border:2px solid var(--cel);color:var(--cel-d)}
 .btn-o:hover{background:var(--cel-xl)}
 .btn-red{background:var(--red);color:white;border:2px solid var(--red)}
 .btn-g{background:var(--green);color:white;border:2px solid var(--green)}
-.btn-p{background:var(--purple);color:white;border:2px solid var(--purple)}
 .btn-pk{background:var(--pink);color:white;border:2px solid var(--pink)}
 .btn-s{background:var(--sun);color:white;border:2px solid var(--sun)}
+.btn-t{background:var(--teal);color:white;border:2px solid var(--teal)}
 .btn-sm{padding:5px 11px;font-size:11px}
 .fi{width:100%;background:var(--cel-xl);border:1.5px solid var(--br);border-radius:var(--rs);padding:9px 12px;font-size:13px;color:var(--tx);transition:.15s}
-.fi:focus{border-color:var(--cel);box-shadow:0 0 0 3px rgba(74,144,217,.1)}
+.fi:focus{border-color:var(--cel)}
 .fi::placeholder{color:var(--tx3)}
 .fl{display:block;font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
 .divhr{height:1px;background:var(--br);margin:12px 0}
@@ -199,11 +204,11 @@ img{max-width:100%;height:auto;display:block}
 .cls svg{width:13px;height:13px}
 .err-msg{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:#B03020;margin-bottom:12px}
 
-/* NEWS CARDS */
+/* NEWS */
 .nc{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
 .nc:hover{border-color:var(--cel);transform:translateY(-2px);box-shadow:var(--sh2)}
 .nc-img{overflow:hidden;position:relative;background:var(--cel-xl)}
-.nc-img.big{height:170px}.nc-img.sm{height:120px}.nc-img.xs{height:90px}
+.nc-img.big{height:170px}.nc-img.sm{height:120px}
 .nc-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
 .nc:hover .nc-img img{transform:scale(1.04)}
 .nc-em{display:flex;align-items:center;justify-content:center;font-size:48px;width:100%;height:100%}
@@ -219,15 +224,13 @@ img{max-width:100%;height:auto;display:block}
 .ng-grid{display:grid;gap:12px;grid-template-columns:1fr}
 @media(min-width:540px){.ng-grid{grid-template-columns:1fr 1fr}}
 @media(min-width:1400px){.ng-grid{grid-template-columns:1fr 1fr 1fr}}
-
-/* SKELETON */
 .sk{background:linear-gradient(90deg,var(--cel-xl) 25%,rgba(74,144,217,.1) 50%,var(--cel-xl) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--rs)}
 @keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
 
 /* LIVE */
 .lstrip{display:flex;gap:9px;overflow-x:auto;margin-bottom:18px;padding-bottom:3px;scrollbar-width:none}
 .lmc{background:var(--white);border:1.5px solid var(--br);border-radius:var(--r);padding:10px 13px;cursor:pointer;flex-shrink:0;min-width:160px;transition:.15s}
-.lmc:hover,.lmc.sel{border-color:var(--cel);box-shadow:var(--sh)}
+.lmc:hover{border-color:var(--cel);box-shadow:var(--sh)}
 .lmc.lv{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.04)}
 .lms{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--tx3);margin-bottom:7px}
 .lms.lv{color:var(--red)}
@@ -244,19 +247,10 @@ img{max-width:100%;height:auto;display:block}
 .po:hover{border-color:var(--cel)}
 .po.voted{border-color:var(--cel-d)}
 .po-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(74,144,217,.2);transition:width .7s}
-.po.voted .po-bar{background:rgba(74,144,217,.25)}
 .po-row{position:relative;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:var(--tx)}
 .po-pct{font-weight:700;font-size:11px;color:var(--tx3)}
 .po-pct.win{color:var(--cel-d)}
 .po-meta{font-size:10px;color:var(--tx3);margin-top:6px}
-
-/* TRENDING */
-.tri{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--br);cursor:pointer}
-.tri:last-child{border-bottom:none}
-.trnum{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--tx3);width:20px;flex-shrink:0}
-.trnum.hot{color:var(--cel)}
-.trn{font-size:12px;font-weight:500;color:var(--tx)}
-.trc{font-size:10px;color:var(--tx3);margin-top:1px}
 
 /* TABS */
 .tabs{display:flex;gap:3px;background:var(--cel-xl);border-radius:var(--r);padding:3px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
@@ -275,7 +269,7 @@ img{max-width:100%;height:auto;display:block}
 /* PRODE */
 .prode-match{background:var(--white);border:1.5px solid var(--br);border-radius:var(--r);padding:13px;margin-bottom:10px;transition:.15s}
 .prode-match:hover{border-color:var(--cel);box-shadow:var(--sh)}
-.prode-match.locked{background:var(--cel-xl);border-color:var(--br)}
+.prode-match.locked{background:var(--cel-xl)}
 .prode-teams{display:flex;align-items:center;gap:8px;margin-bottom:10px}
 .prode-team{flex:1;text-align:center}
 .prode-em{font-size:26px;display:block;margin-bottom:3px}
@@ -283,35 +277,71 @@ img{max-width:100%;height:auto;display:block}
 .prode-vs{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--tx3);flex-shrink:0}
 .prode-pickers{display:flex;gap:6px}
 .prode-btn{flex:1;padding:8px 4px;border-radius:var(--rs);font-size:11px;font-weight:700;font-family:var(--fd);cursor:pointer;border:1.5px solid var(--br);background:var(--white);color:var(--tx2);transition:.15s;text-align:center}
-.prode-btn:hover{border-color:var(--cel);background:var(--cel-xl);color:var(--cel-d)}
+.prode-btn:hover{border-color:var(--cel);background:var(--cel-xl)}
 .prode-btn.sel-h{background:var(--cel);border-color:var(--cel);color:white}
 .prode-btn.sel-e{background:var(--sun);border-color:var(--sun);color:white}
 .prode-btn.sel-a{background:var(--red);border-color:var(--red);color:white}
-.prode-btn.correct{background:var(--green);border-color:var(--green);color:white}
-.prode-btn.wrong{background:rgba(192,57,43,.15);border-color:var(--red);color:var(--red)}
 
 /* REVISTA */
 .rev-article{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.2s;display:flex;flex-direction:column}
 .rev-article:hover{border-color:var(--pink);transform:translateY(-2px);box-shadow:0 8px 30px rgba(236,72,153,.15)}
-.rev-img{height:140px;background:linear-gradient(135deg,#FDF2F8,#FCE7F3);display:flex;align-items:center;justify-content:center;font-size:52px;position:relative}
+.rev-img{height:140px;background:linear-gradient(135deg,#FDF2F8,#FCE7F3);display:flex;align-items:center;justify-content:center;font-size:52px}
 .rev-body{padding:13px;flex:1;display:flex;flex-direction:column}
 .rev-tit{font-family:var(--fd);font-size:14px;font-weight:600;line-height:1.25;margin-bottom:5px;color:var(--tx)}
 .rev-exc{font-size:11px;color:var(--tx2);line-height:1.55;flex:1;margin-bottom:9px}
 .rev-ft{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--tx3);flex-wrap:wrap}
-.rev-author{display:flex;align-items:center;gap:5px}
-.rev-av{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:9px;color:white;font-family:var(--fd)}
+
+/* COMUNIDAD */
+.post-card{background:var(--white);border-radius:var(--r);border:1px solid var(--br);padding:14px;margin-bottom:10px;transition:.15s}
+.post-card:hover{border-color:var(--cel);box-shadow:var(--sh)}
+.post-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;font-family:var(--fd);flex-shrink:0}
+.post-user{font-weight:700;font-size:13px;color:var(--tx)}
+.post-time{font-size:10px;color:var(--tx3)}
+.post-body{font-size:14px;line-height:1.6;color:var(--tx2);margin:10px 0}
+.post-actions{display:flex;gap:12px;padding-top:10px;border-top:1px solid var(--br)}
+.thread-card{background:var(--white);border-radius:var(--r);border:1px solid var(--br);padding:13px;margin-bottom:9px;cursor:pointer;transition:.15s}
+.thread-card:hover{border-color:var(--cel);transform:translateX(3px)}
+.thread-tit{font-family:var(--fd);font-size:15px;font-weight:500;margin-bottom:5px;line-height:1.25;color:var(--tx)}
+.thread-mt{display:flex;gap:10px;font-size:10px;color:var(--tx3)}
+
+/* STREAMING */
+.stream-hero{border-radius:var(--rl);overflow:hidden;margin-bottom:18px;border:2px solid var(--cel);box-shadow:var(--sh);transition:.2s;cursor:pointer;position:relative}
+.stream-hero:hover{box-shadow:var(--sh2)}
+.stream-hero img{width:100%;display:block;max-height:260px;object-fit:cover}
+.stream-hero-ov{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(26,39,68,.92));display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
+.play-circle{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;margin-bottom:12px;transition:.15s}
+.stream-hero:hover .play-circle{background:var(--cel);border-color:white}
+.sc{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.2s}
+.sc:hover{border-color:var(--cel);box-shadow:var(--sh);transform:translateY(-2px)}
+.sc-thumb{height:130px;background:linear-gradient(135deg,var(--cel-xl),#D6EAF8);display:flex;align-items:center;justify-content:center;font-size:44px;position:relative}
+.live-tag{position:absolute;top:8px;left:8px;background:var(--red);color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:var(--fd);letter-spacing:.8px;display:flex;align-items:center;gap:4px}
+.sc-body{padding:11px 13px}
+.sc-tit{font-family:var(--fd);font-size:14px;font-weight:500;margin-bottom:4px;line-height:1.2;color:var(--tx)}
+.sc-info{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:6px}
+
+/* CHAT EN VIVO */
+.chat-wrap{border-radius:var(--r);border:1px solid var(--br);overflow:hidden;background:var(--white)}
+.chat-hd{padding:10px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px;background:var(--cel-xl)}
+.chat-bd{height:200px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:5px}
+.cmsg{padding:6px 10px;border-radius:8px;max-width:80%;font-size:12px;line-height:1.4}
+.cmsg.own{background:var(--cel);color:white;margin-left:auto;border-bottom-right-radius:3px}
+.cmsg.other{background:var(--cel-xl);border-bottom-left-radius:3px}
+.cmsg-u{font-size:9px;font-weight:700;opacity:.65;margin-bottom:2px;color:var(--tx2)}
+.chat-inp{padding:8px;border-top:1px solid var(--br);display:flex;gap:7px;background:var(--cel-xl)}
+.chat-txt{flex:1;background:var(--white);border:1.5px solid var(--br);border-radius:30px;padding:7px 12px;font-size:12px;color:var(--tx)}
+.chat-txt:focus{border-color:var(--cel)}
+.chat-snd{background:var(--cel);border-radius:30px;padding:7px 12px;color:white;display:flex;align-items:center;transition:.15s;border:none;cursor:pointer}
+.chat-snd:hover{background:var(--cel-d)}
+
+/* TRENDING */
+.tri{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--br);cursor:pointer}
+.tri:last-child{border-bottom:none}
+.trnum{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--tx3);width:20px;flex-shrink:0}
+.trnum.hot{color:var(--cel)}
+.trn{font-size:12px;font-weight:500;color:var(--tx)}
+.trc{font-size:10px;color:var(--tx3);margin-top:1px}
 
 /* FIXTURE */
-.fix-round{background:var(--cel);color:white;border-radius:var(--r);padding:8px 14px;margin-bottom:10px;font-family:var(--fd);font-size:13px;font-weight:600;letter-spacing:.5px;display:flex;align-items:center;justify-content:space-between}
-.fix-match{background:var(--white);border:1px solid var(--br);border-radius:var(--rs);padding:10px 13px;margin-bottom:7px;display:flex;align-items:center;justify-content:space-between;transition:.15s}
-.fix-match:hover{border-color:var(--cel);background:var(--cel-xl)}
-.fix-team{display:flex;align-items:center;gap:6px;flex:1}
-.fix-team.right{flex-direction:row-reverse}
-.fix-em{font-size:18px}
-.fix-nm{font-size:12px;font-weight:600;color:var(--tx)}
-.fix-score{font-family:var(--fd);font-size:18px;font-weight:700;color:var(--tx);min-width:50px;text-align:center}
-.fix-score.live{color:var(--red)}
-.fix-date{font-size:10px;color:var(--tx3);min-width:50px;text-align:center}
 .group-hd{background:linear-gradient(135deg,var(--cel-d),var(--cel));color:white;border-radius:var(--rs);padding:7px 12px;margin-bottom:7px;font-family:var(--fd);font-size:12px;font-weight:600;letter-spacing:.5px}
 .group-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}
 .group-table th{background:var(--cel-xl);padding:6px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase}
@@ -322,12 +352,12 @@ img{max-width:100%;height:auto;display:block}
 /* HERO */
 .hero{position:relative;border-radius:var(--rl);overflow:hidden;cursor:pointer;margin-bottom:20px;border:2px solid var(--cel);box-shadow:var(--sh);transition:.2s}
 .hero:hover{box-shadow:var(--sh2)}
-.hero-bg{height:340px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--cel-xl),#D6EAF8);overflow:hidden}
-@media(min-width:900px){.hero-bg{height:400px}}
+.hero-bg{height:320px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--cel-xl),#D6EAF8);overflow:hidden}
+@media(min-width:900px){.hero-bg{height:380px}}
 .hero-bg img{width:100%;height:100%;object-fit:cover}
 .hero-ov{position:absolute;bottom:0;left:0;right:0;padding:18px;background:linear-gradient(transparent,rgba(26,39,68,.96))}
-.hero-tit{font-family:var(--fd);font-size:24px;font-weight:700;line-height:1.1;color:white;margin-bottom:7px}
-@media(min-width:900px){.hero-tit{font-size:32px}}
+.hero-tit{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.1;color:white;margin-bottom:7px}
+@media(min-width:900px){.hero-tit{font-size:30px}}
 </style>
 </head>
 <body>
@@ -335,3308 +365,1213 @@ img{max-width:100%;height:auto;display:block}
   <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#4A90D9;gap:14px">
     <div style="font-size:48px">⚽</div>
     <div style="font-size:18px;font-weight:700">Cargando Tribuna Libre...</div>
-    <div style="font-size:12px;color:#9FAEC0">Si esto no desaparece, revisá la consola (F12)</div>
   </div>
 </div>
-<script>
-window.onerror = function(msg, src, line, col, err) {
-  document.getElementById('root').innerHTML =
-    '<div style="padding:30px;font-family:sans-serif;color:#C0392B;max-width:600px;margin:40px auto">' +
-    '<h2>Error al cargar la app</h2>' +
-    '<pre style="background:#fff0f0;padding:12px;border-radius:8px;font-size:12px;white-space:pre-wrap">' +
-    msg + '\n\nArchivo: ' + src + '\nLínea: ' + line +
-    '</pre><p style="font-size:12px;color:#666">Abrí F12 → Console para más detalles.</p></div>';
-};
-</script>
-<script>
-function _extends() { return _extends = Object.assign ? Object.assign.bind() : function (n) { for (var e = 1; e < arguments.length; e++) { var t = arguments[e]; for (var r in t) ({}).hasOwnProperty.call(t, r) && (n[r] = t[r]); } return n; }, _extends.apply(null, arguments); }
-const {
-  useState,
-  useEffect,
-  useRef,
-  useCallback
-} = React;
 
-/* ══════ CONFIG ══════ */
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
+
+/* ══════════════════════════ CONFIG ══════════════════════════ */
 const API = window.API_URL || 'http://localhost:3000';
-const CAT_EMOJI = {
-  Fútbol: '⚽',
-  Rugby: '🏉',
-  Tenis: '🎾',
-  Básquet: '🏀',
-  Automovilismo: '🏎️',
-  Deportes: '📰',
-  Hockey: '🏑',
-  Boxeo: '🥊'
-};
+const CAT_EMOJI = {Fútbol:'⚽',Rugby:'🏉',Tenis:'🎾',Básquet:'🏀',Automovilismo:'🏎️',Deportes:'📰',Hockey:'🏑',Boxeo:'🥊'};
 
-/* ══════ STATIC FALLBACK DATA ══════ */
-const STATIC_NEWS = [{
-  _id: 's1',
-  cat: 'Fútbol',
-  title: 'River aplasta a Boca en el Superclásico más vibrante del año',
-  excerpt: 'Doblete de Borja y golazo de Mammana. El Monumental explotó de emoción.',
-  publishedAt: new Date().toISOString(),
-  meta: {
-    sourceName: 'TyC Sports',
-    sourceUrl: '#'
-  },
-  coverImage: null
-}, {
-  _id: 's2',
-  cat: 'Rugby',
-  title: 'Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina',
-  excerpt: 'Matera convirtió el try decisivo en un Amalfitani desbordante. Historia pura.',
-  publishedAt: new Date(Date.now() - 3.6e6).toISOString(),
-  meta: {
-    sourceName: 'Olé'
-  },
-  coverImage: null
-}, {
-  _id: 's3',
-  cat: 'Tenis',
-  title: 'Cerúndolo avanza a semis del Masters de Madrid tras vencer a Alcaraz',
-  excerpt: 'El bonaerense ganó en tres sets emocionantes y hace historia en el circuito ATP.',
-  publishedAt: new Date(Date.now() - 7.2e6).toISOString(),
-  meta: {
-    sourceName: 'ESPN'
-  },
-  coverImage: null
-}, {
-  _id: 's4',
-  cat: 'Automovilismo',
-  title: 'Colapinto lidera los libres de Mónaco con tiempo histórico',
-  excerpt: '1:10.821 del argentino sacude el paddock de la Fórmula 1. El país está de pie.',
-  publishedAt: new Date(Date.now() - 1.08e7).toISOString(),
-  meta: {
-    sourceName: 'ESPN'
-  },
-  coverImage: null
-}, {
-  _id: 's5',
-  cat: 'Básquet',
-  title: 'Obra gana la Liga Nacional con doble de Vildoza sobre la chicharra',
-  excerpt: '78-77 definitivo en Mar del Plata. La Liga Nacional vive sus mejores momentos.',
-  publishedAt: new Date(Date.now() - 1.44e7).toISOString(),
-  meta: {
-    sourceName: 'Olé'
-  },
-  coverImage: null
-}, {
-  _id: 's6',
-  cat: 'Fútbol',
-  title: 'Messi renovaría con Inter Miami hasta 2027 según ESPN',
-  excerpt: 'El rosarino seguiría en la MLS al menos dos temporadas más. Los hinchas respiran.',
-  publishedAt: new Date(Date.now() - 1.8e7).toISOString(),
-  meta: {
-    sourceName: 'ESPN'
-  },
-  coverImage: null
-}];
-const STATIC_LIVE = [{
-  id: 1,
-  sp: '⚽',
-  h: 'River',
-  a: 'Racing',
-  sh: 2,
-  sa: 1,
-  min: "67'",
-  live: true
-}, {
-  id: 2,
-  sp: '🏀',
-  h: 'Boca',
-  a: 'San L.',
-  sh: 45,
-  sa: 38,
-  min: '3T',
-  live: true
-}, {
-  id: 3,
-  sp: '🏉',
-  h: 'Pumas',
-  a: 'Wallabies',
-  sh: 21,
-  sa: 14,
-  min: "55'",
-  live: true
-}, {
-  id: 4,
-  sp: '⚽',
-  h: 'Independiente',
-  a: 'Estudiantes',
-  sh: '',
-  sa: '',
-  min: '20:30',
-  live: false
-}];
-const STATIC_POLLS = [{
-  id: 1,
-  q: '¿Fue penal el derribo de Almada en el Superclásico?',
-  opts: ['Sí, penal claro', 'No era nada', 'Muy dudoso'],
-  vs: [1240, 880, 420]
-}, {
-  id: 2,
-  q: '¿Argentina llega al Mundial 2026 como favorita?',
-  opts: ['Somos candidatos', 'Depende del fixture', 'No al nivel'],
-  vs: [3100, 1800, 600]
-}];
-const TICKER_D = [{
-  l: 'RIVER',
-  t: "2-1 Racing · 67'"
-}, {
-  l: 'PUMAS',
-  t: '28-20 All Blacks'
-}, {
-  l: 'COLAPINTO',
-  t: 'lidera libres Mónaco'
-}, {
-  l: 'CERÚNDOLO',
-  t: 'semis Madrid'
-}, {
-  l: 'MESSI',
-  t: 'hat-trick en MLS'
-}, {
-  l: 'VILDOZA',
-  t: 'campeón Liga Nac.'
-}];
-// PRODE DATA
-const PRODE_MATCHES = [{
-  id: 1,
-  h: 'Argentina',
-  he: '🇦🇷',
-  a: 'Colombia',
-  ae: '🇨🇴',
-  date: '15 Jun 2025',
-  dateTs: new Date('2025-06-15').getTime(),
-  resultado: null
-}, {
-  id: 2,
-  h: 'Brasil',
-  he: '🇧🇷',
-  a: 'Uruguay',
-  ae: '🇺🇾',
-  date: '15 Jun 2025',
-  dateTs: new Date('2025-06-15').getTime(),
-  resultado: null
-}, {
-  id: 3,
-  h: 'México',
-  he: '🇲🇽',
-  a: 'Ecuador',
-  ae: '🇪🇨',
-  date: '16 Jun 2025',
-  dateTs: new Date('2025-06-16').getTime(),
-  resultado: null
-}, {
-  id: 4,
-  h: 'Chile',
-  he: '🇨🇱',
-  a: 'Paraguay',
-  ae: '🇵🇾',
-  date: '17 Jun 2025',
-  dateTs: new Date('2025-06-17').getTime(),
-  resultado: null
-}, {
-  id: 5,
-  h: 'Venezuela',
-  he: '🇻🇪',
-  a: 'Bolivia',
-  ae: '🇧🇴',
-  date: '18 Jun 2025',
-  dateTs: new Date('2025-06-18').getTime(),
-  resultado: null
-}, {
-  id: 6,
-  h: 'Perú',
-  he: '🇵🇪',
-  a: 'Panamá',
-  ae: '🇵🇦',
-  date: '19 Jun 2025',
-  dateTs: new Date('2025-06-19').getTime(),
-  resultado: null
-}];
-const LIB_GROUPS = [{
-  name: 'Grupo A',
-  teams: [{
-    t: 'River',
-    p: 9,
-    j: 3,
-    gd: 5
-  }, {
-    t: 'Flamengo',
-    p: 7,
-    j: 3,
-    gd: 3
-  }, {
-    t: 'Millonarios',
-    p: 3,
-    j: 3,
-    gd: -2
-  }, {
-    t: 'Cerro Porteño',
-    p: 1,
-    j: 3,
-    gd: -6
-  }]
-}, {
-  name: 'Grupo B',
-  teams: [{
-    t: 'Boca',
-    p: 7,
-    j: 3,
-    gd: 4
-  }, {
-    t: 'Palmeiras',
-    p: 6,
-    j: 3,
-    gd: 2
-  }, {
-    t: 'Junior',
-    p: 4,
-    j: 3,
-    gd: -1
-  }, {
-    t: 'Always Ready',
-    p: 1,
-    j: 3,
-    gd: -5
-  }]
-}, {
-  name: 'Grupo C',
-  teams: [{
-    t: 'Racing',
-    p: 9,
-    j: 3,
-    gd: 6
-  }, {
-    t: 'Fluminense',
-    p: 6,
-    j: 3,
-    gd: 1
-  }, {
-    t: 'Aucas',
-    p: 3,
-    j: 3,
-    gd: -3
-  }, {
-    t: 'Dep. Táchira',
-    p: 0,
-    j: 3,
-    gd: -4
-  }]
-}, {
-  name: 'Grupo D',
-  teams: [{
-    t: 'San Lorenzo',
-    p: 6,
-    j: 3,
-    gd: 2
-  }, {
-    t: 'Atlético MG',
-    p: 6,
-    j: 3,
-    gd: 2
-  }, {
-    t: 'Independiente',
-    p: 3,
-    j: 3,
-    gd: -1
-  }, {
-    t: 'Caracas',
-    p: 3,
-    j: 3,
-    gd: -3
-  }]
-}];
-const REVISTA_ARTICLES = [{
-  id: 1,
-  title: 'Los pibes del potrero que llegaron a Primera',
-  excerpt: 'Historias de jugadores juveniles que rompieron todas las barreras para llegar a la élite del fútbol argentino.',
-  author: 'Valentina M.',
-  age: 16,
-  emoji: '⚽',
-  cat: 'Historias',
-  reads: 1200
-}, {
-  id: 2,
-  title: 'Entrenamiento mental: la clave que no enseñan en la cancha',
-  excerpt: 'Los jóvenes deportistas hablan sobre cómo manejan la presión, el fracaso y el éxito en su carrera temprana.',
-  author: 'Tomás R.',
-  age: 17,
-  emoji: '🧠',
-  cat: 'Psicología',
-  reads: 980
-}, {
-  id: 3,
-  title: 'Las Leonas Sub-20: camino al Mundial Juvenil',
-  excerpt: 'El equipo juvenil de hockey femenino argentino se prepara con todo para el certamen internacional.',
-  author: 'Sofía B.',
-  age: 15,
-  emoji: '🏑',
-  cat: 'Hockey',
-  reads: 1450
-}, {
-  id: 4,
-  title: 'Colapinto y el sueño de los pibes: ¿podemos ser F1?',
-  excerpt: 'Entrevistas con jóvenes de karting de todo el país que sueñan con seguir los pasos del ídolo argentino.',
-  author: 'Lucas P.',
-  age: 16,
-  emoji: '🏎️',
-  cat: 'Automovilismo',
-  reads: 2100
-}, {
-  id: 5,
-  title: 'Básquet en el barrio: cuando la cancha cambia vidas',
-  excerpt: 'Crónica de los torneos barriales de básquet que formaron a varios jugadores de la actual NBA y Liga Nacional.',
-  author: 'Camila V.',
-  age: 14,
-  emoji: '🏀',
-  cat: 'Básquet',
-  reads: 890
-}, {
-  id: 6,
-  title: 'El VAR con ojos jóvenes: ¿ayuda o complica el juego?',
-  excerpt: 'Columna de opinión de nuestros lectores juveniles sobre la tecnología arbitral en el fútbol moderno.',
-  author: 'Nahuel C.',
-  age: 15,
-  emoji: '📺',
-  cat: 'Opinión',
-  reads: 1670
-}];
+/* ══════════════════════════ STATIC DATA ══════════════════════════ */
+const STATIC_NEWS = [
+  {_id:'s1',cat:'Fútbol',title:'River aplasta a Boca en el Superclásico más vibrante del año',excerpt:'Doblete de Borja y golazo de Mammana. El Monumental explotó de emoción.',publishedAt:new Date().toISOString(),meta:{sourceName:'TyC Sports',sourceUrl:'#'},coverImage:null},
+  {_id:'s2',cat:'Rugby',title:'Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina',excerpt:'Matera convirtió el try decisivo. Historia pura en el Amalfitani desbordante.',publishedAt:new Date(Date.now()-3.6e6).toISOString(),meta:{sourceName:'Olé'},coverImage:null},
+  {_id:'s3',cat:'Tenis',title:'Cerúndolo avanza a semis del Masters de Madrid',excerpt:'El bonaerense venció a Alcaraz en tres sets emocionantes.',publishedAt:new Date(Date.now()-7.2e6).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
+  {_id:'s4',cat:'Automovilismo',title:'Colapinto lidera los libres de Mónaco con tiempo histórico',excerpt:'1:10.821 del argentino sacude el paddock de la Fórmula 1.',publishedAt:new Date(Date.now()-1.08e7).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
+  {_id:'s5',cat:'Básquet',title:'Obra gana la Liga Nacional con doble de Vildoza',excerpt:'78-77 definitivo en Mar del Plata. Emoción pura.',publishedAt:new Date(Date.now()-1.44e7).toISOString(),meta:{sourceName:'Olé'},coverImage:null},
+  {_id:'s6',cat:'Fútbol',title:'Messi renovaría con Inter Miami hasta 2027',excerpt:'El rosarino seguiría en la MLS al menos dos temporadas más.',publishedAt:new Date(Date.now()-1.8e7).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
+];
+const STATIC_LIVE = [
+  {id:1,sp:'⚽',h:'River',a:'Racing',sh:2,sa:1,min:"67'",live:true},
+  {id:2,sp:'🏀',h:'Boca',a:'San L.',sh:45,sa:38,min:'3T',live:true},
+  {id:3,sp:'🏉',h:'Pumas',a:'Wallabies',sh:21,sa:14,min:"55'",live:true},
+  {id:4,sp:'⚽',h:'Independiente',a:'Estudiantes',sh:'',sa:'',min:'20:30',live:false},
+];
+const STATIC_POLLS = [
+  {id:1,q:'¿Fue penal el derribo de Almada en el Superclásico?',opts:['Sí, penal claro','No era nada','Muy dudoso'],vs:[1240,880,420]},
+  {id:2,q:'¿Argentina llega al Mundial 2026 como favorita?',opts:['Somos candidatos','Depende del fixture','No al nivel'],vs:[3100,1800,600]},
+];
+const TICKER_D = [
+  {l:'RIVER',t:"2-1 Racing · 67'"},{l:'PUMAS',t:'28-20 All Blacks'},
+  {l:'COLAPINTO',t:'lidera libres Mónaco'},{l:'CERÚNDOLO',t:'semis Madrid'},
+  {l:'MESSI',t:'hat-trick en MLS'},{l:'VILDOZA',t:'campeón Liga Nac.'},
+];
+const PRODE_MATCHES = [
+  {id:1,h:'Argentina',he:'🇦🇷',a:'Colombia',ae:'🇨🇴',date:'15 Jun 2025'},
+  {id:2,h:'Brasil',he:'🇧🇷',a:'Uruguay',ae:'🇺🇾',date:'15 Jun 2025'},
+  {id:3,h:'México',he:'🇲🇽',a:'Ecuador',ae:'🇪🇨',date:'16 Jun 2025'},
+  {id:4,h:'Chile',he:'🇨🇱',a:'Paraguay',ae:'🇵🇾',date:'17 Jun 2025'},
+  {id:5,h:'Venezuela',he:'🇻🇪',a:'Bolivia',ae:'🇧🇴',date:'18 Jun 2025'},
+  {id:6,h:'Perú',he:'🇵🇪',a:'Panamá',ae:'🇵🇦',date:'19 Jun 2025'},
+];
+const LIB_GROUPS = [
+  {name:'Grupo A',teams:[{t:'River',p:9,j:3,gd:5},{t:'Flamengo',p:7,j:3,gd:3},{t:'Millonarios',p:3,j:3,gd:-2},{t:'Cerro Porteño',p:1,j:3,gd:-6}]},
+  {name:'Grupo B',teams:[{t:'Boca',p:7,j:3,gd:4},{t:'Palmeiras',p:6,j:3,gd:2},{t:'Junior',p:4,j:3,gd:-1},{t:'Always Ready',p:1,j:3,gd:-5}]},
+  {name:'Grupo C',teams:[{t:'Racing',p:9,j:3,gd:6},{t:'Fluminense',p:6,j:3,gd:1},{t:'Aucas',p:3,j:3,gd:-3},{t:'Táchira',p:0,j:3,gd:-4}]},
+  {name:'Grupo D',teams:[{t:'San Lorenzo',p:6,j:3,gd:2},{t:'Atl. MG',p:6,j:3,gd:2},{t:'Independiente',p:3,j:3,gd:-1},{t:'Caracas',p:3,j:3,gd:-3}]},
+];
+const REVISTA_ARTICLES = [
+  {id:1,title:'Los pibes del potrero que llegaron a Primera',excerpt:'Historias de jugadores juveniles que rompieron todas las barreras para llegar a la élite del fútbol argentino.',author:'Valentina M.',age:16,emoji:'⚽',cat:'Historias',reads:1200},
+  {id:2,title:'Entrenamiento mental: la clave que no enseñan en la cancha',excerpt:'Los jóvenes deportistas hablan sobre cómo manejan la presión, el fracaso y el éxito.',author:'Tomás R.',age:17,emoji:'🧠',cat:'Psicología',reads:980},
+  {id:3,title:'Las Leonas Sub-20: camino al Mundial Juvenil',excerpt:'El equipo juvenil de hockey femenino argentino se prepara para el certamen internacional.',author:'Sofía B.',age:15,emoji:'🏑',cat:'Hockey',reads:1450},
+  {id:4,title:'Colapinto y el sueño de los pibes',excerpt:'Entrevistas con jóvenes de karting que sueñan con seguir los pasos del ídolo argentino.',author:'Lucas P.',age:16,emoji:'🏎️',cat:'Automovilismo',reads:2100},
+  {id:5,title:'Básquet en el barrio: cuando la cancha cambia vidas',excerpt:'Crónica de los torneos barriales que formaron a varios jugadores de la actual NBA.',author:'Camila V.',age:14,emoji:'🏀',cat:'Básquet',reads:890},
+  {id:6,title:'El VAR con ojos jóvenes',excerpt:'Columna de opinión de nuestros lectores juveniles sobre la tecnología arbitral.',author:'Nahuel C.',age:15,emoji:'📺',cat:'Opinión',reads:1670},
+];
+const COMMUNITY_POSTS = [
+  {id:1,user:'Gonzalo_TL',av:'GT',color:'#E8262A',text:'¿Alguien más vio el golazo de Borja? Pura magia argentina 🔥⚽',likes:89,time:'Hace 30m'},
+  {id:2,user:'PumasFan',av:'PF',color:'#16A34A',text:'Los Pumas hicieron historia. Nunca olvidaré ese try de Matera. Somos grandes 🏉🇦🇷',likes:156,time:'Hace 1h'},
+  {id:3,user:'ColapintoAR',av:'CA',color:'#F59E0B',text:'Franco Colapinto, el orgullo argentino en la F1! Que sigan los resultados 🏎️',likes:234,time:'Hace 2h'},
+];
+const STREAMS = [
+  {id:1,tit:'River vs Racing — Liga Profesional',ch:'ESPN Premium',viewers:14200,live:true,em:'⚽'},
+  {id:2,tit:'Los Pumas vs All Blacks — Análisis',ch:'Rugby Pass TV',viewers:8900,live:true,em:'🏉'},
+  {id:3,tit:'F1 Mónaco — Libres completas',ch:'ESPN F1',viewers:22100,live:false,em:'🏎️'},
+  {id:4,tit:'NBA Playoffs — Boston vs Miami',ch:'NBA League Pass',viewers:31000,live:true,em:'🏀'},
+  {id:5,tit:'ATP Madrid — Semifinales',ch:'Tennis TV',viewers:5600,live:false,em:'🎾'},
+  {id:6,tit:'Copa Argentina — Resumen del día',ch:'TyC Sports',viewers:6800,live:false,em:'⚽'},
+];
 
-/* ══════ ICONS ══════ */
+/* ══════════════════════════ ICONS ══════════════════════════ */
 const Ic = {
-  Home: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"
-  }), /*#__PURE__*/React.createElement("polyline", {
-    points: "9,22 9,12 15,12 15,22"
-  })),
-  News: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M4 6h16M4 12h16M4 18h7"
-  })),
-  Forum: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-  })),
-  Live: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "12",
-    r: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"
-  })),
-  Prode: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "2",
-    y: "3",
-    width: "20",
-    height: "14",
-    rx: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M8 21h8M12 17v4"
-  })),
-  Copa: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("polyline", {
-    points: "8 21 12 17 16 21"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "12",
-    y1: "17",
-    x2: "12",
-    y2: "11"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M7 4.8A5 5 0 0012 9a5 5 0 005-4.2M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"
-  })),
-  Revista: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"
-  })),
-  Profile: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "7",
-    r: "4"
-  })),
-  Bell: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
-  })),
-  Back: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "19",
-    y1: "12",
-    x2: "5",
-    y2: "12"
-  }), /*#__PURE__*/React.createElement("polyline", {
-    points: "12 19 5 12 12 5"
-  })),
-  Heart: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"
-  })),
-  Comment: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"
-  })),
-  Send: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "currentColor"
-  }), /*#__PURE__*/React.createElement("polygon", {
-    points: "2,2 22,12 2,22 4,13 14,12 4,11"
-  })),
-  X: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "18",
-    y1: "6",
-    x2: "6",
-    y2: "18"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "6",
-    y1: "6",
-    x2: "18",
-    y2: "18"
-  })),
-  Plus: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "12",
-    y1: "5",
-    x2: "12",
-    y2: "19"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "5",
-    y1: "12",
-    x2: "19",
-    y2: "12"
-  })),
-  Star: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "currentColor"
-  }), /*#__PURE__*/React.createElement("polygon", {
-    points: "12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"
-  })),
-  Check: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("polyline", {
-    points: "20 6 9 17 4 12"
-  })),
-  Lock: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("rect", {
-    x: "3",
-    y: "11",
-    width: "18",
-    height: "11",
-    rx: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M7 11V7a5 5 0 0110 0v4"
-  })),
-  Mail: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"
-  }), /*#__PURE__*/React.createElement("polyline", {
-    points: "22,6 12,13 2,6"
-  })),
-  Eye: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "12",
-    r: "3"
-  })),
-  Pen: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"
-  })),
-  Fire: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"
-  })),
-  Lib: p => /*#__PURE__*/React.createElement("svg", _extends({}, p, {
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }), /*#__PURE__*/React.createElement("circle", {
-    cx: "12",
-    cy: "12",
-    r: "10"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "2",
-    y1: "12",
-    x2: "22",
-    y2: "12"
-  }), /*#__PURE__*/React.createElement("path", {
-    d: "M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"
-  }))
+  Home:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>,
+  News:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
+  Com:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
+  Stream:p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  Prode: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M9 8l2 2 4-4"/></svg>,
+  Copa:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4.8A5 5 0 0012 9a5 5 0 005-4.2M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"/></svg>,
+  Rev:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
+  Live:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"/></svg>,
+  Forum: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Profile:p=> <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Bell:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  Back:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Heart: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
+  Comment:p=> <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Send:  p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="2,2 22,12 2,22 4,13 14,12 4,11"/></svg>,
+  X:     p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Plus:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Fire:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
+  Eye:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Pen:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  Check: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
+  Lock:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  Mail:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  Play:  p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>,
+  Globe: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>,
 };
 
-/* ══════ TOAST ══════ */
+/* ══════════════════════════ HOOKS ══════════════════════════ */
 function useToasts() {
   const [toasts, setToasts] = useState([]);
-  const add = useCallback(({
-    msg,
-    type = 'ok'
-  }) => {
+  const add = useCallback(({ msg, type='ok' }) => {
     const id = Date.now();
-    setToasts(t => [...t, {
-      id,
-      msg,
-      type
-    }]);
+    setToasts(t => [...t, { id, msg, type }]);
     setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3200);
   }, []);
-  return {
-    toasts,
-    add
-  };
+  return { toasts, add };
 }
 
-/* ══════ POLL ══════ */
-function Poll({
-  poll
-}) {
-  const [voted, setVoted] = useState(null);
-  const [vs, setVs] = useState([...poll.vs]);
-  const tot = vs.reduce((a, b) => a + b, 0);
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "poll-q"
-  }, poll.q), poll.opts.map((o, i) => {
-    const pct = voted !== null ? Math.round(vs[i] / tot * 100) : null;
-    const win = voted !== null && vs[i] === Math.max(...vs);
-    return /*#__PURE__*/React.createElement("div", {
-      key: i,
-      className: `po${voted === i ? ' voted' : ''}`,
-      onClick: () => {
-        if (voted === null) {
-          setVoted(i);
-          setVs(v => v.map((x, j) => j === i ? x + 1 : x));
-        }
-      }
-    }, pct !== null && /*#__PURE__*/React.createElement("div", {
-      className: "po-bar",
-      style: {
-        width: pct + '%'
-      }
-    }), /*#__PURE__*/React.createElement("div", {
-      className: "po-row"
-    }, /*#__PURE__*/React.createElement("span", null, o), pct !== null && /*#__PURE__*/React.createElement("span", {
-      className: `po-pct${win ? ' win' : ''}`
-    }, pct, "%")));
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "po-meta"
-  }, voted === null ? `${tot.toLocaleString()} votos` : `✓ ${tot.toLocaleString()} votos registrados`));
-}
-
-/* ══════ NEWS CARD ══════ */
-function NewsCard({
-  post,
-  onClick
-}) {
-  const [lk, setLk] = useState(false);
-  const cat = post.category || post.cat || 'Deportes';
-  const em = CAT_EMOJI[cat] || '📰';
-  const ago = (() => {
-    const d = new Date(post.publishedAt);
-    const diff = Math.floor((Date.now() - d) / 60000);
-    if (diff < 60) return `Hace ${diff}m`;
-    if (diff < 1440) return `Hace ${Math.floor(diff / 60)}h`;
-    return d.toLocaleDateString('es-AR');
-  })();
-  return /*#__PURE__*/React.createElement("div", {
-    className: "nc",
-    onClick: onClick
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "nc-img big"
-  }, post.coverImage ? /*#__PURE__*/React.createElement("img", {
-    src: post.coverImage,
-    alt: post.title,
-    loading: "lazy",
-    onError: e => {
-      e.target.style.display = 'none';
-      e.target.nextSibling.style.display = 'flex';
-    }
-  }) : null, /*#__PURE__*/React.createElement("div", {
-    className: "nc-em",
-    style: {
-      display: post.coverImage ? 'none' : 'flex'
-    }
-  }, em), /*#__PURE__*/React.createElement("div", {
-    className: "nc-cat"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "badge bc"
-  }, cat))), /*#__PURE__*/React.createElement("div", {
-    className: "nc-body"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "nc-tit"
-  }, post.title), post.excerpt && /*#__PURE__*/React.createElement("div", {
-    className: "nc-exc"
-  }, post.excerpt.slice(0, 115), post.excerpt.length > 115 ? '...' : ''), /*#__PURE__*/React.createElement("div", {
-    className: "nc-ft"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 1
-    }
-  }, post.meta?.sourceName && /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--cel-d)',
-      fontWeight: 600
-    }
-  }, post.meta.sourceName), /*#__PURE__*/React.createElement("span", null, ago)), /*#__PURE__*/React.createElement("div", {
-    className: "nc-ac"
-  }, /*#__PURE__*/React.createElement("button", {
-    className: `abt${lk ? ' lk' : ''}`,
-    onClick: e => {
-      e.stopPropagation();
-      setLk(!lk);
-    }
-  }, /*#__PURE__*/React.createElement(Ic.Heart, null), lk ? 1 : 0), /*#__PURE__*/React.createElement("button", {
-    className: "abt"
-  }, /*#__PURE__*/React.createElement(Ic.Comment, null), "0")))));
-}
-
-/* ══════ SKELETON ══════ */
-function SkeletonCards({
-  n = 6
-}) {
-  return /*#__PURE__*/React.createElement("div", {
-    className: "ng-grid"
-  }, Array.from({
-    length: n
-  }).map((_, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      background: 'var(--white)',
-      borderRadius: 'var(--r)',
-      border: '1px solid var(--br)',
-      overflow: 'hidden'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 170
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      padding: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 14,
-      width: '55%',
-      marginBottom: 8
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 12,
-      marginBottom: 5
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 12,
-      width: '75%',
-      marginBottom: 8
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 10,
-      width: '40%'
-    }
-  })))));
-}
-
-/* ══════ USE NEWS (API + fallback) ══════ */
-function useNews(page = 1, cat = '', search = '') {
-  const [state, setState] = useState({
-    posts: [],
-    total: 0,
-    pages: 1,
-    loading: true,
-    error: null,
-    fromApi: false
-  });
+function useNews(page=1, cat='', search='') {
+  const [state, setState] = useState({ posts:[], total:0, pages:1, loading:true, fromApi:false });
   useEffect(() => {
-    setState(s => ({
-      ...s,
-      loading: true,
-      error: null
-    }));
-    const params = new URLSearchParams({
-      page,
-      limit: 18
-    });
-    if (cat) params.set('category', cat);
+    setState(s => ({ ...s, loading: true }));
+    const params = new URLSearchParams({ page, limit: 18 });
+    if (cat)    params.set('category', cat);
     if (search) params.set('search', search);
     const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 6000);
-    fetch(`${API}/api/news?${params}`, {
-      signal: ctrl.signal
-    }).then(r => {
-      if (!r.ok) throw new Error(`HTTP ${r.status}`);
-      return r.json();
-    }).then(d => {
-      clearTimeout(timeout);
-      setState({
-        posts: d.posts || [],
-        total: d.pagination?.total || 0,
-        pages: d.pagination?.pages || 1,
-        loading: false,
-        error: null,
-        fromApi: true
-      });
-    }).catch(e => {
-      clearTimeout(timeout);
-      if (e.name === 'AbortError' || e.message.includes('fetch') || e.message.includes('Failed') || e.message.includes('NetworkError')) {
-        // Sin backend: usar datos estáticos silenciosamente
+    const timeout = setTimeout(() => ctrl.abort(), 5000);
+    fetch(`${API}/api/news?${params}`, { signal: ctrl.signal })
+      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+      .then(d => {
+        clearTimeout(timeout);
+        setState({ posts: d.posts||[], total: d.pagination?.total||0, pages: d.pagination?.pages||1, loading: false, fromApi: true });
+      })
+      .catch(() => {
+        clearTimeout(timeout);
         const filtered = cat ? STATIC_NEWS.filter(n => n.cat === cat) : STATIC_NEWS;
-        setState({
-          posts: filtered,
-          total: filtered.length,
-          pages: 1,
-          loading: false,
-          error: null,
-          fromApi: false
-        });
-      } else {
-        setState(s => ({
-          ...s,
-          loading: false,
-          error: e.message,
-          fromApi: false
-        }));
-      }
-    });
+        setState({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
+      });
     return () => clearTimeout(timeout);
   }, [page, cat, search]);
   return state;
 }
 
-/* ══════ AUTH MODAL ══════ */
-function AuthModal({
-  onClose,
-  onLogin,
-  addToast
-}) {
-  const [tab, setTab] = useState('login');
-  const [email, setEmail] = useState('');
-  const [pass, setPass] = useState('');
-  const [uname, setUname] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState('');
-  async function handleGoogle() {
-    if (!window.__fbReady) {
-      addToast({
-        msg: 'Ingresá con email por ahora (Firebase no configurado)',
-        type: 'err'
-      });
-      return;
-    }
-    setLoading(true);
-    setErr('');
-    try {
-      const cred = await window.__fbGoogleSignIn();
-      const r = await fetch(`${API}/api/auth/firebase-sync`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          uid: cred.user.uid,
-          email: cred.user.email,
-          displayName: cred.user.displayName
-        })
-      });
-      if (r.ok) {
-        const d = await r.json();
-        localStorage.setItem('tl_token', d.token);
-        onLogin({
-          ...d.user,
-          isGuest: false
-        });
-      } else {
-        onLogin({
-          name: cred.user.displayName || 'Usuario',
-          av: (cred.user.displayName || 'U')[0],
-          rep: 0,
-          isGuest: false
-        });
-      }
-      addToast({
-        msg: '¡Bienvenido! 🇦🇷',
-        type: 'ok'
-      });
-      onClose();
-    } catch (e) {
-      setErr(e.message || 'Error con Google');
-    }
-    setLoading(false);
-  }
-  async function handleEmail(e) {
-    e.preventDefault();
-    setLoading(true);
-    setErr('');
-    try {
-      const ep = tab === 'login' ? '/api/auth/login' : '/api/auth/register';
-      const body = tab === 'login' ? {
-        email,
-        password: pass
-      } : {
-        email,
-        password: pass,
-        username: uname,
-        displayName: uname
-      };
-      const r = await fetch(`${API}${ep}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error || 'Error del servidor');
-      localStorage.setItem('tl_token', d.token);
-      onLogin({
-        ...d.user,
-        isGuest: false
-      });
-      addToast({
-        msg: `¡Bienvenido${tab === 'reg' ? ' a Tribuna Libre' : ' de vuelta'}! 🇦🇷`,
-        type: 'ok'
-      });
-      onClose();
-    } catch (e) {
-      if (e.message.includes('fetch') || e.message.includes('Failed')) {
-        // Sin backend: login local de prueba
-        const u = {
-          _id: 'local',
-          username: uname || email.split('@')[0],
-          displayName: uname || email.split('@')[0],
-          email,
-          rep: 50,
-          isGuest: false
-        };
-        onLogin(u);
-        addToast({
-          msg: 'Sesión local (backend offline) ✓',
-          type: 'ok'
-        });
-        onClose();
-      } else {
-        setErr(e.message);
-      }
-    }
-    setLoading(false);
-  }
-  return /*#__PURE__*/React.createElement("div", {
-    className: "mbg",
-    onClick: onClose
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl",
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl-h"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl-t",
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 9
-    }
-  }, /*#__PURE__*/React.createElement("img", {
-    src: "https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png",
-    style: {
-      height: 34,
-      width: 34,
-      borderRadius: '50%',
-      border: '2px solid var(--cel)',
-      objectFit: 'cover'
-    },
-    onError: e => e.target.style.display = 'none',
-    alt: "Logo"
-  }), /*#__PURE__*/React.createElement("span", null, "Tribuna ", /*#__PURE__*/React.createElement("span", {
-    style: {
-      color: 'var(--cel)'
-    }
-  }, "Libre"))), /*#__PURE__*/React.createElement("button", {
-    className: "cls",
-    onClick: onClose
-  }, /*#__PURE__*/React.createElement(Ic.X, null))), /*#__PURE__*/React.createElement("div", {
-    className: "auth-tabs"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `atab${tab === 'login' ? ' on' : ''}`,
-    onClick: () => {
-      setTab('login');
-      setErr('');
-    }
-  }, "Ingresar"), /*#__PURE__*/React.createElement("div", {
-    className: `atab${tab === 'reg' ? ' on' : ''}`,
-    onClick: () => {
-      setTab('reg');
-      setErr('');
-    }
-  }, "Registrarse")), err && /*#__PURE__*/React.createElement("div", {
-    className: "err-msg"
-  }, "\u26A0\uFE0F ", err), /*#__PURE__*/React.createElement("button", {
-    className: "soc-btn",
-    onClick: handleGoogle,
-    disabled: loading
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 18
-    }
-  }, "\uD83D\uDD35"), " Continuar con Google"), /*#__PURE__*/React.createElement("div", {
-    className: "or-div"
-  }, "o con tu correo"), /*#__PURE__*/React.createElement("form", {
-    onSubmit: handleEmail
-  }, tab === 'reg' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Usuario"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    value: uname,
-    onChange: e => setUname(e.target.value),
-    placeholder: "mi_usuario",
-    required: true,
-    style: {
-      paddingLeft: 34
-    }
-  }), /*#__PURE__*/React.createElement(Ic.Lock, {
-    style: {
-      width: 13,
-      height: 13,
-      position: 'absolute',
-      left: 10,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: 'var(--tx3)'
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Email"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    type: "email",
-    value: email,
-    onChange: e => setEmail(e.target.value),
-    placeholder: "vos@correo.com",
-    required: true,
-    style: {
-      paddingLeft: 34
-    }
-  }), /*#__PURE__*/React.createElement(Ic.Mail, {
-    style: {
-      width: 13,
-      height: 13,
-      position: 'absolute',
-      left: 10,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: 'var(--tx3)'
-    }
-  }))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Contrase\xF1a"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    type: "password",
-    value: pass,
-    onChange: e => setPass(e.target.value),
-    placeholder: "\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022",
-    required: true,
-    style: {
-      paddingLeft: 34
-    }
-  }), /*#__PURE__*/React.createElement(Ic.Lock, {
-    style: {
-      width: 13,
-      height: 13,
-      position: 'absolute',
-      left: 10,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      color: 'var(--tx3)'
-    }
-  }))), /*#__PURE__*/React.createElement("button", {
-    type: "submit",
-    className: "btn btn-c",
-    style: {
-      width: '100%',
-      justifyContent: 'center'
-    },
-    disabled: loading
-  }, loading ? 'Un momento...' : tab === 'login' ? 'Ingresar' : 'Crear cuenta gratis')), /*#__PURE__*/React.createElement("div", {
-    className: "divhr"
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      onLogin({
-        name: 'Invitado',
-        av: '?',
-        rep: 0,
-        isGuest: true
-      });
-      addToast({
-        msg: 'Entraste como invitado 👋',
-        type: 'ok'
-      });
-      onClose();
-    },
-    className: "btn btn-o",
-    style: {
-      width: '100%',
-      justifyContent: 'center',
-      fontSize: 12
-    }
-  }, "Entrar como invitado"), /*#__PURE__*/React.createElement("p", {
-    style: {
-      textAlign: 'center',
-      fontSize: 10,
-      color: 'var(--tx3)',
-      marginTop: 9,
-      lineHeight: 1.5
-    }
-  }, "Como invitado pod\xE9s leer y comentar. Registrate para el prode, la revista y m\xE1s.")));
+/* ══════════════════════════ COMPONENTS ══════════════════════════ */
+
+function Poll({ poll }) {
+  const [voted, setVoted] = useState(null);
+  const [vs, setVs] = useState([...poll.vs]);
+  const tot = vs.reduce((a,b) => a+b, 0);
+  return (
+    <div>
+      <div className="poll-q">{poll.q}</div>
+      {poll.opts.map((o,i) => {
+        const pct = voted!==null ? Math.round(vs[i]/tot*100) : null;
+        const win = voted!==null && vs[i]===Math.max(...vs);
+        return (
+          <div key={i} className={`po${voted===i?' voted':''}`}
+            onClick={() => { if (voted===null) { setVoted(i); setVs(v=>v.map((x,j)=>j===i?x+1:x)); } }}>
+            {pct!==null && <div className="po-bar" style={{width:pct+'%'}}/>}
+            <div className="po-row">
+              <span>{o}</span>
+              {pct!==null && <span className={`po-pct${win?' win':''}`}>{pct}%</span>}
+            </div>
+          </div>
+        );
+      })}
+      <div className="po-meta">{voted===null ? `${tot.toLocaleString()} votos` : `✓ ${tot.toLocaleString()} votos`}</div>
+    </div>
+  );
+}
+
+function NewsCard({ post, onClick }) {
+  const [lk, setLk] = useState(false);
+  const cat = post.category || post.cat || 'Deportes';
+  const em  = CAT_EMOJI[cat] || '📰';
+  const ago = (() => {
+    const d = new Date(post.publishedAt);
+    const diff = Math.floor((Date.now()-d)/60000);
+    if (diff < 60)   return `Hace ${diff}m`;
+    if (diff < 1440) return `Hace ${Math.floor(diff/60)}h`;
+    return d.toLocaleDateString('es-AR');
+  })();
+  return (
+    <div className="nc" onClick={onClick}>
+      <div className="nc-img big">
+        {post.coverImage && <img src={post.coverImage} alt={post.title} loading="lazy" onError={e=>e.target.style.display='none'}/>}
+        <div className="nc-em" style={{display:post.coverImage?'none':'flex'}}>{em}</div>
+        <div className="nc-cat"><span className="badge bc">{cat}</span></div>
+      </div>
+      <div className="nc-body">
+        <div className="nc-tit">{post.title}</div>
+        {post.excerpt && <div className="nc-exc">{post.excerpt.slice(0,110)}</div>}
+        <div className="nc-ft">
+          <div>
+            {post.meta?.sourceName && <div style={{color:'var(--cel-d)',fontWeight:600}}>{post.meta.sourceName}</div>}
+            <div>{ago}</div>
+          </div>
+          <div className="nc-ac">
+            <button className={`abt${lk?' lk':''}`} onClick={e=>{e.stopPropagation();setLk(!lk);}}><Ic.Heart/>{lk?1:0}</button>
+            <button className="abt"><Ic.Comment/>0</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SkeletonCards({ n=6 }) {
+  return (
+    <div className="ng-grid">
+      {Array.from({length:n}).map((_,i) => (
+        <div key={i} style={{background:'var(--white)',borderRadius:'var(--r)',border:'1px solid var(--br)',overflow:'hidden'}}>
+          <div className="sk" style={{height:170}}/>
+          <div style={{padding:12}}>
+            <div className="sk" style={{height:14,width:'55%',marginBottom:8}}/>
+            <div className="sk" style={{height:12,marginBottom:5}}/>
+            <div className="sk" style={{height:12,width:'75%',marginBottom:8}}/>
+            <div className="sk" style={{height:10,width:'40%'}}/>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function LiveStrip({ onNav }) {
+  const [min, setMin] = useState(67);
+  useEffect(() => { const t=setInterval(()=>setMin(m=>m<90?m+1:m),12000); return()=>clearInterval(t); }, []);
+  return (
+    <div className="lstrip">
+      {STATIC_LIVE.map(e => (
+        <div key={e.id} className={`lmc${e.live?' lv':''}`} onClick={()=>onNav&&onNav('live')}>
+          <div className={`lms${e.live?' lv':''}`}>
+            {e.live && <><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',animation:'pulse 1.4s infinite',display:'inline-block',marginRight:3}}/>EN VIVO · </>}
+            {e.id===1 ? min+"'" : e.min}
+          </div>
+          <div className="lmt">
+            <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
+            {e.sh!=='' ? <div className={`lsc${e.live?' lv':''}`}>{e.id===1?`2-1`:e.sh+'-'+e.sa}</div>
+              : <div style={{fontFamily:'var(--fd)',fontSize:10,color:'var(--tx3)',textAlign:'center'}}>vs</div>}
+            <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 /* ══════ HOME PAGE ══════ */
-function HomePage({
-  onArticle,
-  onNav
-}) {
-  const {
-    posts,
-    loading,
-    fromApi
-  } = useNews(1, '', '');
-  const [liveMin, setLiveMin] = useState(67);
-  useEffect(() => {
-    const t = setInterval(() => setLiveMin(m => m < 90 ? m + 1 : m), 12000);
-    return () => clearInterval(t);
-  }, []);
+function HomePage({ onArticle, onNav }) {
+  const { posts, loading, fromApi } = useNews(1,'','');
   const hero = posts[0];
-  return /*#__PURE__*/React.createElement("div", null, !loading && !fromApi && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'rgba(74,144,217,.1)',
-      border: '1px solid var(--br)',
-      borderRadius: 'var(--r)',
-      padding: '10px 14px',
-      marginBottom: 14,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 9,
-      fontSize: 12
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 18
-    }
-  }, "\uD83D\uDCE1"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: 'var(--cel-d)'
-    }
-  }, "Modo sin conexi\xF3n al servidor"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      color: 'var(--tx2)'
-    }
-  }, "Mostrando contenido de ejemplo. Para noticias reales: ", /*#__PURE__*/React.createElement("code", {
-    style: {
-      background: 'var(--cel-xl)',
-      padding: '1px 5px',
-      borderRadius: 3
-    }
-  }, "node server.js")))), loading ? /*#__PURE__*/React.createElement("div", {
-    className: "sk",
-    style: {
-      height: 340,
-      borderRadius: 'var(--rl)',
-      marginBottom: 20
-    }
-  }) : hero ? /*#__PURE__*/React.createElement("div", {
-    className: "hero",
-    onClick: () => onArticle(hero)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "hero-bg"
-  }, hero.coverImage ? /*#__PURE__*/React.createElement("img", {
-    src: hero.coverImage,
-    alt: hero.title,
-    onError: e => e.target.style.display = 'none'
-  }) : /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 80
-    }
-  }, CAT_EMOJI[hero.category || hero.cat] || '📰')), /*#__PURE__*/React.createElement("div", {
-    className: "hero-ov"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "badge bc",
-    style: {
-      marginBottom: 8,
-      display: 'inline-block'
-    }
-  }, hero.category || hero.cat), /*#__PURE__*/React.createElement("div", {
-    className: "hero-tit"
-  }, hero.title), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'rgba(255,255,255,.55)'
-    }
-  }, "\uD83D\uDCE1 ", hero.meta?.sourceName || 'Tribuna Libre', " \xB7 ", new Date(hero.publishedAt).toLocaleDateString('es-AR')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8,
-      marginTop: 11
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-c btn-sm",
-    onClick: e => {
-      e.stopPropagation();
-      onArticle(hero);
-    }
-  }, "Leer nota"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-sm",
-    style: {
-      background: 'rgba(255,255,255,.15)',
-      border: '1.5px solid rgba(255,255,255,.4)',
-      color: 'white',
-      borderRadius: 30
-    }
-  }, "Compartir")))) : null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st",
-    style: {
-      color: 'var(--red)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ldot"
-  }), "En Vivo"), /*#__PURE__*/React.createElement("span", {
-    className: "sl",
-    onClick: () => onNav('live')
-  }, "Ver todo \u2192")), /*#__PURE__*/React.createElement("div", {
-    className: "lstrip"
-  }, STATIC_LIVE.map(e => /*#__PURE__*/React.createElement("div", {
-    key: e.id,
-    className: `lmc${e.live ? ' lv' : ''}`,
-    onClick: () => onNav('live')
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `lms${e.live ? ' lv' : ''}`
-  }, e.live && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 5,
-      height: 5,
-      borderRadius: '50%',
-      background: 'var(--red)',
-      animation: 'pulse 1.4s infinite',
-      display: 'inline-block',
-      marginRight: 3
-    }
-  }), "EN VIVO \xB7 "), e.id === 1 ? liveMin + "'" : e.min), /*#__PURE__*/React.createElement("div", {
-    className: "lmt"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ltm"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lem"
-  }, e.sp), /*#__PURE__*/React.createElement("div", {
-    className: "lnm"
-  }, e.h)), e.sh !== '' ? /*#__PURE__*/React.createElement("div", {
-    className: `lsc${e.live ? ' lv' : ''}`
-  }, e.id === 1 ? `2-1` : e.sh + '-' + e.sa) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 10,
-      color: 'var(--tx3)',
-      textAlign: 'center'
-    }
-  }, "vs"), /*#__PURE__*/React.createElement("div", {
-    className: "ltm"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lem"
-  }, e.sp), /*#__PURE__*/React.createElement("div", {
-    className: "lnm"
-  }, e.a)))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gap: 10,
-      gridTemplateColumns: '1fr 1fr',
-      marginBottom: 20
-    }
-  }, [{
-    id: 'prode',
-    em: '🏆',
-    tit: 'El Prode',
-    sub: 'Participá gratis',
-    col: 'var(--sun)',
-    bg: 'linear-gradient(135deg,#FFFBEB,#FEF3C7)'
-  }, {
-    id: 'copa',
-    em: '🌎',
-    tit: 'Copa del Mundo y Libertadores',
-    sub: 'Fixture y grupos',
-    col: 'var(--cel-d)',
-    bg: 'linear-gradient(135deg,var(--cel-xl),#D6EAF8)'
-  }, {
-    id: 'revista',
-    em: '✏️',
-    tit: 'Revista Juvenil',
-    sub: 'Para los pibes',
-    col: 'var(--pink)',
-    bg: 'linear-gradient(135deg,#FDF2F8,#FCE7F3)'
-  }, {
-    id: 'forum',
-    em: '💬',
-    tit: 'Debates',
-    sub: 'La cancha es de todos',
-    col: 'var(--purple)',
-    bg: 'linear-gradient(135deg,#F5F3FF,#EDE9FE)'
-  }].map(s => /*#__PURE__*/React.createElement("div", {
-    key: s.id,
-    onClick: () => onNav(s.id),
-    style: {
-      background: s.bg,
-      border: `1.5px solid ${s.col}22`,
-      borderRadius: 'var(--r)',
-      padding: '14px 12px',
-      cursor: 'pointer',
-      transition: '.2s',
-      textAlign: 'center'
-    },
-    onMouseEnter: e => e.currentTarget.style.transform = 'translateY(-2px)',
-    onMouseLeave: e => e.currentTarget.style.transform = ''
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 28,
-      marginBottom: 5
-    }
-  }, s.em), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 13,
-      fontWeight: 700,
-      color: s.col,
-      marginBottom: 2
-    }
-  }, s.tit), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: 'var(--tx3)'
-    }
-  }, s.sub)))), /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "\xDAltimas Noticias"), /*#__PURE__*/React.createElement("span", {
-    className: "sl",
-    onClick: () => onNav('news')
-  }, "Ver todas \u2192")), loading ? /*#__PURE__*/React.createElement(SkeletonCards, {
-    n: 6
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "ng-grid"
-  }, posts.slice(1, 7).map(p => /*#__PURE__*/React.createElement(NewsCard, {
-    key: p._id,
-    post: p,
-    onClick: () => onArticle(p)
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "sh",
-    style: {
-      marginTop: 18
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Encuesta del D\xEDa")), /*#__PURE__*/React.createElement("div", {
-    className: "card cp",
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement(Poll, {
-    poll: STATIC_POLLS[0]
-  })));
+  return (
+    <div>
+      {!loading && !fromApi && (
+        <div style={{background:'rgba(74,144,217,.1)',border:'1px solid var(--br)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:9,fontSize:12}}>
+          <span style={{fontSize:18}}>📡</span>
+          <div>
+            <b style={{color:'var(--cel-d)'}}>Modo sin servidor</b>
+            <div style={{color:'var(--tx2)'}}>Mostrando contenido de ejemplo. Corrí <code style={{background:'var(--cel-xl)',padding:'1px 5px',borderRadius:3}}>node server.js</code> para noticias reales.</div>
+          </div>
+        </div>
+      )}
+      {/* HERO */}
+      {loading ? <div className="sk" style={{height:320,borderRadius:'var(--rl)',marginBottom:20}}/> : hero && (
+        <div className="hero" onClick={()=>onArticle(hero)}>
+          <div className="hero-bg">
+            {hero.coverImage ? <img src={hero.coverImage} alt={hero.title} onError={e=>e.target.style.display='none'}/> : <span style={{fontSize:80}}>{CAT_EMOJI[hero.category||hero.cat]||'📰'}</span>}
+          </div>
+          <div className="hero-ov">
+            <span className="badge bc" style={{marginBottom:8,display:'inline-block'}}>{hero.category||hero.cat}</span>
+            <div className="hero-tit">{hero.title}</div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,.55)'}}>📡 {hero.meta?.sourceName||'Tribuna Libre'}</div>
+            <div style={{display:'flex',gap:8,marginTop:11}}>
+              <button className="btn btn-c btn-sm" onClick={e=>{e.stopPropagation();onArticle(hero);}}>Leer nota</button>
+              <button className="btn btn-sm" style={{background:'rgba(255,255,255,.15)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}}>Compartir</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* LIVE */}
+      <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div><span className="sl" onClick={()=>onNav('live')}>Ver todo →</span></div>
+      <LiveStrip onNav={onNav}/>
+      {/* ACCESOS RÁPIDOS */}
+      <div style={{display:'grid',gap:10,gridTemplateColumns:'1fr 1fr',marginBottom:18}}>
+        {[
+          {id:'comunidad',em:'👥',tit:'Comunidad',sub:'Foro y debates',col:'var(--cel-d)',bg:'var(--cel-xl)'},
+          {id:'streaming',em:'📡',tit:'Streaming',sub:'En vivo ahora',col:'var(--red)',bg:'rgba(192,57,43,.07)'},
+          {id:'prode',em:'🏆',tit:'El Prode',sub:'Participá gratis',col:'#B7770D',bg:'#FFFBEB'},
+          {id:'revista',em:'✏️',tit:'Revista Juvenil',sub:'Para los pibes',col:'#9D174D',bg:'#FDF2F8'},
+        ].map(s => (
+          <div key={s.id} onClick={()=>onNav(s.id)}
+            style={{background:s.bg,border:`1.5px solid ${s.col}22`,borderRadius:'var(--r)',padding:'14px 12px',cursor:'pointer',transition:'.2s',textAlign:'center'}}
+            onMouseEnter={e=>e.currentTarget.style.borderColor=s.col}
+            onMouseLeave={e=>e.currentTarget.style.borderColor=s.col+'22'}>
+            <div style={{fontSize:26,marginBottom:5}}>{s.em}</div>
+            <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,color:s.col,marginBottom:2}}>{s.tit}</div>
+            <div style={{fontSize:10,color:'var(--tx3)'}}>{s.sub}</div>
+          </div>
+        ))}
+      </div>
+      {/* NOTICIAS */}
+      <div className="sh"><div className="st">Últimas Noticias</div><span className="sl" onClick={()=>onNav('news')}>Ver todas →</span></div>
+      {loading ? <SkeletonCards n={6}/> : (
+        <div className="ng-grid" style={{marginBottom:18}}>
+          {posts.slice(1,7).map(p => <NewsCard key={p._id} post={p} onClick={()=>onArticle(p)}/>)}
+        </div>
+      )}
+      {/* POLL */}
+      <div className="sh"><div className="st">Encuesta del Día</div></div>
+      <div className="card cp"><Poll poll={STATIC_POLLS[0]}/></div>
+    </div>
+  );
 }
 
 /* ══════ NEWS PAGE ══════ */
-function NewsPage({
-  onArticle
-}) {
+function NewsPage({ onArticle }) {
   const [page, setPage] = useState(1);
-  const [cat, setCat] = useState('');
+  const [cat, setCat]   = useState('');
+  const [inp, setInp]   = useState('');
   const [search, setSearch] = useState('');
-  const [inp, setInp] = useState('');
-  const {
-    posts,
-    total,
-    pages,
-    loading,
-    error,
-    fromApi
-  } = useNews(page, cat, search);
-  const cats = ['Fútbol', 'Rugby', 'Tenis', 'Básquet', 'Automovilismo', 'Deportes'];
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Noticias"), !loading && /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: 'var(--tx3)'
-    }
-  }, total, " noticias", fromApi ? ' (en vivo)' : ' (demo)')), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1,
-      position: 'relative'
-    }
-  }, /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    value: inp,
-    onChange: e => setInp(e.target.value),
-    onKeyDown: e => e.key === 'Enter' && (setSearch(inp), setPage(1)),
-    placeholder: "Buscar noticias...",
-    style: {
-      paddingRight: 38
-    }
-  }), /*#__PURE__*/React.createElement("button", {
-    onClick: () => {
-      setSearch(inp);
-      setPage(1);
-    },
-    style: {
-      position: 'absolute',
-      right: 8,
-      top: '50%',
-      transform: 'translateY(-50%)',
-      background: 'none',
-      color: 'var(--cel-d)',
-      display: 'flex',
-      alignItems: 'center',
-      border: 'none',
-      cursor: 'pointer'
-    }
-  }, /*#__PURE__*/React.createElement("svg", {
-    style: {
-      width: 15,
-      height: 15
-    },
-    viewBox: "0 0 24 24",
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: "2"
-  }, /*#__PURE__*/React.createElement("circle", {
-    cx: "11",
-    cy: "11",
-    r: "8"
-  }), /*#__PURE__*/React.createElement("line", {
-    x1: "21",
-    y1: "21",
-    x2: "16.65",
-    y2: "16.65"
-  }))))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      overflowX: 'auto',
-      marginBottom: 14,
-      scrollbarWidth: 'none'
-    }
-  }, ['Todos', ...cats].map(c => /*#__PURE__*/React.createElement("button", {
-    key: c,
-    onClick: () => {
-      setCat(c === 'Todos' ? '' : c);
-      setPage(1);
-    },
-    style: {
-      flexShrink: 0,
-      padding: '5px 12px',
-      borderRadius: 20,
-      background: cat === (c === 'Todos' ? '' : c) ? 'var(--cel)' : 'var(--white)',
-      border: `1.5px solid ${cat === (c === 'Todos' ? '' : c) ? 'var(--cel)' : 'var(--br)'}`,
-      color: cat === (c === 'Todos' ? '' : c) ? 'white' : 'var(--tx2)',
-      fontSize: 11,
-      fontWeight: 600,
-      cursor: 'pointer',
-      transition: '.15s'
-    }
-  }, c))), loading ? /*#__PURE__*/React.createElement(SkeletonCards, {
-    n: 12
-  }) : /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "ng-grid"
-  }, posts.map(p => /*#__PURE__*/React.createElement(NewsCard, {
-    key: p._id,
-    post: p,
-    onClick: () => onArticle(p)
-  }))), posts.length === 0 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      textAlign: 'center',
-      padding: '40px 0',
-      color: 'var(--tx3)'
-    }
-  }, "\uD83D\uDCED Sin resultados"), pages > 1 && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'center',
-      gap: 8,
-      marginTop: 18
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-o btn-sm",
-    disabled: page === 1,
-    onClick: () => setPage(p => p - 1)
-  }, "\u2190 Anterior"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      alignSelf: 'center',
-      fontSize: 12,
-      color: 'var(--tx3)'
-    }
-  }, "P\xE1g ", page, "/", pages), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-o btn-sm",
-    disabled: page === pages,
-    onClick: () => setPage(p => p + 1)
-  }, "Siguiente \u2192"))));
+  const { posts, total, pages, loading, fromApi } = useNews(page, cat, search);
+  const cats = ['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Deportes'];
+  return (
+    <div>
+      <div className="sh"><div className="st">Noticias</div>{!loading&&<span style={{fontSize:11,color:'var(--tx3)'}}>{total} · {fromApi?'en vivo':'demo'}</span>}</div>
+      <div style={{position:'relative',marginBottom:12}}>
+        <input className="fi" value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(setSearch(inp),setPage(1))} placeholder="Buscar noticias..." style={{paddingRight:38}}/>
+        <button onClick={()=>{setSearch(inp);setPage(1);}} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',color:'var(--cel-d)',border:'none',cursor:'pointer',display:'flex',alignItems:'center'}}>
+          <svg style={{width:15,height:15}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        </button>
+      </div>
+      <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:14,scrollbarWidth:'none'}}>
+        {['Todos',...cats].map(c => (
+          <button key={c} onClick={()=>{setCat(c==='Todos'?'':c);setPage(1);}}
+            style={{flexShrink:0,padding:'5px 12px',borderRadius:20,background:cat===(c==='Todos'?'':c)?'var(--cel)':'var(--white)',border:`1.5px solid ${cat===(c==='Todos'?'':c)?'var(--cel)':'var(--br)'}`,color:cat===(c==='Todos'?'':c)?'white':'var(--tx2)',fontSize:11,fontWeight:600,cursor:'pointer',transition:'.15s'}}>
+            {c}
+          </button>
+        ))}
+      </div>
+      {loading ? <SkeletonCards n={12}/> : (
+        <>
+          <div className="ng-grid">
+            {posts.map(p => <NewsCard key={p._id} post={p} onClick={()=>onArticle(p)}/>)}
+          </div>
+          {posts.length===0 && <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)'}}>📭 Sin resultados</div>}
+          {pages>1 && (
+            <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:18}}>
+              <button className="btn btn-o btn-sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>← Anterior</button>
+              <span style={{alignSelf:'center',fontSize:12,color:'var(--tx3)'}}>Pág {page}/{pages}</span>
+              <button className="btn btn-o btn-sm" disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Siguiente →</button>
+            </div>
+          )}
+        </>
+      )}
+    </div>
+  );
 }
 
 /* ══════ ARTICLE PAGE ══════ */
-function ArticlePage({
-  post,
-  onBack,
-  user,
-  addToast
-}) {
+function ArticlePage({ post, onBack, user, addToast }) {
   const [comments, setComments] = useState([]);
   const [cmtTxt, setCmtTxt] = useState('');
   const [sending, setSending] = useState(false);
   const token = localStorage.getItem('tl_token');
   useEffect(() => {
     if (!post._id || post._id.startsWith('s')) return;
-    fetch(`${API}/api/comments?post=${post._id}`).then(r => r.json()).then(d => setComments(d.comments || [])).catch(() => {});
+    fetch(`${API}/api/comments?post=${post._id}`).then(r=>r.json()).then(d=>setComments(d.comments||[])).catch(()=>{});
   }, [post._id]);
   async function submit(e) {
     e.preventDefault();
     if (!cmtTxt.trim()) return;
     setSending(true);
     try {
-      const r = await fetch(`${API}/api/comments`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...(token && {
-            Authorization: `Bearer ${token}`
-          })
-        },
-        body: JSON.stringify({
-          post: post._id,
-          content: cmtTxt.trim(),
-          author: user?.isGuest === false ? user.displayName || user.username : 'Invitado'
-        })
-      });
-      if (r.ok) {
-        const d = await r.json();
-        setComments(c => [d.comment, ...c]);
-        setCmtTxt('');
-        addToast({
-          msg: 'Comentario publicado ✓',
-          type: 'ok'
-        });
-      } else {
-        // Sin backend: agregar localmente
-        setComments(c => [{
-          _id: Date.now(),
-          author: user?.isGuest === false ? user.displayName || user.username : 'Invitado',
-          content: cmtTxt.trim(),
-          createdAt: new Date().toISOString()
-        }, ...c]);
-        setCmtTxt('');
-        addToast({
-          msg: 'Comentario guardado localmente',
-          type: 'ok'
-        });
-      }
+      const r = await fetch(`${API}/api/comments`, { method:'POST', headers:{'Content-Type':'application/json',...(token&&{Authorization:`Bearer ${token}`})}, body:JSON.stringify({post:post._id,content:cmtTxt.trim(),author:user?.isGuest===false?(user.displayName||user.username):'Invitado'}) });
+      const d = await r.json();
+      if (r.ok) setComments(c => [d.comment,...c]);
+      else setComments(c => [{_id:Date.now(),author:'Vos',content:cmtTxt.trim(),createdAt:new Date().toISOString()},...c]);
     } catch {
-      setComments(c => [{
-        _id: Date.now(),
-        author: 'Vos',
-        content: cmtTxt.trim(),
-        createdAt: new Date().toISOString()
-      }, ...c]);
-      setCmtTxt('');
-      addToast({
-        msg: 'Comentario guardado ✓',
-        type: 'ok'
-      });
+      setComments(c => [{_id:Date.now(),author:'Vos',content:cmtTxt.trim(),createdAt:new Date().toISOString()},...c]);
     }
+    setCmtTxt('');
     setSending(false);
+    addToast({msg:'Comentario publicado ✓',type:'ok'});
   }
   const cat = post.category || post.cat || 'Deportes';
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxWidth: 720,
-      margin: '0 auto'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    onClick: onBack,
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 5,
-      background: 'none',
-      color: 'var(--cel)',
-      marginBottom: 16,
-      fontSize: 12,
-      fontWeight: 600,
-      cursor: 'pointer',
-      border: 'none'
-    }
-  }, /*#__PURE__*/React.createElement(Ic.Back, {
-    style: {
-      width: 13,
-      height: 13
-    }
-  }), " Volver"), post.coverImage && /*#__PURE__*/React.createElement("img", {
-    src: post.coverImage,
-    alt: post.title,
-    style: {
-      width: '100%',
-      maxHeight: 320,
-      objectFit: 'cover',
-      borderRadius: 'var(--rl)',
-      border: '2px solid var(--cel)',
-      marginBottom: 16
-    },
-    onError: e => e.target.style.display = 'none'
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10,
-      display: 'flex',
-      gap: 7,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "badge bc"
-  }, cat), post.aiSummary && /*#__PURE__*/React.createElement("span", {
-    className: "badge bv-b"
-  }, "\u2726 Resumen IA"), post.meta?.sourceName && /*#__PURE__*/React.createElement("span", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4,
-      padding: '2px 8px',
-      background: 'var(--cel-xl)',
-      borderRadius: 20,
-      fontSize: 9,
-      fontWeight: 700,
-      color: 'var(--cel-d)',
-      fontFamily: 'var(--fd)',
-      border: '1px solid var(--br)'
-    }
-  }, "\uD83D\uDCE1 ", post.meta.sourceName)), /*#__PURE__*/React.createElement("h1", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 26,
-      fontWeight: 700,
-      lineHeight: 1.1,
-      marginBottom: 10,
-      color: 'var(--tx)'
-    }
-  }, post.title), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--tx3)',
-      marginBottom: 18
-    }
-  }, new Date(post.publishedAt).toLocaleDateString('es-AR', {
-    day: 'numeric',
-    month: 'long',
-    year: 'numeric'
-  })), post.aiSummary && /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'var(--cel-xl)',
-      border: '1px solid var(--br)',
-      borderRadius: 'var(--rs)',
-      padding: '12px 14px',
-      marginBottom: 16,
-      fontSize: 13,
-      lineHeight: 1.65,
-      color: 'var(--tx)'
-    }
-  }, /*#__PURE__*/React.createElement("strong", {
-    style: {
-      color: 'var(--cel-d)'
-    }
-  }, "\u2726 Resumen: "), post.aiSummary), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: "'Merriweather',serif",
-      fontSize: 14,
-      lineHeight: 1.85,
-      color: 'var(--tx2)',
-      marginBottom: 18
-    }
-  }, post.content || post.excerpt || 'Leé la nota completa en la fuente original.', post.meta?.sourceUrl && post.meta.sourceUrl !== '#' && /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginTop: 12
-    }
-  }, /*#__PURE__*/React.createElement("a", {
-    href: post.meta.sourceUrl,
-    target: "_blank",
-    rel: "noopener noreferrer",
-    style: {
-      color: 'var(--cel)',
-      fontWeight: 600,
-      fontSize: 13
-    }
-  }, "\u2192 Leer nota completa en ", post.meta.sourceName))), /*#__PURE__*/React.createElement("div", {
-    className: "card cp",
-    style: {
-      marginBottom: 20
-    }
-  }, /*#__PURE__*/React.createElement(Poll, {
-    poll: STATIC_POLLS[Math.floor(Math.random() * STATIC_POLLS.length)]
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Comentarios"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 11,
-      color: 'var(--tx3)'
-    }
-  }, comments.length)), /*#__PURE__*/React.createElement("div", {
-    className: "card cp",
-    style: {
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("form", {
-    onSubmit: submit
-  }, /*#__PURE__*/React.createElement("textarea", {
-    className: "fi",
-    value: cmtTxt,
-    onChange: e => setCmtTxt(e.target.value),
-    placeholder: "Sumate al debate...",
-    style: {
-      minHeight: 65,
-      resize: 'vertical',
-      marginBottom: 9
-    }
-  }), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      justifyContent: 'flex-end'
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    type: "submit",
-    className: "btn btn-c btn-sm",
-    disabled: sending
-  }, sending ? 'Publicando...' : 'Publicar')))), comments.map(c => /*#__PURE__*/React.createElement("div", {
-    key: c._id || Math.random(),
-    style: {
-      borderBottom: '1px solid var(--br)',
-      paddingBottom: 12,
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 7,
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 28,
-      height: 28,
-      borderRadius: '50%',
-      background: 'var(--cel)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontWeight: 700,
-      fontSize: 10,
-      color: 'white'
-    }
-  }, (c.author || '?')[0].toUpperCase()), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 12
-    }
-  }, c.author || 'Invitado'), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: 'var(--tx3)'
-    }
-  }, c.createdAt ? new Date(c.createdAt).toLocaleDateString('es-AR') : 'Ahora'))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      lineHeight: 1.55,
-      color: 'var(--tx2)'
-    }
-  }, c.content))));
+  return (
+    <div style={{maxWidth:720,margin:'0 auto'}}>
+      <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--cel)',marginBottom:16,fontSize:12,fontWeight:600,cursor:'pointer',border:'none'}}><Ic.Back style={{width:13,height:13}}/> Volver</button>
+      {post.coverImage && <img src={post.coverImage} alt={post.title} style={{width:'100%',maxHeight:300,objectFit:'cover',borderRadius:'var(--rl)',border:'2px solid var(--cel)',marginBottom:16}} onError={e=>e.target.style.display='none'}/>}
+      <div style={{marginBottom:10,display:'flex',gap:7,flexWrap:'wrap'}}>
+        <span className="badge bc">{cat}</span>
+        {post.meta?.sourceName && <span className="badge bc">📡 {post.meta.sourceName}</span>}
+      </div>
+      <h1 style={{fontFamily:'var(--fd)',fontSize:24,fontWeight:700,lineHeight:1.1,marginBottom:10}}>{post.title}</h1>
+      <div style={{fontSize:12,color:'var(--tx3)',marginBottom:18}}>{new Date(post.publishedAt).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
+      <div style={{fontFamily:"'Merriweather',serif",fontSize:14,lineHeight:1.85,color:'var(--tx2)',marginBottom:18}}>
+        {post.excerpt || post.content || 'Leé la nota completa en la fuente original.'}
+        {post.meta?.sourceUrl && post.meta.sourceUrl !== '#' && (
+          <div style={{marginTop:12}}>
+            <a href={post.meta.sourceUrl} target="_blank" rel="noopener noreferrer" style={{color:'var(--cel)',fontWeight:600}}>→ Leer nota completa en {post.meta.sourceName}</a>
+          </div>
+        )}
+      </div>
+      <div className="card cp" style={{marginBottom:20}}><Poll poll={STATIC_POLLS[0]}/></div>
+      <div className="sh"><div className="st">Comentarios</div><span style={{fontSize:11,color:'var(--tx3)'}}>{comments.length}</span></div>
+      <div className="card cp" style={{marginBottom:14}}>
+        <form onSubmit={submit}>
+          <textarea className="fi" value={cmtTxt} onChange={e=>setCmtTxt(e.target.value)} placeholder="Sumate al debate..." style={{minHeight:60,resize:'vertical',marginBottom:9}}/>
+          <div style={{display:'flex',justifyContent:'flex-end'}}><button type="submit" className="btn btn-c btn-sm" disabled={sending}>{sending?'Publicando...':'Publicar'}</button></div>
+        </form>
+      </div>
+      {comments.map(c => (
+        <div key={c._id||Math.random()} style={{borderBottom:'1px solid var(--br)',paddingBottom:12,marginBottom:12}}>
+          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
+            <div style={{width:28,height:28,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:10,color:'white'}}>{(c.author||'?')[0].toUpperCase()}</div>
+            <div><div style={{fontWeight:700,fontSize:12}}>{c.author||'Invitado'}</div><div style={{fontSize:10,color:'var(--tx3)'}}>{c.createdAt?new Date(c.createdAt).toLocaleDateString('es-AR'):'Ahora'}</div></div>
+          </div>
+          <div style={{fontSize:13,lineHeight:1.55,color:'var(--tx2)'}}>{c.content}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════ COMUNIDAD PAGE (NUEVA SECCIÓN) ══════ */
+function ComunidadPage({ user, addToast, onNav }) {
+  const [tab, setTab]       = useState('feed');
+  const [text, setText]     = useState('');
+  const [posts, setPosts]   = useState(COMMUNITY_POSTS);
+  const [liked, setLiked]   = useState({});
+  const [chatMsg, setChatMsg] = useState('');
+  const [chatMsgs, setChatMsgs] = useState([
+    {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
+    {id:2,u:'ScrumMaster',text:'¡Increíble! Los Pumas también la rompen 🏉',own:false},
+    {id:3,u:'Vos',text:'¡Esto es Tribuna Libre en vivo!',own:true},
+  ]);
+  const chatRef = useRef();
+  function publish() {
+    if (!text.trim()) return;
+    setPosts(p => [{id:Date.now(),user:user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado',av:(user?.displayName||'I')[0].toUpperCase(),color:'#4A90D9',text,likes:0,time:'Ahora'},...p]);
+    setText('');
+    addToast({msg:'¡Publicado en la comunidad!',type:'ok'});
+  }
+  function sendChat() {
+    if (!chatMsg.trim()) return;
+    setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
+    setChatMsg('');
+    setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
+  }
+  const THREADS = [
+    {id:1,cat:'futbol',title:'El VAR en Argentina: ¿solución o mayor caos?',r:87,v:1240,hot:true,author:'Gonzalo_TL',t:'Hace 1h'},
+    {id:2,cat:'rugby',title:'Los Pumas: formación ideal para el Mundial 2027',r:54,v:890,hot:true,author:'ScrumMaster',t:'Hace 3h'},
+    {id:3,cat:'auto',title:'Colapinto 2025: ¿puede pelear el título de F1?',r:34,v:670,hot:false,author:'SpeedFreak',t:'Hace 5h'},
+    {id:4,cat:'basquet',title:'Vildoza: el mejor base argentino de la historia',r:29,v:445,hot:false,author:'LaVioleta',t:'Hace 7h'},
+  ];
+  return (
+    <div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
+        <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--cel)'}}>Tribuna Libre</span></h1>
+      </div>
+      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+      {/* Tabs */}
+      <div className="tabs">
+        {[{id:'feed',l:'Feed'},{id:'chat',l:'Chat en Vivo'},{id:'debates',l:'Debates'}].map(t => (
+          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
+        ))}
+      </div>
+      {/* FEED */}
+      {tab==='feed' && (
+        <div>
+          <div className="card cp" style={{marginBottom:14}}>
+            <div style={{display:'flex',gap:10,marginBottom:9}}>
+              <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>
+                {user?.isGuest===false ? (user.displayName||user.username||'V')[0].toUpperCase() : '?'}
+              </div>
+              <textarea value={text} onChange={e=>setText(e.target.value)} className="fi" placeholder="¿Qué pensás del deporte argentino?" style={{minHeight:60,resize:'none'}}/>
+            </div>
+            <div style={{display:'flex',justifyContent:'flex-end'}}>
+              <button className="btn btn-c btn-sm" onClick={publish}>Publicar</button>
+            </div>
+          </div>
+          {posts.map(p => (
+            <div key={p.id} className="post-card">
+              <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
+                <div className="post-av" style={{background:p.color}}>{p.av}</div>
+                <div><div className="post-user">{p.user}</div><div className="post-time">{p.time}</div></div>
+              </div>
+              <div className="post-body">{p.text}</div>
+              <div className="post-actions">
+                <button className={`abt${liked[p.id]?' lk':''}`} onClick={()=>setLiked(l=>({...l,[p.id]:!l[p.id]}))}>
+                  <Ic.Heart/> {p.likes+(liked[p.id]?1:0)}
+                </button>
+                <button className="abt"><Ic.Comment/> Responder</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* CHAT EN VIVO */}
+      {tab==='chat' && (
+        <div>
+          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,padding:'9px 12px',background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)'}}>
+            <div className="ldot"/><span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>Chat en vivo</span>
+            <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>234 conectados</span>
+          </div>
+          <div className="chat-wrap">
+            <div ref={chatRef} className="chat-bd">
+              {chatMsgs.map(m => (
+                <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
+                  {!m.own && <div className="cmsg-u">{m.u}</div>}
+                  <div>{m.text}</div>
+                </div>
+              ))}
+            </div>
+            <div className="chat-inp">
+              <input className="chat-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Escribí tu mensaje..."/>
+              <button className="chat-snd" onClick={sendChat}><Ic.Send style={{width:14,height:14}}/></button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* DEBATES */}
+      {tab==='debates' && (
+        <div>
+          <div className="sh"><div className="st">Hilos activos</div><span className="sl">+ Nuevo hilo</span></div>
+          {THREADS.map(t => (
+            <div key={t.id} className="thread-card">
+              <div style={{display:'flex',gap:5,marginBottom:5}}>
+                {t.hot && <span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+                <span className="badge bc" style={{fontSize:9}}>{t.cat}</span>
+                <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
+              </div>
+              <div className="thread-tit">{t.title}</div>
+              <div className="thread-mt">
+                <span style={{display:'flex',alignItems:'center',gap:3}}><Ic.Comment style={{width:11,height:11}}/>{t.r}</span>
+                <span style={{display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:11,height:11}}/>{t.v}</span>
+                <span>@{t.author}</span>
+              </div>
+            </div>
+          ))}
+          <div className="sh" style={{marginTop:18}}><div className="st">Encuestas</div></div>
+          {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════ STREAMING PAGE (NUEVA SECCIÓN) ══════ */
+function StreamingPage({ addToast }) {
+  const [streamOpen, setStreamOpen] = useState(false);
+  const [chatMsg, setChatMsg]  = useState('');
+  const [chatMsgs, setChatMsgs] = useState([
+    {id:1,u:'GonzaB',text:'Que partido 🔥⚽',own:false},
+    {id:2,u:'PumasFan',text:'¡Los Pumas también la rompen!',own:false},
+  ]);
+  const chatRef = useRef();
+  function sendChat() {
+    if (!chatMsg.trim()) return;
+    setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
+    setChatMsg('');
+    setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
+  }
+  if (!streamOpen) return (
+    <div>
+      <div className="sh"><div className="st">Streaming Deportivo</div></div>
+      {/* Imagen de acceso al streaming — clic para entrar */}
+      <div className="stream-hero" onClick={()=>setStreamOpen(true)}>
+        <img
+          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/stremmers.png"
+          alt="Acceso Streaming Tribuna Libre"
+          onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex';}}
+        />
+        <div style={{display:'none',height:200,alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,var(--cel-d),var(--cel))',fontSize:60}}>📡</div>
+        <div className="stream-hero-ov">
+          <div className="play-circle"><Ic.Play style={{width:22,height:22,color:'white',marginLeft:3}}/></div>
+          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,color:'white',marginBottom:5}}>Streaming en Vivo</div>
+          <div style={{fontSize:13,color:'rgba(255,255,255,.7)'}}>Hacé clic para ver todas las transmisiones · {STREAMS.filter(s=>s.live).length} en vivo ahora</div>
+        </div>
+      </div>
+    </div>
+  );
+  return (
+    <div>
+      <div className="sh">
+        <div className="st">Streaming</div>
+        <button className="btn btn-o btn-sm" onClick={()=>setStreamOpen(false)}>← Volver</button>
+      </div>
+      <div style={{background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)',padding:'9px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
+        <div className="ldot"/><span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>{STREAMS.filter(s=>s.live).length} transmisiones en vivo ahora mismo</span>
+        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>{STREAMS.filter(s=>s.live).reduce((a,s)=>a+s.viewers,0).toLocaleString()} viendo</span>
+      </div>
+      <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr',marginBottom:20}}>
+        {[null,null].map((_,r) => (
+          <div key={r} style={{display:'grid',gap:12,gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))'}}>
+            {STREAMS.slice(r*3,(r+1)*3).map(s => (
+              <div key={s.id} className="sc" onClick={()=>addToast({msg:`Abriendo ${s.tit}...`,type:'ok'})}>
+                <div className="sc-thumb">
+                  <span>{s.em}</span>
+                  {s.live && <div className="live-tag"><div style={{width:5,height:5,borderRadius:'50%',background:'white',animation:'pulse 1.4s infinite'}}/>LIVE</div>}
+                </div>
+                <div className="sc-body">
+                  <div className="sc-tit">{s.tit}</div>
+                  <div className="sc-info">
+                    <span>{s.ch}</span>
+                    {s.live && <><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',flexShrink:0}}/><span style={{color:'var(--red)'}}>{s.viewers.toLocaleString()}</span></>}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      {/* Chat del streaming */}
+      <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>Chat del streaming</div></div>
+      <div className="chat-wrap">
+        <div className="chat-hd">
+          <div className="ldot"/><span style={{fontWeight:600,fontSize:13}}>Chat en vivo</span>
+          <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3)'}}>1.2k online</span>
+        </div>
+        <div ref={chatRef} className="chat-bd">
+          {chatMsgs.map(m => (
+            <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
+              {!m.own && <div className="cmsg-u">{m.u}</div>}
+              <div>{m.text}</div>
+            </div>
+          ))}
+        </div>
+        <div className="chat-inp">
+          <input className="chat-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Comentá el partido..."/>
+          <button className="chat-snd" onClick={sendChat}><Ic.Send style={{width:14,height:14}}/></button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 /* ══════ PRODE PAGE ══════ */
-function ProdePage({
-  user,
-  addToast
-}) {
-  const [tab, setTab] = useState('mundial');
+function ProdePage({ user, addToast }) {
   const [picks, setPicks] = useState({});
   const [submitted, setSubmitted] = useState(false);
   const totalPicked = Object.keys(picks).length;
-  function pick(matchId, result) {
-    setPicks(p => ({
-      ...p,
-      [matchId]: result
-    }));
-  }
+  function pick(id, r) { setPicks(p => ({...p,[id]:r})); }
   function submit() {
-    if (totalPicked < PRODE_MATCHES.length) {
-      addToast({
-        msg: 'Completá todas las predicciones antes de enviar',
-        type: 'err'
-      });
-      return;
-    }
-    if (!user || user.isGuest) {
-      addToast({
-        msg: 'Necesitás registrarte para guardar tus predicciones 🔒',
-        type: 'err'
-      });
-      return;
-    }
+    if (totalPicked < PRODE_MATCHES.length) { addToast({msg:'Completá todas las predicciones antes de enviar',type:'err'}); return; }
+    if (!user || user.isGuest) { addToast({msg:'Necesitás registrarte para guardar tus predicciones 🔒',type:'err'}); return; }
     setSubmitted(true);
-    addToast({
-      msg: '¡Predicciones guardadas! ¡Mucha suerte! 🏆',
-      type: 'ok'
-    });
+    addToast({msg:'¡Predicciones guardadas! ¡Mucha suerte! 🏆',type:'ok'});
   }
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,#B7770D,var(--sun))',
-      borderRadius: 'var(--rl)',
-      padding: '18px 20px',
-      marginBottom: 18,
-      color: 'white'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10,
-      marginBottom: 6
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 28
-    }
-  }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 20,
-      fontWeight: 700,
-      letterSpacing: .5
-    }
-  }, "El Prode de Tribuna Libre"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      opacity: .8
-    }
-  }, "100% gratis para todos los usuarios"))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 10,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      background: 'rgba(255,255,255,.2)',
-      borderRadius: 20,
-      padding: '3px 10px',
-      fontSize: 11,
-      fontWeight: 600
-    }
-  }, "\uD83C\uDF0E Copa del Mundo"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      background: 'rgba(255,255,255,.2)',
-      borderRadius: 20,
-      padding: '3px 10px',
-      fontSize: 11,
-      fontWeight: 600
-    }
-  }, "\uD83C\uDFC6 Copa Libertadores"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      background: 'rgba(255,255,255,.2)',
-      borderRadius: 20,
-      padding: '3px 10px',
-      fontSize: 11,
-      fontWeight: 600
-    }
-  }, "\u26BD Liga Profesional"))), /*#__PURE__*/React.createElement("div", {
-    className: "tabs"
-  }, ['mundial', 'libertadores', 'liga', 'ranking'].map(t => /*#__PURE__*/React.createElement("div", {
-    key: t,
-    className: `tabx${tab === t ? ' on' : ''}`,
-    onClick: () => setTab(t)
-  }, t === 'mundial' ? '🌎 Copa del Mundo' : t === 'libertadores' ? '🏆 Libertadores' : t === 'liga' ? '⚽ Liga Profesional' : '🥇 Ranking'))), (tab === 'mundial' || tab === 'liga') && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-      marginBottom: 14,
-      flexWrap: 'wrap',
-      gap: 8
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--tx2)'
-    }
-  }, "Completadas: ", /*#__PURE__*/React.createElement("b", {
-    style: {
-      color: 'var(--cel-d)'
-    }
-  }, totalPicked, "/", PRODE_MATCHES.length)), !submitted ? /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-s btn-sm",
-    onClick: submit
-  }, "Enviar predicciones") : /*#__PURE__*/React.createElement("span", {
-    className: "badge bg-b",
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4
-    }
-  }, /*#__PURE__*/React.createElement(Ic.Check, {
-    style: {
-      width: 10,
-      height: 10
-    }
-  }), "Enviado")), PRODE_MATCHES.map(m => {
-    const p = picks[m.id];
-    return /*#__PURE__*/React.createElement("div", {
-      key: m.id,
-      className: `prode-match${submitted ? ' locked' : ''}`
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "prode-teams"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: "prode-team"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "prode-em"
-    }, m.he), /*#__PURE__*/React.createElement("div", {
-      className: "prode-nm"
-    }, m.h)), /*#__PURE__*/React.createElement("div", {
-      className: "prode-vs"
-    }, "vs"), /*#__PURE__*/React.createElement("div", {
-      className: "prode-team"
-    }, /*#__PURE__*/React.createElement("span", {
-      className: "prode-em"
-    }, m.ae), /*#__PURE__*/React.createElement("div", {
-      className: "prode-nm"
-    }, m.a))), /*#__PURE__*/React.createElement("div", {
-      style: {
-        fontSize: 10,
-        color: 'var(--tx3)',
-        marginBottom: 8,
-        textAlign: 'center'
-      }
-    }, "\uD83D\uDCC5 ", m.date), /*#__PURE__*/React.createElement("div", {
-      className: "prode-pickers"
-    }, /*#__PURE__*/React.createElement("div", {
-      className: `prode-btn${p === 'h' ? ' sel-h' : ''}`,
-      onClick: () => !submitted && pick(m.id, 'h')
-    }, m.h, " gana"), /*#__PURE__*/React.createElement("div", {
-      className: `prode-btn${p === 'e' ? ' sel-e' : ''}`,
-      onClick: () => !submitted && pick(m.id, 'e')
-    }, "Empate"), /*#__PURE__*/React.createElement("div", {
-      className: `prode-btn${p === 'a' ? ' sel-a' : ''}`,
-      onClick: () => !submitted && pick(m.id, 'a')
-    }, m.a, " gana")));
-  })), tab === 'libertadores' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 12,
-      padding: '10px 14px',
-      background: 'linear-gradient(135deg,rgba(39,174,96,.1),rgba(39,174,96,.05))',
-      border: '1px solid rgba(39,174,96,.2)',
-      borderRadius: 'var(--r)',
-      fontSize: 12,
-      color: 'var(--tx2)'
-    }
-  }, "\uD83C\uDFC6 Predec\xED los resultados de cada partido de Libertadores y acumul\xE1 puntos en el ranking."), [{
-    round: 'Octavos de Final',
-    match: 'River vs Nacional',
-    date: '8 Jul 2025'
-  }, {
-    round: 'Octavos de Final',
-    match: 'Boca vs Atlético MG',
-    date: '9 Jul 2025'
-  }, {
-    round: 'Octavos de Final',
-    match: 'Racing vs Junior',
-    date: '10 Jul 2025'
-  }].map((m, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      background: 'var(--white)',
-      border: '1.5px solid var(--br)',
-      borderRadius: 'var(--r)',
-      padding: '13px',
-      marginBottom: 9
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      color: 'var(--tx3)',
-      fontWeight: 700,
-      letterSpacing: '1px',
-      textTransform: 'uppercase',
-      marginBottom: 5
-    }
-  }, m.round), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 15,
-      fontWeight: 600,
-      marginBottom: 8
-    }
-  }, m.match), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: 'var(--tx3)',
-      marginBottom: 8
-    }
-  }, "\uD83D\uDCC5 ", m.date), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6
-    }
-  }, ['Local gana', 'Empate', 'Visitante gana'].map((opt, j) => /*#__PURE__*/React.createElement("div", {
-    key: j,
-    className: "prode-btn",
-    style: {
-      flex: 1
-    }
-  }, opt)))))), tab === 'ranking' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,#B7770D,var(--sun))',
-      color: 'white',
-      borderRadius: 'var(--r)',
-      padding: '14px',
-      marginBottom: 14,
-      textAlign: 'center'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 18,
-      fontWeight: 700,
-      marginBottom: 4
-    }
-  }, "Ranking del Prode"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      opacity: .8
-    }
-  }, "Temporada 2025 \xB7 Actualizado en tiempo real")), [{
-    pos: 1,
-    name: 'Gonzalo_TL',
-    pts: 47,
-    aciertos: 12,
-    em: '🥇'
-  }, {
-    pos: 2,
-    name: 'PumasFan',
-    pts: 43,
-    aciertos: 11,
-    em: '🥈'
-  }, {
-    pos: 3,
-    name: 'ScrumMaster',
-    pts: 38,
-    aciertos: 10,
-    em: '🥉'
-  }, {
-    pos: 4,
-    name: 'LaVioleta10',
-    pts: 31,
-    aciertos: 8,
-    em: ''
-  }, {
-    pos: 5,
-    name: 'SpeedFreak',
-    pts: 28,
-    aciertos: 7,
-    em: ''
-  }].map((u, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    style: {
-      background: 'var(--white)',
-      border: `1.5px solid ${i < 3 ? 'var(--sun)' : 'var(--br)'}`,
-      borderRadius: 'var(--r)',
-      padding: '11px 13px',
-      marginBottom: 8,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 18,
-      fontWeight: 700,
-      color: i === 0 ? '#B7770D' : i === 1 ? '#94A3B8' : i === 2 ? '#CD7F32' : 'var(--tx3)',
-      width: 26,
-      textAlign: 'center'
-    }
-  }, u.em || u.pos), /*#__PURE__*/React.createElement("div", {
-    style: {
-      flex: 1
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13
-    }
-  }, u.name), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: 'var(--tx3)'
-    }
-  }, u.aciertos, " aciertos")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 18,
-      fontWeight: 700,
-      color: 'var(--sun)'
-    }
-  }, u.pts, " pts")))));
+  return (
+    <div>
+      <div style={{background:'linear-gradient(135deg,#B7770D,var(--sun))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:18,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:30}}>🏆</span>
+        <div>
+          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>El Prode de Tribuna Libre</div>
+          <div style={{fontSize:12,opacity:.8}}>100% gratis para todos los usuarios</div>
+        </div>
+      </div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,flexWrap:'wrap',gap:8}}>
+        <div style={{fontSize:12,color:'var(--tx2)'}}>Completadas: <b style={{color:'var(--cel-d)'}}>{totalPicked}/{PRODE_MATCHES.length}</b></div>
+        {!submitted ? <button className="btn btn-s btn-sm" onClick={submit}>Enviar predicciones</button>
+          : <span className="badge bg-b" style={{display:'flex',alignItems:'center',gap:4}}><Ic.Check style={{width:10,height:10}}/>Enviado</span>}
+      </div>
+      {PRODE_MATCHES.map(m => {
+        const p = picks[m.id];
+        return (
+          <div key={m.id} className={`prode-match${submitted?' locked':''}`}>
+            <div className="prode-teams">
+              <div className="prode-team"><span className="prode-em">{m.he}</span><div className="prode-nm">{m.h}</div></div>
+              <div className="prode-vs">vs</div>
+              <div className="prode-team"><span className="prode-em">{m.ae}</span><div className="prode-nm">{m.a}</div></div>
+            </div>
+            <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8,textAlign:'center'}}>📅 {m.date}</div>
+            <div className="prode-pickers">
+              <div className={`prode-btn${p==='h'?' sel-h':''}`} onClick={()=>!submitted&&pick(m.id,'h')}>{m.h} gana</div>
+              <div className={`prode-btn${p==='e'?' sel-e':''}`} onClick={()=>!submitted&&pick(m.id,'e')}>Empate</div>
+              <div className={`prode-btn${p==='a'?' sel-a':''}`} onClick={()=>!submitted&&pick(m.id,'a')}>{m.a} gana</div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
 }
 
-/* ══════ COPA PAGE (fixture + libertadores) ══════ */
+/* ══════ COPA PAGE ══════ */
 function CopaPage() {
   const [tab, setTab] = useState('fixture');
-  const worldcupGroups = [{
-    name: 'Grupo A',
-    teams: [{
-      t: 'Argentina 🇦🇷',
-      pt: 9,
-      j: 3
-    }, {
-      t: 'Colombia 🇨🇴',
-      pt: 6,
-      j: 3
-    }, {
-      t: 'Brasil 🇧🇷',
-      pt: 3,
-      j: 3
-    }, {
-      t: 'México 🇲🇽',
-      pt: 0,
-      j: 3
-    }]
-  }, {
-    name: 'Grupo B',
-    teams: [{
-      t: 'Uruguay 🇺🇾',
-      pt: 7,
-      j: 3
-    }, {
-      t: 'Ecuador 🇪🇨',
-      pt: 5,
-      j: 3
-    }, {
-      t: 'Chile 🇨🇱',
-      pt: 4,
-      j: 3
-    }, {
-      t: 'Venezuela 🇻🇪',
-      pt: 1,
-      j: 3
-    }]
-  }];
-  const matches = [{
-    round: 'Cuartos',
-    h: '🇦🇷 Argentina',
-    a: '🇧🇷 Brasil',
-    score: null,
-    date: '15 Jul 2026',
-    live: false
-  }, {
-    round: 'Cuartos',
-    h: '🇺🇾 Uruguay',
-    a: '🇨🇴 Colombia',
-    score: null,
-    date: '16 Jul 2026',
-    live: false
-  }, {
-    round: 'Semifinal',
-    h: 'Ganador Q1',
-    a: 'Ganador Q2',
-    score: null,
-    date: '19 Jul 2026',
-    live: false
-  }, {
-    round: 'Final',
-    h: 'TBD',
-    a: 'TBD',
-    score: null,
-    date: '26 Jul 2026',
-    live: false
-  }];
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,var(--cel-d),var(--cel))',
-      borderRadius: 'var(--rl)',
-      padding: '16px 20px',
-      marginBottom: 18,
-      color: 'white',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 32
-    }
-  }, "\uD83C\uDF0E"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 20,
-      fontWeight: 700
-    }
-  }, "Copa del Mundo 2026"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      opacity: .8
-    }
-  }, "Estados Unidos \xB7 M\xE9xico \xB7 Canad\xE1"))), /*#__PURE__*/React.createElement("div", {
-    className: "tabs"
-  }, ['fixture', 'grupos', 'libertadores'].map(t => /*#__PURE__*/React.createElement("div", {
-    key: t,
-    className: `tabx${tab === t ? ' on' : ''}`,
-    onClick: () => setTab(t)
-  }, t === 'fixture' ? 'Fixture' : t === 'grupos' ? 'Grupos' : 'Copa Libertadores'))), tab === 'fixture' && /*#__PURE__*/React.createElement("div", null, matches.map((m, i) => /*#__PURE__*/React.createElement("div", {
-    key: i
-  }, (i === 0 || matches[i - 1].round !== m.round) && /*#__PURE__*/React.createElement("div", {
-    className: "fix-round",
-    style: {
-      marginTop: i > 0 ? 14 : 0
-    }
-  }, m.round), /*#__PURE__*/React.createElement("div", {
-    className: "fix-match"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fix-team"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "fix-em"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "fix-nm"
-  }, m.h)), /*#__PURE__*/React.createElement("div", {
-    className: `fix-score${m.live ? ' live' : ''}`
-  }, m.score || /*#__PURE__*/React.createElement("div", {
-    className: "fix-date"
-  }, m.date)), /*#__PURE__*/React.createElement("div", {
-    className: "fix-team right"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "fix-nm"
-  }, m.a)))))), tab === 'grupos' && /*#__PURE__*/React.createElement("div", null, worldcupGroups.map((g, i) => /*#__PURE__*/React.createElement("div", {
-    key: i
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "group-hd"
-  }, "Grupo ", g.name.split(' ')[1]), /*#__PURE__*/React.createElement("table", {
-    className: "group-table"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Equipo"), /*#__PURE__*/React.createElement("th", null, "PJ"), /*#__PURE__*/React.createElement("th", null, "PTS"))), /*#__PURE__*/React.createElement("tbody", null, g.teams.map((t, j) => /*#__PURE__*/React.createElement("tr", {
-    key: j
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      fontWeight: j < 2 ? 700 : 400
-    }
-  }, t.t), /*#__PURE__*/React.createElement("td", null, t.j), /*#__PURE__*/React.createElement("td", {
-    style: {
-      fontWeight: 700,
-      color: j < 2 ? 'var(--cel-d)' : 'var(--tx)'
-    }
-  }, t.pt)))))))), tab === 'libertadores' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,rgba(39,174,96,.12),rgba(22,160,133,.06))',
-      border: '1px solid rgba(39,174,96,.2)',
-      borderRadius: 'var(--r)',
-      padding: '12px 14px',
-      marginBottom: 16,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 10
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 24
-    }
-  }, "\uD83C\uDFC6"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontWeight: 700,
-      fontSize: 13
-    }
-  }, "Copa Libertadores 2025"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--tx2)'
-    }
-  }, "Fase de grupos en curso"))), LIB_GROUPS.map((g, i) => /*#__PURE__*/React.createElement("div", {
-    key: i
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "group-hd",
-    style: {
-      background: 'linear-gradient(135deg,#1E8449,#27AE60)'
-    }
-  }, g.name), /*#__PURE__*/React.createElement("table", {
-    className: "group-table"
-  }, /*#__PURE__*/React.createElement("thead", null, /*#__PURE__*/React.createElement("tr", null, /*#__PURE__*/React.createElement("th", null, "Club"), /*#__PURE__*/React.createElement("th", null, "PJ"), /*#__PURE__*/React.createElement("th", null, "PTS"), /*#__PURE__*/React.createElement("th", null, "DG"))), /*#__PURE__*/React.createElement("tbody", null, g.teams.map((t, j) => /*#__PURE__*/React.createElement("tr", {
-    key: j
-  }, /*#__PURE__*/React.createElement("td", {
-    style: {
-      fontWeight: j < 2 ? 700 : 400
-    }
-  }, j < 2 ? '✦ ' : '', t.t), /*#__PURE__*/React.createElement("td", null, t.j), /*#__PURE__*/React.createElement("td", {
-    style: {
-      fontWeight: 700,
-      color: j < 2 ? '#1E8449' : 'var(--tx)'
-    }
-  }, t.p), /*#__PURE__*/React.createElement("td", {
-    style: {
-      color: t.gd > 0 ? '#1E8449' : t.gd < 0 ? 'var(--red)' : 'var(--tx3)'
-    }
-  }, t.gd > 0 ? '+' : '', t.gd)))))))));
+  return (
+    <div>
+      <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:18,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:30}}>🌎</span>
+        <div><div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Copa del Mundo 2026</div><div style={{fontSize:12,opacity:.8}}>EE.UU · México · Canadá</div></div>
+      </div>
+      <div className="tabs">
+        {[{id:'fixture',l:'Fixture'},{id:'grupos',l:'Grupos'},{id:'libertadores',l:'Libertadores'}].map(t => (
+          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
+        ))}
+      </div>
+      {tab==='fixture' && (
+        <div>
+          {[{r:'Cuartos',h:'🇦🇷 Argentina',a:'🇧🇷 Brasil',d:'15 Jul 2026'},{r:'Cuartos',h:'🇺🇾 Uruguay',a:'🇨🇴 Colombia',d:'16 Jul 2026'},{r:'Semifinal',h:'Ganador Q1',a:'Ganador Q2',d:'19 Jul 2026'},{r:'Final',h:'TBD',a:'TBD',d:'26 Jul 2026'}].map((m,i,arr) => (
+            <div key={i}>
+              {(i===0||arr[i-1].r!==m.r) && <div style={{background:'var(--cel)',color:'white',borderRadius:'var(--r)',padding:'7px 13px',marginBottom:9,marginTop:i>0?13:0,fontFamily:'var(--fd)',fontSize:12,fontWeight:600}}>{m.r}</div>}
+              <div style={{background:'var(--white)',border:'1px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 13px',marginBottom:7,display:'flex',alignItems:'center',justifyContent:'space-between',transition:'.15s'}} onMouseEnter={e=>e.currentTarget.style.background='var(--cel-xl)'} onMouseLeave={e=>e.currentTarget.style.background='var(--white)'}>
+                <span style={{fontSize:13,fontWeight:500,flex:1}}>{m.h}</span>
+                <span style={{fontFamily:'var(--fd)',fontSize:11,color:'var(--tx3)',padding:'0 12px'}}>{m.d}</span>
+                <span style={{fontSize:13,fontWeight:500,flex:1,textAlign:'right'}}>{m.a}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab==='grupos' && (
+        <div>
+          {[{name:'A',teams:[{t:'Argentina 🇦🇷',pt:9},{t:'Colombia 🇨🇴',pt:6},{t:'Brasil 🇧🇷',pt:3},{t:'México 🇲🇽',pt:0}]},{name:'B',teams:[{t:'Uruguay 🇺🇾',pt:7},{t:'Ecuador 🇪🇨',pt:5},{t:'Chile 🇨🇱',pt:4},{t:'Venezuela 🇻🇪',pt:1}]}].map((g,i) => (
+            <div key={i}><div className="group-hd">Grupo {g.name}</div>
+              <table className="group-table">
+                <thead><tr><th>Equipo</th><th>PTS</th></tr></thead>
+                <tbody>{g.teams.map((t,j) => <tr key={j}><td style={{fontWeight:j<2?700:400}}>{t.t}</td><td style={{fontWeight:700,color:j<2?'var(--cel-d)':'var(--tx)'}}>{t.pt}</td></tr>)}</tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab==='libertadores' && (
+        <div>
+          {LIB_GROUPS.map((g,i) => (
+            <div key={i}><div className="group-hd" style={{background:'linear-gradient(135deg,#1E8449,#27AE60)'}}>{g.name}</div>
+              <table className="group-table">
+                <thead><tr><th>Club</th><th>PJ</th><th>PTS</th><th>DG</th></tr></thead>
+                <tbody>{g.teams.map((t,j) => <tr key={j}><td style={{fontWeight:j<2?700:400}}>{j<2?'✦ ':''}{t.t}</td><td>{t.j}</td><td style={{fontWeight:700,color:j<2?'#1E8449':'var(--tx)'}}>{t.p}</td><td style={{color:t.gd>0?'#1E8449':t.gd<0?'var(--red)':'var(--tx3)'}}>{t.gd>0?'+':''}{t.gd}</td></tr>)}</tbody>
+              </table>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 /* ══════ REVISTA PAGE ══════ */
-function RevistaPage({
-  user,
-  addToast
-}) {
-  const [tab, setTab] = useState('articulos');
+function RevistaPage({ user, addToast }) {
+  const [tab, setTab]     = useState('notas');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({
-    titulo: '',
-    texto: '',
-    cat: 'Fútbol',
-    nombre: '',
-    edad: ''
-  });
+  const [form, setForm]   = useState({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
   function submitNota(e) {
     e.preventDefault();
-    addToast({
-      msg: '¡Tu nota fue enviada para revisión! Gracias por participar 🎉',
-      type: 'ok'
-    });
-    setShowForm(false);
-    setForm({
-      titulo: '',
-      texto: '',
-      cat: 'Fútbol',
-      nombre: '',
-      edad: ''
-    });
+    addToast({msg:'¡Tu nota fue enviada para revisión! 🎉',type:'ok'});
+    setShowForm(false); setForm({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
   }
-  return /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,#9D174D,var(--pink))',
-      borderRadius: 'var(--rl)',
-      padding: '18px 20px',
-      marginBottom: 18,
-      color: 'white'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      gap: 12,
-      marginBottom: 8
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 32
-    }
-  }, "\u270F\uFE0F"), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 20,
-      fontWeight: 700,
-      letterSpacing: .5
-    }
-  }, "Revista Tribuna Libre"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      opacity: .8
-    }
-  }, "El espacio de los j\xF3venes periodistas deportivos"))), /*#__PURE__*/React.createElement("p", {
-    style: {
-      fontSize: 13,
-      opacity: .9,
-      lineHeight: 1.5,
-      marginBottom: 12
-    }
-  }, "Un espacio creado para y por j\xF3venes fan\xE1ticos del deporte. Public\xE1 tus notas, opiniones, an\xE1lisis y m\xE1s. La cancha es tuya."), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-sm",
-    style: {
-      background: 'rgba(255,255,255,.2)',
-      border: '1.5px solid rgba(255,255,255,.4)',
-      color: 'white',
-      borderRadius: 30
-    },
-    onClick: () => setShowForm(true)
-  }, /*#__PURE__*/React.createElement(Ic.Pen, {
-    style: {
-      width: 13,
-      height: 13
-    }
-  }), " Publicar mi nota")), /*#__PURE__*/React.createElement("div", {
-    className: "tabs"
-  }, ['articulos', 'opinion', 'historias', 'tips', 'submit'].map(t => /*#__PURE__*/React.createElement("div", {
-    key: t,
-    className: `tabx${tab === t ? ' on' : ''}`,
-    onClick: () => setTab(t)
-  }, t === 'articulos' ? '📰 Notas' : t === 'opinion' ? '💬 Opiniones' : t === 'historias' ? '🌟 Historias' : t === 'tips' ? '💡 Tips' : '✍️ Publicá'))), (tab === 'articulos' || tab === 'opinion' || tab === 'historias') && /*#__PURE__*/React.createElement("div", {
-    className: "ng-grid"
-  }, REVISTA_ARTICLES.filter(a => tab === 'articulos' || tab === 'opinion' ? a.cat === 'Opinión' || tab === 'articulos' : a.cat === 'Historias' || tab === 'articulos').map(a => /*#__PURE__*/React.createElement("div", {
-    key: a.id,
-    className: "rev-article"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rev-img"
-  }, /*#__PURE__*/React.createElement("span", null, a.emoji)), /*#__PURE__*/React.createElement("div", {
-    className: "rev-body"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 7,
-      display: 'flex',
-      gap: 5,
-      flexWrap: 'wrap'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "badge bp"
-  }, a.cat)), /*#__PURE__*/React.createElement("div", {
-    className: "rev-tit"
-  }, a.title), /*#__PURE__*/React.createElement("div", {
-    className: "rev-exc"
-  }, a.excerpt), /*#__PURE__*/React.createElement("div", {
-    className: "rev-ft"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rev-author"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "rev-av",
-    style: {
-      background: 'var(--pink)'
-    }
-  }, a.author[0]), /*#__PURE__*/React.createElement("span", null, a.author)), /*#__PURE__*/React.createElement("span", null, a.age, " a\xF1os"), /*#__PURE__*/React.createElement("span", {
-    style: {
-      marginLeft: 'auto',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 3
-    }
-  }, /*#__PURE__*/React.createElement(Ic.Eye, {
-    style: {
-      width: 11,
-      height: 11
-    }
-  }), a.reads)))))), tab === 'tips' && /*#__PURE__*/React.createElement("div", null, [{
-    em: '🎯',
-    tit: 'Cómo escribir una crónica deportiva',
-    body: 'Contá el partido como si lo estuvieras viendo. Describí las emociones, los momentos clave y las jugadas que definieron el resultado. No te olvides de las estadísticas importantes.'
-  }, {
-    em: '📊',
-    tit: 'Analizar táctica sin ser experto',
-    body: 'Fijate en las posiciones de los jugadores en el campo, cómo presionan en defensa, y si hay patrones en el ataque. Con ver 3-4 jugadas repetidas podés sacar buenas conclusiones.'
-  }, {
-    em: '🎙️',
-    tit: 'Tu primera entrevista a un deportista',
-    body: 'Preparate bien las preguntas antes. Hacé preguntas abiertas que empiecen con "¿Cómo...?" o "¿Por qué...?" en lugar de preguntas con respuesta sí/no. Escuchá activamente.'
-  }, {
-    em: '📱',
-    tit: 'Periodismo deportivo en redes',
-    body: 'Instagram y TikTok son tus aliados. Videos cortos de análisis, infografías de estadísticas y hilos de Twitter explicando una jugada pueden hacerte viral. La clave: sé auténtico.'
-  }].map((tip, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "card cp",
-    style: {
-      marginBottom: 10,
-      display: 'flex',
-      gap: 12
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 26,
-      flexShrink: 0
-    }
-  }, tip.em), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 14,
-      fontWeight: 600,
-      marginBottom: 5
-    }
-  }, tip.tit), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--tx2)',
-      lineHeight: 1.6
-    }
-  }, tip.body))))), tab === 'submit' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,#FDF2F8,#FCE7F3)',
-      border: '1.5px solid var(--pink)',
-      borderRadius: 'var(--rl)',
-      padding: '18px',
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 16,
-      fontWeight: 700,
-      color: '#9D174D',
-      marginBottom: 6
-    }
-  }, "\xBFQuer\xE9s publicar en la Revista?"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: 'var(--tx2)',
-      lineHeight: 1.6
-    }
-  }, "Mandanos tu nota, columna de opini\xF3n o cr\xF3nica. Si ten\xE9s entre 10 y 22 a\xF1os y am\xE1s el deporte, este es tu espacio. Revisamos todo antes de publicar para ayudarte a mejorar.")), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-pk",
-    style: {
-      width: '100%',
-      justifyContent: 'center',
-      marginBottom: 16
-    },
-    onClick: () => setShowForm(true)
-  }, /*#__PURE__*/React.createElement(Ic.Pen, {
-    style: {
-      width: 14,
-      height: 14
-    }
-  }), " Mandar mi nota ahora"), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      color: 'var(--tx3)',
-      lineHeight: 1.6,
-      textAlign: 'center'
-    }
-  }, "Tambi\xE9n pod\xE9s mandarnos por DM en Instagram ", /*#__PURE__*/React.createElement("b", null, "@tribunalibrearg"), " o por email a ", /*#__PURE__*/React.createElement("b", null, "revista@tribunalibre.com.ar"))), showForm && /*#__PURE__*/React.createElement("div", {
-    className: "mbg",
-    onClick: () => setShowForm(false)
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl",
-    onClick: e => e.stopPropagation()
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl-h"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "mdl-t",
-    style: {
-      color: '#9D174D'
-    }
-  }, "\u270F\uFE0F Publicar nota"), /*#__PURE__*/React.createElement("button", {
-    className: "cls",
-    onClick: () => setShowForm(false)
-  }, /*#__PURE__*/React.createElement(Ic.X, null))), /*#__PURE__*/React.createElement("form", {
-    onSubmit: submitNota
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Tu nombre o apodo"), /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    value: form.nombre,
-    onChange: e => setForm(f => ({
-      ...f,
-      nombre: e.target.value
-    })),
-    placeholder: "Juan o 'El_Pibe_10'",
-    required: true
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Tu edad"), /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    type: "number",
-    value: form.edad,
-    onChange: e => setForm(f => ({
-      ...f,
-      edad: e.target.value
-    })),
-    placeholder: "15",
-    min: "8",
-    max: "25",
-    required: true
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Deporte o categor\xEDa"), /*#__PURE__*/React.createElement("select", {
-    className: "fi",
-    style: {
-      background: 'var(--cel-xl)'
-    },
-    value: form.cat,
-    onChange: e => setForm(f => ({
-      ...f,
-      cat: e.target.value
-    }))
-  }, ['Fútbol', 'Rugby', 'Tenis', 'Básquet', 'Automovilismo', 'Hockey', 'Boxeo', 'Análisis Táctico', 'Crónica', 'Opinión', 'Historia', 'Otro'].map(s => /*#__PURE__*/React.createElement("option", {
-    key: s
-  }, s)))), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 10
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "T\xEDtulo de tu nota"), /*#__PURE__*/React.createElement("input", {
-    className: "fi",
-    value: form.titulo,
-    onChange: e => setForm(f => ({
-      ...f,
-      titulo: e.target.value
-    })),
-    placeholder: "El t\xEDtulo que m\xE1s te guste",
-    required: true
-  })), /*#__PURE__*/React.createElement("div", {
-    style: {
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("label", {
-    className: "fl"
-  }, "Tu nota"), /*#__PURE__*/React.createElement("textarea", {
-    className: "fi",
-    value: form.texto,
-    onChange: e => setForm(f => ({
-      ...f,
-      texto: e.target.value
-    })),
-    placeholder: "Escrib\xED todo lo que ten\xE9s ganas de contar. M\xEDnimo 3 p\xE1rrafos.",
-    required: true,
-    style: {
-      minHeight: 120,
-      resize: 'vertical',
-      lineHeight: 1.6
-    }
-  })), /*#__PURE__*/React.createElement("button", {
-    type: "submit",
-    className: "btn btn-pk",
-    style: {
-      width: '100%',
-      justifyContent: 'center'
-    }
-  }, "Enviar mi nota \uD83D\uDE80")))));
+  return (
+    <div>
+      <div style={{background:'linear-gradient(135deg,#9D174D,var(--pink))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:16,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:30}}>✏️</span>
+        <div>
+          <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Revista Tribuna Libre</div>
+          <div style={{fontSize:12,opacity:.8}}>El espacio de los jóvenes periodistas deportivos</div>
+        </div>
+        <button className="btn btn-sm" style={{marginLeft:'auto',background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}} onClick={()=>setShowForm(true)}>
+          <Ic.Pen style={{width:12,height:12}}/> Publicar
+        </button>
+      </div>
+      <div className="tabs">
+        {[{id:'notas',l:'📰 Notas'},{id:'opinion',l:'💬 Opinión'},{id:'tips',l:'💡 Tips'},{id:'enviar',l:'✍️ Publicá'}].map(t => (
+          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
+        ))}
+      </div>
+      {(tab==='notas'||tab==='opinion') && (
+        <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr'}}>
+          {REVISTA_ARTICLES.map(a => (
+            <div key={a.id} className="rev-article">
+              <div className="rev-img"><span>{a.emoji}</span></div>
+              <div className="rev-body">
+                <div style={{marginBottom:7}}><span className="badge bp">{a.cat}</span></div>
+                <div className="rev-tit">{a.title}</div>
+                <div className="rev-exc">{a.excerpt}</div>
+                <div className="rev-ft">
+                  <span>{a.author}</span><span>{a.age} años</span>
+                  <span style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:11,height:11}}/>{a.reads}</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab==='tips' && (
+        <div>
+          {[{em:'🎯',t:'Cómo escribir una crónica deportiva',b:'Contá el partido como si lo estuvieras viendo. Describí las emociones, los momentos clave y las jugadas que definieron el resultado.'},
+            {em:'📊',t:'Analizar táctica sin ser experto',b:'Fijate en las posiciones en el campo, cómo presionan en defensa, y si hay patrones en el ataque. Con ver 3-4 jugadas podés sacar conclusiones.'},
+            {em:'🎙️',t:'Tu primera entrevista a un deportista',b:'Prepará las preguntas antes. Hacé preguntas abiertas con "¿Cómo...?" o "¿Por qué...?". Escuchá activamente y no interrumpas.'},
+          ].map((tip,i) => (
+            <div key={i} className="card cp" style={{marginBottom:10,display:'flex',gap:12}}>
+              <span style={{fontSize:24,flexShrink:0}}>{tip.em}</span>
+              <div><div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600,marginBottom:4}}>{tip.t}</div><div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6}}>{tip.b}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+      {tab==='enviar' && (
+        <div>
+          <div style={{background:'linear-gradient(135deg,#FDF2F8,#FCE7F3)',border:'1.5px solid var(--pink)',borderRadius:'var(--rl)',padding:18,marginBottom:16}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'#9D174D',marginBottom:5}}>¿Querés publicar en la Revista?</div>
+            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:12}}>Si tenés entre 10 y 22 años y amás el deporte, este es tu espacio. Mandanos tu nota y te ayudamos a mejorarla.</div>
+            <button className="btn btn-pk" onClick={()=>setShowForm(true)}><Ic.Pen style={{width:13,height:13}}/> Mandar mi nota ahora</button>
+          </div>
+        </div>
+      )}
+      {showForm && (
+        <div className="mbg" onClick={()=>setShowForm(false)}>
+          <div className="mdl" onClick={e=>e.stopPropagation()}>
+            <div className="mdl-h"><div className="mdl-t" style={{color:'#9D174D'}}>✏️ Publicar nota</div><button className="cls" onClick={()=>setShowForm(false)}><Ic.X/></button></div>
+            <form onSubmit={submitNota}>
+              <div style={{marginBottom:10}}><label className="fl">Tu nombre</label><input className="fi" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Juan o 'El_Pibe_10'" required/></div>
+              <div style={{marginBottom:10}}><label className="fl">Tu edad</label><input className="fi" type="number" value={form.edad} onChange={e=>setForm(f=>({...f,edad:e.target.value}))} placeholder="15" min="8" max="25" required/></div>
+              <div style={{marginBottom:10}}><label className="fl">Categoría</label>
+                <select className="fi" style={{background:'var(--cel-xl)'}} value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))}>
+                  {['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Hockey','Opinión','Crónica','Historia'].map(s=><option key={s}>{s}</option>)}
+                </select>
+              </div>
+              <div style={{marginBottom:10}}><label className="fl">Título</label><input className="fi" value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="El título más llamativo" required/></div>
+              <div style={{marginBottom:16}}><label className="fl">Tu nota</label><textarea className="fi" value={form.texto} onChange={e=>setForm(f=>({...f,texto:e.target.value}))} placeholder="Escribí tu nota aquí. Mínimo 3 párrafos." required style={{minHeight:100,resize:'vertical'}}/></div>
+              <button type="submit" className="btn btn-pk" style={{width:'100%',justifyContent:'center'}}>Enviar mi nota 🚀</button>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
-/* ══════ RIGHT SIDEBAR ══════ */
-function RightSidebar({
-  onNav,
-  posts = []
-}) {
-  return /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: 15
+/* ══════ AUTH MODAL ══════ */
+function AuthModal({ onClose, onLogin, addToast }) {
+  const [tab, setTab]     = useState('login');
+  const [email, setEmail] = useState('');
+  const [pass, setPass]   = useState('');
+  const [uname, setUname] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [err, setErr]     = useState('');
+
+  async function handleGoogle() {
+    if (!window.__fbReady) { addToast({msg:'Ingresá con email (Firebase no configurado)',type:'err'}); return; }
+    setLoading(true); setErr('');
+    try {
+      const cred = await window.__fbGoogleSignIn();
+      // Intentar sync con backend, si falla usar datos de Firebase
+      try {
+        const r = await fetch(`${API}/api/auth/firebase-sync`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({uid:cred.user.uid,email:cred.user.email,displayName:cred.user.displayName}) });
+        if (r.ok) { const d=await r.json(); localStorage.setItem('tl_token',d.token); onLogin({...d.user,isGuest:false}); }
+        else throw new Error('sin backend');
+      } catch {
+        onLogin({displayName:cred.user.displayName||'Usuario',email:cred.user.email,rep:0,isGuest:false});
+      }
+      addToast({msg:'¡Bienvenido! 🇦🇷',type:'ok'}); onClose();
+    } catch(e) { setErr(e.message||'Error con Google'); }
+    setLoading(false);
+  }
+
+  async function handleEmail(e) {
+    e.preventDefault(); setLoading(true); setErr('');
+    try {
+      const ep = tab==='login' ? '/api/auth/login' : '/api/auth/register';
+      const body = tab==='login' ? {email,password:pass} : {email,password:pass,username:uname,displayName:uname};
+      const r = await fetch(`${API}${ep}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      const d = await r.json();
+      if (!r.ok) throw new Error(d.error||'Error');
+      localStorage.setItem('tl_token', d.token);
+      onLogin({...d.user,isGuest:false});
+      addToast({msg:`¡Bienvenido${tab==='reg'?' a Tribuna Libre':' de vuelta'}! 🇦🇷`,type:'ok'});
+      onClose();
+    } catch(e) {
+      if (e.message.includes('fetch')||e.message.includes('Failed')||e.message.includes('NetworkError')) {
+        // Sin backend: login local
+        const u = {displayName:uname||email.split('@')[0], email, rep:50, isGuest:false};
+        onLogin(u);
+        addToast({msg:'Sesión local activa (backend offline) ✓',type:'ok'});
+        onClose();
+      } else { setErr(e.message); }
     }
-  }, posts.length > 0 && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "M\xE1s recientes")), /*#__PURE__*/React.createElement("div", {
-    className: "card cs"
-  }, posts.slice(0, 5).map((p, i) => /*#__PURE__*/React.createElement("div", {
-    key: p._id,
-    style: {
-      paddingBottom: 9,
-      marginBottom: 9,
-      borderBottom: '1px solid var(--br)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 6,
-      marginBottom: 3
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontWeight: 700,
-      color: 'var(--tx3)',
-      fontSize: 14,
-      width: 18
-    }
-  }, i + 1), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 12,
-      fontWeight: 500,
-      color: 'var(--tx)',
-      lineHeight: 1.25
-    }
-  }, p.title)), p.meta?.sourceName && /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 10,
-      color: 'var(--tx3)',
-      paddingLeft: 24
-    }
-  }, "\uD83D\uDCE1 ", p.meta.sourceName))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Secciones")), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'grid',
-      gap: 7
-    }
-  }, [{
-    id: 'prode',
-    em: '🏆',
-    l: 'El Prode',
-    c: 'var(--sun)',
-    bg: '#FFFBEB'
-  }, {
-    id: 'copa',
-    em: '🌎',
-    l: 'Copa del Mundo',
-    c: 'var(--cel-d)',
-    bg: 'var(--cel-xl)'
-  }, {
-    id: 'copa',
-    em: '🏆',
-    l: 'Libertadores',
-    c: '#1E8449',
-    bg: 'rgba(39,174,96,.08)'
-  }, {
-    id: 'revista',
-    em: '✏️',
-    l: 'Revista Juvenil',
-    c: '#9D174D',
-    bg: '#FDF2F8'
-  }].map((s, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    onClick: () => onNav(s.id),
-    style: {
-      background: s.bg,
-      border: `1px solid ${s.c}22`,
-      borderRadius: 'var(--rs)',
-      padding: '9px 12px',
-      cursor: 'pointer',
-      display: 'flex',
-      alignItems: 'center',
-      gap: 8,
-      transition: '.15s'
-    },
-    onMouseEnter: e => e.currentTarget.style.borderColor = s.c,
-    onMouseLeave: e => e.currentTarget.style.borderColor = s.c + '22'
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 16
-    }
-  }, s.em), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      fontWeight: 600,
-      color: s.c
-    }
-  }, s.l))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "El VAR")), /*#__PURE__*/React.createElement("div", {
-    className: "card cp"
-  }, /*#__PURE__*/React.createElement(Poll, {
-    poll: STATIC_POLLS[0]
-  }))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st",
-    style: {
-      color: 'var(--red)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ldot"
-  }), "En Vivo")), STATIC_LIVE.filter(e => e.live).map(e => /*#__PURE__*/React.createElement("div", {
-    key: e.id,
-    className: "card cs",
-    style: {
-      marginBottom: 7,
-      cursor: 'pointer'
-    },
-    onClick: () => {}
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 9,
-      fontWeight: 700,
-      color: 'var(--red)',
-      marginBottom: 4,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 4
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 5,
-      height: 5,
-      borderRadius: '50%',
-      background: 'var(--red)',
-      animation: 'pulse 1.4s infinite'
-    }
-  }), "EN VIVO \xB7 ", e.min), /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'space-between'
-    }
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      fontWeight: 500
-    }
-  }, e.sp, " ", e.h), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 16,
-      fontWeight: 700,
-      color: 'var(--red)'
-    }
-  }, e.sh, "-", e.sa), /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 12,
-      fontWeight: 500
-    }
-  }, e.a))))), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Trending")), /*#__PURE__*/React.createElement("div", {
-    className: "card cs"
-  }, ['#Superclásico2025', '#LosPumas', '#Colapinto2025', '#LigaProfesional', '#Copa26'].map((tag, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "tri"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `trnum${i < 2 ? ' hot' : ''}`
-  }, "#", i + 1), /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "trn"
-  }, tag, i < 2 && ' 🔥'), /*#__PURE__*/React.createElement("div", {
-    className: "trc"
-  }, Math.round((7000 - i * 800) / 100) * 100, " posts")))))));
+    setLoading(false);
+  }
+
+  return (
+    <div className="mbg" onClick={onClose}>
+      <div className="mdl" onClick={e=>e.stopPropagation()}>
+        <div className="mdl-h">
+          <div className="mdl-t" style={{display:'flex',alignItems:'center',gap:9}}>
+            <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png"
+              style={{height:34,width:34,borderRadius:'50%',border:'2px solid var(--cel)',objectFit:'cover'}}
+              onError={e=>e.target.style.display='none'} alt="Logo"/>
+            <span>Tribuna <span style={{color:'var(--cel)'}}>Libre</span></span>
+          </div>
+          <button className="cls" onClick={onClose}><Ic.X/></button>
+        </div>
+        <div className="auth-tabs">
+          <div className={`atab${tab==='login'?' on':''}`} onClick={()=>{setTab('login');setErr('');}}>Ingresar</div>
+          <div className={`atab${tab==='reg'?' on':''}`} onClick={()=>{setTab('reg');setErr('');}}>Registrarse</div>
+        </div>
+        {err && <div className="err-msg">⚠️ {err}</div>}
+        <button className="soc-btn" onClick={handleGoogle} disabled={loading}><span style={{fontSize:18}}>🔵</span> Continuar con Google</button>
+        <div className="or-div">o con tu correo</div>
+        <form onSubmit={handleEmail}>
+          {tab==='reg' && (
+            <div style={{marginBottom:10}}>
+              <label className="fl">Usuario</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" value={uname} onChange={e=>setUname(e.target.value)} placeholder="mi_usuario" required style={{paddingLeft:34}}/>
+                <Ic.Lock style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
+            </div>
+          )}
+          <div style={{marginBottom:10}}>
+            <label className="fl">Email</label>
+            <div style={{position:'relative'}}>
+              <input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vos@correo.com" required style={{paddingLeft:34}}/>
+              <Ic.Mail style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+            </div>
+          </div>
+          <div style={{marginBottom:16}}>
+            <label className="fl">Contraseña</label>
+            <div style={{position:'relative'}}>
+              <input className="fi" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required style={{paddingLeft:34}}/>
+              <Ic.Lock style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-c" style={{width:'100%',justifyContent:'center'}} disabled={loading}>
+            {loading ? 'Un momento...' : (tab==='login'?'Ingresar':'Crear cuenta gratis')}
+          </button>
+        </form>
+        <div className="divhr"/>
+        <button onClick={()=>{onLogin({displayName:'Invitado',rep:0,isGuest:true});addToast({msg:'Entraste como invitado 👋',type:'ok'});onClose();}}
+          className="btn btn-o" style={{width:'100%',justifyContent:'center',fontSize:12}}>Entrar como invitado</button>
+      </div>
+    </div>
+  );
 }
 
 /* ══════ LOGO ══════ */
-function Logo({
-  onClick
-}) {
+function Logo({ onClick }) {
   const [failed, setFailed] = useState(false);
-  return /*#__PURE__*/React.createElement("div", {
-    className: "logo-w",
-    onClick: onClick
-  }, !failed ? /*#__PURE__*/React.createElement("img", {
-    className: "logo-img",
-    src: "https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png",
-    alt: "Tribuna Libre",
-    onError: () => setFailed(true)
-  }) : /*#__PURE__*/React.createElement("div", {
-    className: "logo-fb"
-  }, "TL"), /*#__PURE__*/React.createElement("div", {
-    className: "logo-txt"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "logo-main"
-  }, "Tribuna Libre"), /*#__PURE__*/React.createElement("div", {
-    className: "logo-sub"
-  }, "Red de Periodismo ", /*#__PURE__*/React.createElement("b", null, "Deportivo"))));
+  return (
+    <div className="logo-w" onClick={onClick}>
+      {!failed ? (
+        <img className="logo-img" src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png" alt="Logo" onError={()=>setFailed(true)}/>
+      ) : (
+        <div className="logo-fb">TL</div>
+      )}
+      <div className="logo-txt">
+        <div className="logo-main">Tribuna Libre</div>
+        <div className="logo-sub">Red de Periodismo <b>Deportivo</b></div>
+      </div>
+    </div>
+  );
 }
 
-/* ══════ APP ══════ */
-const NAV = [{
-  id: 'home',
-  l: 'Inicio',
-  icon: 'Home'
-}, {
-  id: 'news',
-  l: 'Noticias',
-  icon: 'News'
-}, {
-  id: 'prode',
-  l: 'El Prode',
-  icon: 'Prode'
-}, {
-  id: 'copa',
-  l: 'Copas',
-  icon: 'Copa'
-}, {
-  id: 'revista',
-  l: 'Revista Juvenil',
-  icon: 'Revista'
-}, {
-  id: 'live',
-  l: 'En Vivo',
-  icon: 'Live'
-}, {
-  id: 'forum',
-  l: 'Debates',
-  icon: 'Forum'
-}, {
-  id: 'profile',
-  l: 'Mi perfil',
-  icon: 'Profile'
-}];
-const MOBILE_NAV = [{
-  id: 'home',
-  l: 'Inicio',
-  icon: 'Home'
-}, {
-  id: 'news',
-  l: 'Noticias',
-  icon: 'News'
-}, {
-  id: 'prode',
-  l: 'Prode',
-  icon: 'Prode'
-}, {
-  id: 'revista',
-  l: 'Revista',
-  icon: 'Revista'
-}, {
-  id: 'profile',
-  l: 'Perfil',
-  icon: 'Profile'
-}];
-function App() {
-  const [page, setPage] = useState('home');
-  const [article, setArticle] = useState(null);
-  const [user, setUser] = useState({
-    isGuest: true
-  });
-  const [authOpen, setAuthOpen] = useState(false);
-  const {
-    toasts,
-    add: addToast
-  } = useToasts();
-  const {
-    posts
-  } = useNews(1, '', '');
+/* ══════ RIGHT SIDEBAR ══════ */
+function RightSidebar({ onNav, posts=[] }) {
+  return (
+    <div style={{display:'flex',flexDirection:'column',gap:15}}>
+      {posts.length>0 && (
+        <div>
+          <div className="sh"><div className="st">Más recientes</div></div>
+          <div className="card cs">
+            {posts.slice(0,5).map((p,i) => (
+              <div key={p._id} style={{paddingBottom:9,marginBottom:9,borderBottom:'1px solid var(--br)'}}>
+                <div style={{display:'flex',gap:6,marginBottom:3}}>
+                  <span style={{fontFamily:'var(--fd)',fontWeight:700,color:'var(--tx3)',fontSize:13,width:18}}>{i+1}</span>
+                  <div style={{fontSize:12,fontWeight:500,color:'var(--tx)',lineHeight:1.25}}>{p.title}</div>
+                </div>
+                {p.meta?.sourceName && <div style={{fontSize:10,color:'var(--tx3)',paddingLeft:24}}>📡 {p.meta.sourceName}</div>}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      <div>
+        <div className="sh"><div className="st">Secciones</div></div>
+        <div style={{display:'grid',gap:6}}>
+          {[{id:'comunidad',em:'👥',l:'Comunidad',c:'var(--cel-d)',bg:'var(--cel-xl)'},
+            {id:'streaming',em:'📡',l:'Streaming',c:'var(--red)',bg:'rgba(192,57,43,.07)'},
+            {id:'prode',em:'🏆',l:'El Prode',c:'#B7770D',bg:'#FFFBEB'},
+            {id:'copa',em:'🌎',l:'Copa del Mundo',c:'var(--cel-d)',bg:'var(--cel-xl)'},
+            {id:'revista',em:'✏️',l:'Revista Juvenil',c:'#9D174D',bg:'#FDF2F8'},
+          ].map((s,i) => (
+            <div key={i} onClick={()=>onNav(s.id)}
+              style={{background:s.bg,border:`1px solid ${s.c}22`,borderRadius:'var(--rs)',padding:'8px 11px',cursor:'pointer',display:'flex',alignItems:'center',gap:8,transition:'.15s'}}
+              onMouseEnter={e=>e.currentTarget.style.borderColor=s.c}
+              onMouseLeave={e=>e.currentTarget.style.borderColor=s.c+'22'}>
+              <span style={{fontSize:14}}>{s.em}</span>
+              <span style={{fontSize:12,fontWeight:600,color:s.c}}>{s.l}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+      <div>
+        <div className="sh"><div className="st">El VAR</div></div>
+        <div className="card cp"><Poll poll={STATIC_POLLS[0]}/></div>
+      </div>
+      <div>
+        <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div></div>
+        {STATIC_LIVE.filter(e=>e.live).map(e => (
+          <div key={e.id} className="card cs" style={{marginBottom:7,cursor:'pointer'}} onClick={()=>onNav('live')}>
+            <div style={{fontSize:9,fontWeight:700,color:'var(--red)',marginBottom:4,display:'flex',alignItems:'center',gap:4}}>
+              <div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',animation:'pulse 1.4s infinite'}}/>EN VIVO · {e.min}
+            </div>
+            <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span style={{fontSize:12,fontWeight:500}}>{e.sp} {e.h}</span>
+              <span style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'var(--red)'}}>{e.sh}-{e.sa}</span>
+              <span style={{fontSize:12,fontWeight:500}}>{e.a}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+      <div>
+        <div className="sh"><div className="st">Trending</div></div>
+        <div className="card cs">
+          {['#Superclásico2025','#LosPumas','#Colapinto2025','#LigaProfesional','#Copa26'].map((tag,i) => (
+            <div key={i} className="tri">
+              <div className={`trnum${i<2?' hot':''}`}>#{i+1}</div>
+              <div><div className="trn">{tag}{i<2&&' 🔥'}</div><div className="trc">{Math.round((7000-i*800)/100)*100} posts</div></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
-  // Restaurar sesión
+/* ══════════════════════════ NAV CONFIG ══════════════════════════ */
+// FIX: Agregadas las secciones faltantes (comunidad y streaming)
+const NAV = [
+  {id:'home',      l:'Inicio',         icon:'Home'},
+  {id:'news',      l:'Noticias',       icon:'News'},
+  {id:'comunidad', l:'Comunidad',      icon:'Com'},    // ← NUEVA
+  {id:'streaming', l:'Streaming',      icon:'Stream'}, // ← NUEVA
+  {id:'prode',     l:'El Prode',       icon:'Prode'},
+  {id:'copa',      l:'Copas',          icon:'Copa'},
+  {id:'revista',   l:'Revista Juvenil',icon:'Rev'},
+  {id:'live',      l:'En Vivo',        icon:'Live'},
+  {id:'forum',     l:'Debates',        icon:'Forum'},
+  {id:'profile',   l:'Mi perfil',      icon:'Profile'},
+];
+const MOBILE_NAV = [
+  {id:'home',      l:'Inicio',    icon:'Home'},
+  {id:'news',      l:'Noticias',  icon:'News'},
+  {id:'comunidad', l:'Comunidad', icon:'Com'},    // ← NUEVA
+  {id:'streaming', l:'Streaming', icon:'Stream'}, // ← NUEVA
+  {id:'profile',   l:'Perfil',    icon:'Profile'},
+];
+
+/* ══════════════════════════ APP ══════════════════════════ */
+function App() {
+  const [page, setPage]     = useState('home');
+  const [article, setArticle] = useState(null);
+  const [user, setUser]     = useState({ isGuest: true });
+  const [authOpen, setAuthOpen] = useState(false);
+  const { toasts, add: addToast } = useToasts();
+  const { posts } = useNews(1,'','');
+
+  // Restaurar sesión JWT
   useEffect(() => {
     const token = localStorage.getItem('tl_token');
     if (!token) return;
-    fetch(`${API}/api/auth/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`
-      }
-    }).then(r => r.ok ? r.json() : null).then(d => {
-      if (d?.user) setUser({
-        ...d.user,
-        isGuest: false
-      });
-    }).catch(() => localStorage.removeItem('tl_token'));
+    fetch(`${API}/api/auth/me`, { headers:{ Authorization:`Bearer ${token}` } })
+      .then(r => r.ok ? r.json() : null)
+      .then(d => { if (d?.user) setUser({...d.user, isGuest:false}); })
+      .catch(() => localStorage.removeItem('tl_token'));
   }, []);
-  function nav(p) {
-    setPage(p);
-    setArticle(null);
-    window.scrollTo(0, 0);
-  }
-  function openArticle(p) {
-    setArticle(p);
-    setPage('article');
-    window.scrollTo(0, 0);
-  }
+
+  function nav(p) { setPage(p); setArticle(null); window.scrollTo(0,0); }
+  function openArticle(p) { setArticle(p); setPage('article'); window.scrollTo(0,0); }
   function logout() {
     localStorage.removeItem('tl_token');
-    if (window.__fbSignOut) window.__fbSignOut().catch(() => {});
-    setUser({
-      isGuest: true
-    });
-    addToast({
-      msg: 'Sesión cerrada',
-      type: 'ok'
-    });
+    if (window.__fbSignOut) window.__fbSignOut().catch(()=>{});
+    setUser({ isGuest: true });
+    addToast({ msg:'Sesión cerrada', type:'ok' });
     nav('home');
   }
-  return /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "toasts"
-  }, toasts.map(t => /*#__PURE__*/React.createElement("div", {
-    key: t.id,
-    className: `toast ${t.type}`
-  }, /*#__PURE__*/React.createElement("span", null, t.type === 'ok' ? '✅' : '⚠️'), t.msg))), /*#__PURE__*/React.createElement("div", {
-    className: "flag-stripe"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "hdr"
-  }, /*#__PURE__*/React.createElement(Logo, {
-    onClick: () => nav('home')
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ticker"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "tk-tr"
-  }, [...TICKER_D, ...TICKER_D].map((t, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "tk-it"
-  }, /*#__PURE__*/React.createElement("b", null, t.l), t.t)))), /*#__PURE__*/React.createElement("div", {
-    className: "hdr-r"
-  }, user.isGuest ? /*#__PURE__*/React.createElement("button", {
-    className: "sign-btn",
-    onClick: () => setAuthOpen(true)
-  }, "Ingresar / Registrarse") : /*#__PURE__*/React.createElement("div", {
-    className: "usr-btn",
-    onClick: () => nav('profile')
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "usr-av",
-    style: {
-      background: 'var(--cel)'
-    }
-  }, (user.displayName || user.username || 'U')[0].toUpperCase()), /*#__PURE__*/React.createElement("span", {
-    className: "usr-nm"
-  }, user.displayName || user.username)))), /*#__PURE__*/React.createElement("div", {
-    className: "shell"
-  }, /*#__PURE__*/React.createElement("nav", {
-    className: "lnav"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "nl-live",
-    onClick: () => nav('live')
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ldot"
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "nl-live-t"
-  }, "EN VIVO"), /*#__PURE__*/React.createElement("span", {
-    className: "nl-live-c"
-  }, "3")), /*#__PURE__*/React.createElement("div", {
-    className: "ng"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "nlbl"
-  }, "Navegaci\xF3n"), NAV.map(n => {
-    const Icon = Ic[n.icon];
-    return /*#__PURE__*/React.createElement("div", {
-      key: n.id,
-      className: `nl${page === n.id || page === 'article' && n.id === 'news' ? ' on' : ''}`,
-      onClick: () => nav(n.id)
-    }, /*#__PURE__*/React.createElement(Icon, null), /*#__PURE__*/React.createElement("span", null, n.l), n.id === 'prode' && /*#__PURE__*/React.createElement("span", {
-      className: "nl-badge",
-      style: {
-        background: 'var(--sun)'
-      }
-    }, "!"), n.id === 'live' && /*#__PURE__*/React.createElement("span", {
-      className: "nl-badge"
-    }, "3"));
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "nav-hr"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ng"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "nlbl"
-  }, "Equipos"), [['🔴', 'River Plate'], ['🔵', 'Boca Juniors'], ['⚡', 'Racing Club'], ['🏉', 'Los Pumas']].map(([em, nm], i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "nl"
-  }, /*#__PURE__*/React.createElement("span", {
-    style: {
-      fontSize: 14,
-      width: 20,
-      textAlign: 'center'
-    }
-  }, em), nm))), !user.isGuest && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    className: "nav-hr"
-  }), /*#__PURE__*/React.createElement("div", {
-    className: "ng"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "nl",
-    onClick: logout,
-    style: {
-      color: 'var(--red)'
-    }
-  }, /*#__PURE__*/React.createElement(Ic.X, {
-    style: {
-      width: 13,
-      height: 13
-    }
-  }), /*#__PURE__*/React.createElement("span", null, "Cerrar sesi\xF3n"))))), /*#__PURE__*/React.createElement("main", {
-    className: "main"
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      maxWidth: 760,
-      margin: '0 auto'
-    }
-  }, page === 'home' && /*#__PURE__*/React.createElement(HomePage, {
-    onArticle: openArticle,
-    onNav: nav
-  }), page === 'news' && /*#__PURE__*/React.createElement(NewsPage, {
-    onArticle: openArticle
-  }), page === 'article' && article && /*#__PURE__*/React.createElement(ArticlePage, {
-    post: article,
-    onBack: () => nav('news'),
-    user: user,
-    addToast: addToast
-  }), page === 'prode' && /*#__PURE__*/React.createElement(ProdePage, {
-    user: user,
-    addToast: addToast
-  }), page === 'copa' && /*#__PURE__*/React.createElement(CopaPage, null), page === 'revista' && /*#__PURE__*/React.createElement(RevistaPage, {
-    user: user,
-    addToast: addToast
-  }), page === 'live' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st",
-    style: {
-      color: 'var(--red)'
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ldot"
-  }), "En Vivo")), /*#__PURE__*/React.createElement("div", {
-    className: "lstrip"
-  }, STATIC_LIVE.map(e => /*#__PURE__*/React.createElement("div", {
-    key: e.id,
-    className: `lmc${e.live ? ' lv' : ''}`
-  }, /*#__PURE__*/React.createElement("div", {
-    className: `lms${e.live ? ' lv' : ''}`
-  }, e.live && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 5,
-      height: 5,
-      borderRadius: '50%',
-      background: 'var(--red)',
-      animation: 'pulse 1.4s infinite',
-      display: 'inline-block',
-      marginRight: 3
-    }
-  }), "EN VIVO \xB7 "), e.min), /*#__PURE__*/React.createElement("div", {
-    className: "lmt"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "ltm"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lem"
-  }, e.sp), /*#__PURE__*/React.createElement("div", {
-    className: "lnm"
-  }, e.h)), e.sh !== '' ? /*#__PURE__*/React.createElement("div", {
-    className: `lsc${e.live ? ' lv' : ''}`
-  }, e.sh, "-", e.sa) : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 10,
-      color: 'var(--tx3)',
-      textAlign: 'center'
-    }
-  }, "vs"), /*#__PURE__*/React.createElement("div", {
-    className: "ltm"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "lem"
-  }, e.sp), /*#__PURE__*/React.createElement("div", {
-    className: "lnm"
-  }, e.a)))))), /*#__PURE__*/React.createElement("div", {
-    className: "card cp"
-  }, /*#__PURE__*/React.createElement(Poll, {
-    poll: STATIC_POLLS[0]
-  }))), page === 'forum' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    className: "sh"
-  }, /*#__PURE__*/React.createElement("div", {
-    className: "st"
-  }, "Debates")), STATIC_POLLS.map(p => /*#__PURE__*/React.createElement("div", {
-    key: p.id,
-    className: "card cp",
-    style: {
-      marginBottom: 12
-    }
-  }, /*#__PURE__*/React.createElement(Poll, {
-    poll: p
-  })))), page === 'profile' && /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("div", {
-    style: {
-      background: 'linear-gradient(135deg,var(--cel-d),var(--cel))',
-      borderRadius: 'var(--rl)',
-      padding: 24,
-      textAlign: 'center',
-      marginBottom: 16
-    }
-  }, /*#__PURE__*/React.createElement("div", {
-    style: {
-      width: 70,
-      height: 70,
-      borderRadius: '50%',
-      background: 'rgba(255,255,255,.2)',
-      margin: '0 auto 12px',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      fontFamily: 'var(--fd)',
-      fontSize: 28,
-      fontWeight: 700,
-      color: 'white',
-      border: '2.5px solid rgba(255,255,255,.4)'
-    }
-  }, user.isGuest ? '?' : (user.displayName || user.username || 'U')[0].toUpperCase()), /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontFamily: 'var(--fd)',
-      fontSize: 22,
-      fontWeight: 700,
-      color: 'white',
-      marginBottom: 5
-    }
-  }, user.isGuest ? 'Invitado' : user.displayName || user.username), user.isGuest ? /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-sm",
-    style: {
-      background: 'rgba(255,255,255,.2)',
-      border: '1.5px solid rgba(255,255,255,.5)',
-      color: 'white',
-      borderRadius: 30
-    },
-    onClick: () => setAuthOpen(true)
-  }, "Crear cuenta gratis") : /*#__PURE__*/React.createElement("div", {
-    style: {
-      fontSize: 13,
-      color: 'rgba(255,255,255,.75)'
-    }
-  }, user.email)), !user.isGuest && /*#__PURE__*/React.createElement("div", {
-    style: {
-      display: 'flex',
-      gap: 8,
-      marginBottom: 14
-    }
-  }, /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-o btn-sm",
-    style: {
-      flex: 1,
-      justifyContent: 'center'
-    }
-  }, "Editar perfil"), /*#__PURE__*/React.createElement("button", {
-    className: "btn btn-red btn-sm",
-    style: {
-      flex: 1,
-      justifyContent: 'center'
-    },
-    onClick: logout
-  }, "Cerrar sesi\xF3n"))))), /*#__PURE__*/React.createElement("aside", {
-    className: "rsb"
-  }, /*#__PURE__*/React.createElement(RightSidebar, {
-    onNav: nav,
-    posts: posts
-  }))), /*#__PURE__*/React.createElement("div", {
-    className: "bnav"
-  }, MOBILE_NAV.map(n => {
-    const Icon = Ic[n.icon];
-    return /*#__PURE__*/React.createElement("div", {
-      key: n.id,
-      className: `bni${page === n.id ? ' on' : ''}`,
-      onClick: () => nav(n.id)
-    }, /*#__PURE__*/React.createElement(Icon, null), /*#__PURE__*/React.createElement("span", null, n.l));
-  })), authOpen && /*#__PURE__*/React.createElement(AuthModal, {
-    onClose: () => setAuthOpen(false),
-    onLogin: setUser,
-    addToast: addToast
-  }));
-}
-ReactDOM.createRoot(document.getElementById('root')).render(/*#__PURE__*/React.createElement(App, null));
 
+  return (
+    <>
+      {/* TOASTS */}
+      <div className="toasts">
+        {toasts.map(t => <div key={t.id} className={`toast ${t.type}`}><span>{t.type==='ok'?'✅':'⚠️'}</span>{t.msg}</div>)}
+      </div>
+
+      {/* FLAG STRIPE */}
+      <div className="flag-stripe"/>
+
+      {/* TOPBAR */}
+      <div className="hdr">
+        <Logo onClick={()=>nav('home')}/>
+        <div className="ticker">
+          <div className="tk-tr">
+            {[...TICKER_D,...TICKER_D].map((t,i) => <div key={i} className="tk-it"><b>{t.l}</b>{t.t}</div>)}
+          </div>
+        </div>
+        <div className="hdr-r">
+          {user.isGuest ? (
+            <button className="sign-btn" onClick={()=>setAuthOpen(true)}>Ingresar / Registrarse</button>
+          ) : (
+            <div className="usr-btn" onClick={()=>nav('profile')}>
+              <div className="usr-av">{(user.displayName||user.username||'U')[0].toUpperCase()}</div>
+              <span className="usr-nm">{user.displayName||user.username}</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="shell">
+        {/* LEFT NAV */}
+        <nav className="lnav">
+          <div className="nl-live" onClick={()=>nav('live')}>
+            <div className="ldot"/><span className="nl-live-t">EN VIVO</span><span className="nl-live-c">3</span>
+          </div>
+          <div className="ng">
+            <span className="nlbl">Navegación</span>
+            {NAV.map(n => {
+              const Icon = Ic[n.icon];
+              return (
+                <div key={n.id} className={`nl${page===n.id||(page==='article'&&n.id==='news')?' on':''}`} onClick={()=>nav(n.id)}>
+                  <Icon/><span>{n.l}</span>
+                  {n.id==='prode'     && <span className="nl-badge" style={{background:'var(--sun)'}}>!</span>}
+                  {n.id==='live'      && <span className="nl-badge">3</span>}
+                  {n.id==='comunidad' && <span className="nl-badge" style={{background:'var(--cel-d)'}}>●</span>}
+                  {n.id==='streaming' && <span className="nl-badge" style={{background:'var(--red)'}}>▶</span>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="nav-hr"/>
+          <div className="ng">
+            <span className="nlbl">Equipos</span>
+            {[['🔴','River Plate'],['🔵','Boca Juniors'],['⚡','Racing Club'],['🏉','Los Pumas']].map(([em,nm],i) => (
+              <div key={i} className="nl"><span style={{fontSize:14,width:20,textAlign:'center'}}>{em}</span>{nm}</div>
+            ))}
+          </div>
+          {!user.isGuest && (
+            <><div className="nav-hr"/>
+            <div className="ng">
+              <div className="nl" onClick={logout} style={{color:'var(--red)'}}><Ic.X style={{width:13,height:13}}/><span>Cerrar sesión</span></div>
+            </div></>
+          )}
+        </nav>
+
+        {/* MAIN CONTENT — FIX: Routing completo con todas las secciones */}
+        <main className="main">
+          <div style={{maxWidth:760,margin:'0 auto'}}>
+            {page==='home'      && <HomePage onArticle={openArticle} onNav={nav}/>}
+            {page==='news'      && <NewsPage onArticle={openArticle}/>}
+            {page==='article'   && article && <ArticlePage post={article} onBack={()=>nav('news')} user={user} addToast={addToast}/>}
+            {page==='comunidad' && <ComunidadPage user={user} addToast={addToast} onNav={nav}/>}
+            {page==='streaming' && <StreamingPage addToast={addToast}/>}
+            {page==='prode'     && <ProdePage user={user} addToast={addToast}/>}
+            {page==='copa'      && <CopaPage/>}
+            {page==='revista'   && <RevistaPage user={user} addToast={addToast}/>}
+            {page==='live'      && (
+              <div>
+                <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div></div>
+                <LiveStrip onNav={nav}/>
+                <div className="card cp" style={{marginTop:14}}><Poll poll={STATIC_POLLS[0]}/></div>
+              </div>
+            )}
+            {page==='forum' && (
+              <div>
+                <div className="sh"><div className="st">Debates</div></div>
+                {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
+              </div>
+            )}
+            {page==='profile' && (
+              <div>
+                <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',borderRadius:'var(--rl)',padding:24,textAlign:'center',marginBottom:16}}>
+                  <div style={{width:70,height:70,borderRadius:'50%',background:'rgba(255,255,255,.2)',margin:'0 auto 12px',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:28,fontWeight:700,color:'white',border:'2.5px solid rgba(255,255,255,.4)'}}>
+                    {user.isGuest ? '?' : (user.displayName||user.username||'U')[0].toUpperCase()}
+                  </div>
+                  <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,color:'white',marginBottom:5}}>{user.isGuest?'Invitado':(user.displayName||user.username)}</div>
+                  {user.isGuest ? (
+                    <button className="btn btn-sm" style={{background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.5)',color:'white',borderRadius:30}} onClick={()=>setAuthOpen(true)}>Crear cuenta gratis</button>
+                  ) : (
+                    <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>{user.email}</div>
+                  )}
+                </div>
+                {!user.isGuest && (
+                  <div style={{display:'flex',gap:8,marginBottom:14}}>
+                    <button className="btn btn-o btn-sm" style={{flex:1,justifyContent:'center'}}>Editar perfil</button>
+                    <button className="btn btn-red btn-sm" style={{flex:1,justifyContent:'center'}} onClick={logout}>Cerrar sesión</button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </main>
+
+        <aside className="rsb"><RightSidebar onNav={nav} posts={posts}/></aside>
+      </div>
+
+      {/* MOBILE BOTTOM NAV */}
+      <div className="bnav">
+        {MOBILE_NAV.map(n => {
+          const Icon = Ic[n.icon];
+          return (
+            <div key={n.id} className={`bni${page===n.id?' on':''}`} onClick={()=>nav(n.id)}>
+              <Icon/><span>{n.l}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onLogin={setUser} addToast={addToast}/>}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
