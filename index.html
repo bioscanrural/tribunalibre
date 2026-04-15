@@ -2,1185 +2,1225 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Tribuna Libre · Periodismo Deportivo Argentina</title>
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&family=Merriweather:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
-
-<!-- ═══ REACT + BABEL ══════════════════════════════════ -->
-<!-- FIX: tags de cierre dobles corregidos, CDN confiable -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js" crossorigin></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js" crossorigin></script>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Tribuna Libre · Red de Periodismo Deportivo Argentina</title>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&family=Merriweather:ital,wght@0,400;0,700;1,400&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
-<!-- ═══ FIREBASE — CARGA SEGURA ═══════════════════════
-  PARA GITHUB PAGES: agregá tu dominio en Firebase Console:
-  Authentication → Settings → Authorized domains
-  → Agregar: TUUSUARIO.github.io
-  Si no tenés Firebase, dejalo así y usa login con email local.
-════════════════════════════════════════════════════════ -->
-<script>
-// Stubs por defecto — nunca tiran error aunque Firebase falle
-window.__fbReady        = false;
-window.__fbSignIn       = function(){ return Promise.reject(new Error('Autenticando...')); };
-window.__fbRegister     = window.__fbSignIn;
-window.__fbGoogleSignIn = window.__fbSignIn;
-window.__fbSignOut      = function(){ return Promise.resolve(); };
-window.__fbOnAuthChange = function(cb){ /* no-op */ };
-
-// FIX: Firebase se carga de forma completamente segura
-// Si falla (dominio no autorizado, sin internet, etc.) la app sigue funcionando
-(function loadFirebase() {
-  // ── REEMPLAZÁ ESTOS VALORES CON LOS DE TU PROYECTO FIREBASE ──
-  var FB_CONFIG = {
-    apiKey:            "AIzaSyBSGW1Fw2ZwAz8GEXmhGu9nqt8hiCgzkd8",
-    authDomain:        "tribunalibre.firebaseapp.com",
-    projectId:         "tribunalibre",
-    storageBucket:     "tribunalibre.firebasestorage.app",
-    messagingSenderId: "502168463964",
-    appId:             "1:502168463964:web:47ccf03ee592035bcd5499"
-  };
-  // ─────────────────────────────────────────────────────────────
-
-  function initFb() {
-    try {
-      if (typeof firebase === 'undefined') { return; }
-      if (!firebase.apps.length) firebase.initializeApp(FB_CONFIG);
-      var auth = firebase.auth();
-      var gp   = new firebase.auth.GoogleAuthProvider();
-      window.__fbAuth         = auth;
-      window.__fbReady        = true;
-      window.__fbSignIn       = function(e,p){ return auth.signInWithEmailAndPassword(e,p); };
-      window.__fbRegister     = function(e,p){ return auth.createUserWithEmailAndPassword(e,p); };
-      window.__fbSignOut      = function(){    return auth.signOut(); };
-      window.__fbGoogleSignIn = function(){    return auth.signInWithPopup(gp); };
-      window.__fbOnAuthChange = function(cb){  return auth.onAuthStateChanged(cb); };
-      console.info('Firebase listo ✓');
-    } catch(e) {
-      console.warn('Firebase no disponible (no crítico):', e.message);
-    }
-  }
-
-  var s1 = document.createElement('script');
-  s1.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js';
-  s1.onload = function() {
-    var s2 = document.createElement('script');
-    s2.src = 'https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js';
-    s2.onload = initFb;
-    s2.onerror = function(){ console.warn('firebase-auth no cargó'); };
-    document.head.appendChild(s2);
-  };
-  s1.onerror = function(){ console.warn('firebase-app no cargó'); };
-  document.head.appendChild(s1);
-})();
-</script>
-
-<script>
-// ═══ API URL ═══════════════════════════════════════════
-// FIX: Para GitHub Pages, cambiá esto por tu backend en Railway/Render
-// Si no tenés backend, la app usa datos de ejemplo automáticamente
-// LOCAL:      http://localhost:3000
-// PRODUCCIÓN: https://tu-proyecto.railway.app  ← CAMBIAR
-window.API_URL = 'http://localhost:3000';
-// ═══════════════════════════════════════════════════════
-</script>
-
 <style>
-:root{
-  --cel:#4A90D9;--cel-d:#2E6FB5;--cel-l:#74ACDF;
-  --cel-xl:#E8F4FF;--bg:#F0F7FF;--white:#FFFFFF;
-  --red:#C0392B;--sun:#F6B40E;--green:#27AE60;
-  --purple:#8B5CF6;--pink:#EC4899;--teal:#0891B2;
-  --tx:#1A2744;--tx2:#4A5568;--tx3:#9FAEC0;
-  --br:rgba(74,144,217,.18);--brm:rgba(74,144,217,.32);
-  --sh:0 4px 20px rgba(74,144,217,.14);
-  --sh2:0 8px 36px rgba(74,144,217,.22);
-  --r:11px;--rs:7px;--rl:17px;
-  --fd:'Oswald',sans-serif;--fw:'DM Sans',sans-serif;
-  --h:60px;
+/* ══════════════════════════════════════════
+   ARGENTINA PALETTE
+══════════════════════════════════════════ */
+:root {
+  --cel:    #4A90D9;
+  --cel-d:  #2E6FB5;
+  --cel-l:  #74ACDF;
+  --cel-xl: #D6EAFA;
+  --cel-bg: #F0F7FF;
+  --white:  #FFFFFF;
+  --sun:    #F6B40E;
+  --red:    #C0392B;
+  --tx:     #1A2744;
+  --tx2:    #4A5568;
+  --tx3:    #9FAEC0;
+  --bg:     #F0F7FF;
+  --card:   #FFFFFF;
+  --card2:  #F8FBFF;
+  --br:     rgba(74,144,217,.18);
+  --brm:    rgba(74,144,217,.32);
+  --sh:     0 4px 24px rgba(74,144,217,.15);
+  --sh2:    0 8px 40px rgba(74,144,217,.22);
+  --r:      12px;
+  --rs:     8px;
+  --rl:     18px;
+  --fw:     'DM Sans', sans-serif;
+  --fd:     'Oswald', sans-serif;
+  --fs:     'Merriweather', serif;
+  --h:      62px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased}
-h1,h2,h3{font-family:var(--fd)}
-button{cursor:pointer;border:none;outline:none;font-family:var(--fw)}
-input,textarea,select{outline:none;font-family:var(--fw);color:var(--tx)}
-img{max-width:100%;height:auto;display:block}
-::-webkit-scrollbar{width:3px;height:3px}
-::-webkit-scrollbar-thumb{background:var(--cel-l);border-radius:3px}
-::selection{background:var(--cel);color:#fff}
 
-/* LAYOUT */
-.flag-stripe{height:5px;background:linear-gradient(90deg,var(--cel) 33%,var(--white) 33%,var(--white) 66%,var(--cel) 66%);position:fixed;top:0;left:0;right:0;z-index:400}
-.hdr{position:fixed;top:5px;left:0;right:0;height:var(--h);background:var(--white);border-bottom:2px solid var(--cel);display:flex;align-items:center;padding:0 14px;gap:10px;z-index:300;box-shadow:var(--sh)}
-.logo-w{display:flex;align-items:center;gap:9px;cursor:pointer;flex-shrink:0;user-select:none}
-.logo-img{height:42px;width:42px;border-radius:50%;border:2px solid var(--cel);object-fit:cover;background:var(--cel-xl);flex-shrink:0}
-.logo-fb{height:42px;width:42px;border-radius:50%;border:2px solid var(--cel);background:var(--cel);display:flex;align-items:center;justify-content:center;font-family:var(--fd);font-size:16px;font-weight:700;color:white;flex-shrink:0}
-.logo-txt{display:flex;flex-direction:column;line-height:1.1}
-.logo-main{font-family:var(--fd);font-size:19px;font-weight:700;color:var(--cel-d);letter-spacing:1px}
-.logo-sub{font-size:10px;color:var(--tx3)}
-.logo-sub b{color:var(--cel)}
-.ticker{flex:1;overflow:hidden;border-left:3px solid var(--cel);padding-left:8px;min-width:0;display:none}
-@media(min-width:600px){.ticker{display:block}}
-.tk-tr{display:flex;gap:28px;animation:tick 32s linear infinite;white-space:nowrap}
-@keyframes tick{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
-.tk-it{font-size:11px;color:var(--tx2);flex-shrink:0}
-.tk-it b{color:var(--cel-d);font-size:9px;background:var(--cel-xl);padding:1px 5px;border-radius:3px;margin-right:4px}
-.hdr-r{display:flex;align-items:center;gap:7px;flex-shrink:0}
-.sign-btn{padding:6px 14px;border-radius:30px;background:var(--cel);color:white;font-size:12px;font-weight:600;border:2px solid var(--cel);transition:.15s}
-.sign-btn:hover{background:var(--cel-d)}
-.usr-btn{display:flex;align-items:center;gap:6px;padding:4px 10px 4px 4px;border-radius:30px;background:var(--cel-xl);border:1.5px solid var(--cel);cursor:pointer;transition:.15s}
-.usr-btn:hover{background:var(--cel)}
-.usr-av{width:26px;height:26px;border-radius:50%;background:var(--cel);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:10px;color:white;font-family:var(--fd);flex-shrink:0}
-.usr-nm{font-size:11px;font-weight:600;color:var(--cel-d)}
-.usr-btn:hover .usr-nm{color:white}
-.shell{display:flex;margin-top:calc(var(--h)+5px);min-height:calc(100vh - var(--h) - 5px)}
-.lnav{width:200px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;scrollbar-width:none;background:var(--white);border-right:1px solid var(--br);padding:10px 0;display:none;flex-direction:column}
-@media(min-width:860px){.lnav{display:flex}}
-.ng{padding:0 8px;margin-bottom:5px}
-.nlbl{font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:1.8px;text-transform:uppercase;padding:0 6px;margin-bottom:3px;display:block}
-.nl{display:flex;align-items:center;gap:7px;padding:7px 8px;border-radius:var(--rs);cursor:pointer;color:var(--tx2);font-size:12.5px;font-weight:500;transition:.15s;margin-bottom:1px}
-.nl:hover{background:var(--cel-xl);color:var(--cel-d)}
-.nl.on{background:var(--cel);color:white}
-.nl svg{width:14px;height:14px;flex-shrink:0}
-.nl-badge{margin-left:auto;background:var(--red);color:white;font-size:9px;border-radius:10px;padding:1px 5px;font-weight:700}
-.nav-hr{height:1px;background:var(--br);margin:6px 10px}
-.nl-live{display:flex;align-items:center;gap:6px;margin:4px 8px 7px;padding:7px 9px;background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:var(--rs);cursor:pointer}
-.ldot{width:6px;height:6px;border-radius:50%;background:var(--red);animation:pulse 1.4s infinite;flex-shrink:0}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.35;transform:scale(1.5)}}
-.nl-live-t{font-size:11px;font-weight:700;color:var(--red);font-family:var(--fd);letter-spacing:.5px}
-.nl-live-c{font-size:10px;color:rgba(192,57,43,.5);margin-left:auto}
-.main{flex:1;min-width:0;padding:18px 14px}
-@media(min-width:860px){.main{padding:22px 20px}}
-.rsb{width:280px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;padding:16px 13px;border-left:1px solid var(--br);background:var(--white);display:none;scrollbar-width:none}
-@media(min-width:1200px){.rsb{display:block}}
-.bnav{position:fixed;bottom:0;left:0;right:0;height:54px;background:var(--white);border-top:2px solid var(--cel);display:flex;align-items:center;z-index:300}
-.bni{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:5px 2px;cursor:pointer;color:var(--tx3);transition:.15s}
-.bni.on{color:var(--cel-d)}
-.bni svg{width:17px;height:17px}
-.bni span{font-size:9px;font-weight:600;font-family:var(--fd);letter-spacing:.3px}
-@media(min-width:860px){.bnav{display:none}}
-@media(max-width:859px){body{padding-bottom:54px}}
+/* ══════════════════════════════════════════
+   BASE
+══════════════════════════════════════════ */
+* { box-sizing: border-box; margin: 0; padding: 0 }
+html, body {
+  background: var(--bg); color: var(--tx);
+  font-family: var(--fw); min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+h1,h2,h3,h4 { font-family: var(--fd); }
+button { cursor: pointer; border: none; outline: none; font-family: var(--fw); }
+input, textarea, select { outline: none; font-family: var(--fw); }
+a { color: inherit; text-decoration: none; }
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: var(--cel-l); border-radius: 4px; }
+::selection { background: var(--cel); color: #fff; }
+img { max-width: 100%; height: auto; }
 
-/* ATOMS */
-.card{background:var(--white);border-radius:var(--r);border:1px solid var(--br)}
-.cp{padding:15px}.cs{padding:11px}
-.sh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.st{font-family:var(--fd);font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:1.2px;display:flex;align-items:center;gap:7px;color:var(--tx)}
-.st::before{content:'';width:3px;height:13px;background:var(--cel);border-radius:2px;display:inline-block}
-.sl{font-size:11px;color:var(--cel);cursor:pointer;font-weight:600}
-.sl:hover{color:var(--cel-d);text-decoration:underline}
-.badge{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:9px;font-weight:700;font-family:var(--fd);letter-spacing:.8px;text-transform:uppercase}
-.bc{background:var(--cel-xl);color:var(--cel-d);border:1px solid var(--br)}
-.br-b{background:rgba(192,57,43,.1);color:#B03020;border:1px solid rgba(192,57,43,.2)}
-.bg-b{background:rgba(39,174,96,.12);color:#1E8449;border:1px solid rgba(39,174,96,.25)}
-.bv-b{background:rgba(139,92,246,.1);color:#6D28D9;border:1px solid rgba(139,92,246,.2)}
-.bs{background:rgba(246,180,14,.12);color:#B7770D;border:1px solid rgba(246,180,14,.25)}
-.bp{background:rgba(236,72,153,.12);color:#9D174D;border:1px solid rgba(236,72,153,.25)}
-.btn{padding:7px 16px;border-radius:30px;font-size:12px;font-weight:600;transition:.15s;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.btn-c{background:var(--cel);color:white;border:2px solid var(--cel)}
-.btn-c:hover{background:var(--cel-d)}
-.btn-o{background:transparent;border:2px solid var(--cel);color:var(--cel-d)}
-.btn-o:hover{background:var(--cel-xl)}
-.btn-red{background:var(--red);color:white;border:2px solid var(--red)}
-.btn-g{background:var(--green);color:white;border:2px solid var(--green)}
-.btn-pk{background:var(--pink);color:white;border:2px solid var(--pink)}
-.btn-s{background:var(--sun);color:white;border:2px solid var(--sun)}
-.btn-t{background:var(--teal);color:white;border:2px solid var(--teal)}
-.btn-sm{padding:5px 11px;font-size:11px}
-.fi{width:100%;background:var(--cel-xl);border:1.5px solid var(--br);border-radius:var(--rs);padding:9px 12px;font-size:13px;color:var(--tx);transition:.15s}
-.fi:focus{border-color:var(--cel)}
-.fi::placeholder{color:var(--tx3)}
-.fl{display:block;font-size:10px;font-weight:700;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase;margin-bottom:5px}
-.divhr{height:1px;background:var(--br);margin:12px 0}
-.toasts{position:fixed;top:calc(var(--h)+12px);right:13px;z-index:600;display:flex;flex-direction:column;gap:6px;pointer-events:none}
-.toast{background:var(--white);border:1.5px solid var(--br);border-radius:var(--r);padding:9px 13px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;box-shadow:var(--sh2);animation:tin .3s;min-width:190px;pointer-events:all}
-.toast.ok{border-color:rgba(39,174,96,.5)}.toast.err{border-color:rgba(192,57,43,.5)}
-@keyframes tin{from{transform:translateX(50px);opacity:0}to{transform:translateX(0);opacity:1}}
-.mbg{position:fixed;inset:0;background:rgba(26,39,68,.65);z-index:500;display:flex;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(8px)}
-.mdl{background:var(--white);border-radius:var(--rl);border:2px solid var(--cel);padding:22px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:var(--sh2)}
-.mdl-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
-.mdl-t{font-family:var(--fd);font-size:19px;font-weight:600}
-.cls{width:26px;height:26px;border-radius:50%;background:var(--cel-xl);display:flex;align-items:center;justify-content:center;color:var(--cel-d);cursor:pointer;border:none}
-.cls:hover{background:var(--cel);color:white}
-.cls svg{width:13px;height:13px}
-.err-msg{background:rgba(192,57,43,.08);border:1px solid rgba(192,57,43,.2);border-radius:var(--rs);padding:8px 12px;font-size:12px;color:#B03020;margin-bottom:12px}
+/* ══════════════════════════════════════════
+   FLAG STRIPE — decorative top bar
+══════════════════════════════════════════ */
+.flag-stripe {
+  height: 6px;
+  background: linear-gradient(90deg, var(--cel) 33.33%, var(--white) 33.33%, var(--white) 66.66%, var(--cel) 66.66%);
+  flex-shrink: 0;
+}
 
-/* NEWS */
-.nc{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.18s;display:flex;flex-direction:column}
-.nc:hover{border-color:var(--cel);transform:translateY(-2px);box-shadow:var(--sh2)}
-.nc-img{overflow:hidden;position:relative;background:var(--cel-xl)}
-.nc-img.big{height:170px}.nc-img.sm{height:120px}
-.nc-img img{width:100%;height:100%;object-fit:cover;transition:transform .3s}
-.nc:hover .nc-img img{transform:scale(1.04)}
-.nc-em{display:flex;align-items:center;justify-content:center;font-size:48px;width:100%;height:100%}
-.nc-cat{position:absolute;top:8px;left:8px}
-.nc-body{padding:12px;flex:1;display:flex;flex-direction:column}
-.nc-tit{font-family:var(--fd);font-size:14px;font-weight:500;line-height:1.25;margin-bottom:5px;color:var(--tx)}
-.nc-exc{font-size:11px;color:var(--tx2);line-height:1.55;margin-bottom:8px;flex:1}
-.nc-ft{display:flex;align-items:center;justify-content:space-between;font-size:10px;color:var(--tx3);padding-top:8px;border-top:1px solid var(--br);margin-top:auto}
-.nc-ac{display:flex;gap:8px}
-.abt{display:flex;align-items:center;gap:3px;font-size:10px;color:var(--tx2);background:none;transition:.15s;padding:0}
-.abt:hover,.abt.lk{color:var(--cel-d)}
-.abt svg{width:11px;height:11px}
-.ng-grid{display:grid;gap:12px;grid-template-columns:1fr}
-@media(min-width:540px){.ng-grid{grid-template-columns:1fr 1fr}}
-@media(min-width:1400px){.ng-grid{grid-template-columns:1fr 1fr 1fr}}
-.sk{background:linear-gradient(90deg,var(--cel-xl) 25%,rgba(74,144,217,.1) 50%,var(--cel-xl) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:var(--rs)}
-@keyframes shimmer{0%{background-position:200%}100%{background-position:-200%}}
+/* ══════════════════════════════════════════
+   HEADER / TOPBAR
+══════════════════════════════════════════ */
+.hdr {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 300;
+}
+.hdr-inner {
+  height: var(--h); background: var(--white);
+  border-bottom: 2px solid var(--cel);
+  display: flex; align-items: center; padding: 0 16px;
+  gap: 12px; box-shadow: var(--sh);
+}
+.logo-wrap {
+  display: flex; align-items: center; gap: 10px;
+  cursor: pointer; flex-shrink: 0; text-decoration: none;
+}
+.logo-img {
+  height: 44px; width: 44px; border-radius: 50%;
+  border: 2px solid var(--cel); object-fit: cover;
+  background: var(--cel-bg);
+  flex-shrink: 0;
+}
+.logo-fallback {
+  height: 44px; width: 44px; border-radius: 50%;
+  border: 2px solid var(--cel); background: var(--cel);
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; overflow: hidden; position: relative;
+}
+.logo-flag-strip {
+  position: absolute; left: 0; right: 0;
+  top: 0; bottom: 0; display: flex; flex-direction: column;
+}
+.lfs-c { flex: 1; background: var(--cel); }
+.lfs-w { flex: 1; background: var(--white); }
+.lfs-c2 { flex: 1; background: var(--cel); }
+.logo-tl {
+  position: relative; z-index: 1;
+  font-family: var(--fd); font-size: 16px; font-weight: 700;
+  color: var(--cel); background: rgba(255,255,255,.85);
+  border-radius: 4px; padding: 1px 5px; letter-spacing: 1px;
+}
+.logo-text { display: flex; flex-direction: column; line-height: 1.1; }
+.logo-main {
+  font-family: var(--fd); font-size: 20px; font-weight: 700;
+  color: var(--cel-d); letter-spacing: 1px; line-height: 1;
+}
+.logo-sub {
+  font-size: 10px; font-weight: 500; color: var(--tx2);
+  letter-spacing: .5px;
+}
+.logo-arg { color: var(--cel); font-weight: 700; }
 
-/* LIVE */
-.lstrip{display:flex;gap:9px;overflow-x:auto;margin-bottom:18px;padding-bottom:3px;scrollbar-width:none}
-.lmc{background:var(--white);border:1.5px solid var(--br);border-radius:var(--r);padding:10px 13px;cursor:pointer;flex-shrink:0;min-width:160px;transition:.15s}
-.lmc:hover{border-color:var(--cel);box-shadow:var(--sh)}
-.lmc.lv{border-color:rgba(192,57,43,.3);background:rgba(192,57,43,.04)}
-.lms{display:flex;align-items:center;gap:4px;font-size:9px;font-weight:700;color:var(--tx3);margin-bottom:7px}
-.lms.lv{color:var(--red)}
-.lmt{display:flex;align-items:center;justify-content:space-between;gap:7px}
-.ltm{text-align:center;flex:1}
-.lem{font-size:20px;display:block;margin-bottom:2px}
-.lnm{font-size:10px;color:var(--tx2);font-weight:500}
-.lsc{font-family:var(--fd);font-size:24px;font-weight:700;color:var(--tx);min-width:42px;text-align:center}
-.lsc.lv{color:var(--red)}
+/* Ticker */
+.ticker {
+  flex: 1; overflow: hidden; min-width: 0;
+  border-left: 3px solid var(--cel); padding-left: 10px;
+}
+.ticker-tr {
+  display: flex; gap: 32px;
+  animation: ticker 35s linear infinite; white-space: nowrap;
+}
+@keyframes ticker {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.tk { font-size: 12px; color: var(--tx2); flex-shrink: 0; }
+.tk b { color: var(--cel-d); font-size: 10px; font-weight: 700;
+  background: var(--cel-xl); padding: 1px 5px; border-radius: 3px; margin-right: 5px; }
 
-/* POLL */
-.poll-q{font-family:var(--fd);font-size:14px;font-weight:500;margin-bottom:10px;color:var(--tx);line-height:1.3}
-.po{background:var(--cel-xl);border-radius:var(--rs);padding:9px 12px;margin-bottom:6px;cursor:pointer;border:1.5px solid var(--br);position:relative;overflow:hidden;transition:.15s}
-.po:hover{border-color:var(--cel)}
-.po.voted{border-color:var(--cel-d)}
-.po-bar{position:absolute;left:0;top:0;bottom:0;background:rgba(74,144,217,.2);transition:width .7s}
-.po-row{position:relative;display:flex;justify-content:space-between;align-items:center;font-size:12px;font-weight:500;color:var(--tx)}
-.po-pct{font-weight:700;font-size:11px;color:var(--tx3)}
-.po-pct.win{color:var(--cel-d)}
-.po-meta{font-size:10px;color:var(--tx3);margin-top:6px}
+/* Header actions */
+.hdr-r {
+  display: flex; align-items: center; gap: 8px; flex-shrink: 0;
+}
+.hib {
+  width: 32px; height: 32px; border-radius: var(--rs);
+  background: transparent; color: var(--tx2);
+  display: flex; align-items: center; justify-content: center;
+  transition: .15s; position: relative;
+  border: 1px solid transparent;
+}
+.hib:hover { background: var(--cel-xl); color: var(--cel-d); border-color: var(--br); }
+.hib svg { width: 17px; height: 17px; }
+.ndot {
+  position: absolute; top: 4px; right: 4px;
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--red); border: 2px solid var(--white);
+}
+.usr-btn {
+  display: flex; align-items: center; gap: 7px;
+  padding: 5px 12px 5px 5px; border-radius: 30px;
+  background: var(--cel-xl); border: 1.5px solid var(--cel);
+  cursor: pointer; transition: .15s;
+}
+.usr-btn:hover { background: var(--cel); color: white; }
+.usr-btn:hover .usr-nm { color: white; }
+.usr-av {
+  width: 28px; height: 28px; border-radius: 50%;
+  background: var(--cel); display: flex; align-items: center;
+  justify-content: center; font-weight: 700; font-size: 11px;
+  color: white; font-family: var(--fd); letter-spacing: .5px; flex-shrink: 0;
+}
+.usr-nm { font-size: 12px; font-weight: 600; color: var(--cel-d); }
+.sign-btn {
+  padding: 7px 16px; border-radius: 30px;
+  background: var(--cel); color: white; font-size: 12px; font-weight: 600;
+  transition: .15s; border: 2px solid var(--cel);
+}
+.sign-btn:hover { background: var(--cel-d); border-color: var(--cel-d); }
 
-/* TABS */
-.tabs{display:flex;gap:3px;background:var(--cel-xl);border-radius:var(--r);padding:3px;margin-bottom:14px;overflow-x:auto;scrollbar-width:none}
-.tabx{flex-shrink:0;padding:6px 12px;text-align:center;border-radius:var(--rs);font-size:11px;font-weight:700;font-family:var(--fd);cursor:pointer;color:var(--tx2);transition:.15s;white-space:nowrap}
-.tabx.on{background:var(--cel);color:white}
+/* ══════════════════════════════════════════
+   SHELL LAYOUT
+══════════════════════════════════════════ */
+.shell {
+  display: flex; margin-top: calc(var(--h) + 6px);
+  min-height: calc(100vh - var(--h) - 6px);
+}
+/* Left nav */
+.lnav {
+  width: 210px; flex-shrink: 0;
+  position: sticky; top: calc(var(--h) + 6px);
+  height: calc(100vh - var(--h) - 6px);
+  overflow-y: auto; scrollbar-width: none;
+  background: var(--white); border-right: 1px solid var(--br);
+  padding: 14px 0; display: none; flex-direction: column;
+}
+@media(min-width: 900px) { .lnav { display: flex; } }
+.nav-sec { padding: 0 10px; margin-bottom: 6px; }
+.nav-lbl {
+  font-size: 9px; font-weight: 700; color: var(--tx3);
+  letter-spacing: 1.8px; text-transform: uppercase;
+  padding: 0 7px; margin-bottom: 4px; display: block;
+}
+.nl {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 9px; border-radius: var(--rs);
+  cursor: pointer; color: var(--tx2); font-size: 13px;
+  font-weight: 500; transition: .15s; margin-bottom: 2px;
+}
+.nl:hover { background: var(--cel-xl); color: var(--cel-d); }
+.nl.on { background: var(--cel); color: white; box-shadow: 0 3px 10px rgba(74,144,217,.35); }
+.nl svg { width: 15px; height: 15px; flex-shrink: 0; }
+.nl-badge {
+  margin-left: auto; background: var(--red); color: white;
+  font-size: 9px; font-weight: 700; border-radius: 10px; padding: 1px 6px;
+}
+.nl-live {
+  display: flex; align-items: center; gap: 6px;
+  margin: 6px 10px 8px; padding: 8px 10px;
+  background: rgba(192,57,43,.08); border: 1px solid rgba(192,57,43,.2);
+  border-radius: var(--rs); cursor: pointer; transition: .15s;
+}
+.nl-live:hover { border-color: rgba(192,57,43,.4); }
+.ldot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); animation: pulse 1.4s infinite; flex-shrink: 0; }
+@keyframes pulse { 0%,100% { opacity: 1; transform: scale(1); } 50% { opacity: .35; transform: scale(1.5); } }
+.nl-live-txt { font-size: 11px; font-weight: 700; color: var(--red); font-family: var(--fd); letter-spacing: .5px; }
+.nl-live-ct { font-size: 10px; color: rgba(192,57,43,.5); margin-left: auto; }
+.nav-hr { height: 1px; background: var(--br); margin: 8px 12px; }
+.team-row {
+  display: flex; align-items: center; gap: 7px;
+  padding: 6px 9px; border-radius: var(--rs);
+  cursor: pointer; transition: .15s; margin-bottom: 1px;
+}
+.team-row:hover { background: var(--cel-xl); }
+.team-em { font-size: 14px; width: 22px; text-align: center; }
+.team-nm { font-size: 12px; font-weight: 500; color: var(--tx2); }
+.team-nm small { display: block; font-size: 10px; color: var(--tx3); font-weight: 400; }
 
-/* AUTH */
-.auth-tabs{display:flex;background:var(--cel-xl);border-radius:var(--r);padding:3px;margin-bottom:16px}
-.atab{flex:1;padding:7px;text-align:center;border-radius:var(--rs);font-size:12px;font-weight:700;cursor:pointer;color:var(--tx2);transition:.15s;font-family:var(--fd)}
-.atab.on{background:var(--cel);color:white}
-.soc-btn{width:100%;padding:10px;border-radius:var(--rs);border:1.5px solid var(--br);background:var(--cel-xl);color:var(--tx);display:flex;align-items:center;justify-content:center;gap:9px;font-size:13px;font-weight:500;margin-bottom:8px;transition:.15s;cursor:pointer}
-.soc-btn:hover{border-color:var(--cel)}
-.or-div{display:flex;align-items:center;gap:10px;margin:12px 0;color:var(--tx3);font-size:11px}
-.or-div::before,.or-div::after{content:'';flex:1;height:1px;background:var(--br)}
+/* MAIN */
+.main { flex: 1; min-width: 0; padding: 20px 16px; }
+@media(min-width: 900px) { .main { padding: 24px 22px; } }
 
-/* PRODE */
-.prode-match{background:var(--white);border:1.5px solid var(--br);border-radius:var(--r);padding:13px;margin-bottom:10px;transition:.15s}
-.prode-match:hover{border-color:var(--cel);box-shadow:var(--sh)}
-.prode-match.locked{background:var(--cel-xl)}
-.prode-teams{display:flex;align-items:center;gap:8px;margin-bottom:10px}
-.prode-team{flex:1;text-align:center}
-.prode-em{font-size:26px;display:block;margin-bottom:3px}
-.prode-nm{font-size:12px;font-weight:600;color:var(--tx)}
-.prode-vs{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--tx3);flex-shrink:0}
-.prode-pickers{display:flex;gap:6px}
-.prode-btn{flex:1;padding:8px 4px;border-radius:var(--rs);font-size:11px;font-weight:700;font-family:var(--fd);cursor:pointer;border:1.5px solid var(--br);background:var(--white);color:var(--tx2);transition:.15s;text-align:center}
-.prode-btn:hover{border-color:var(--cel);background:var(--cel-xl)}
-.prode-btn.sel-h{background:var(--cel);border-color:var(--cel);color:white}
-.prode-btn.sel-e{background:var(--sun);border-color:var(--sun);color:white}
-.prode-btn.sel-a{background:var(--red);border-color:var(--red);color:white}
+/* RIGHT SIDEBAR */
+.rsb {
+  width: 295px; flex-shrink: 0;
+  position: sticky; top: calc(var(--h) + 6px);
+  height: calc(100vh - var(--h) - 6px);
+  overflow-y: auto; padding: 18px 14px;
+  border-left: 1px solid var(--br);
+  background: var(--white); display: none;
+  scrollbar-width: none;
+}
+@media(min-width: 1200px) { .rsb { display: block; } }
 
-/* REVISTA */
-.rev-article{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.2s;display:flex;flex-direction:column}
-.rev-article:hover{border-color:var(--pink);transform:translateY(-2px);box-shadow:0 8px 30px rgba(236,72,153,.15)}
-.rev-img{height:140px;background:linear-gradient(135deg,#FDF2F8,#FCE7F3);display:flex;align-items:center;justify-content:center;font-size:52px}
-.rev-body{padding:13px;flex:1;display:flex;flex-direction:column}
-.rev-tit{font-family:var(--fd);font-size:14px;font-weight:600;line-height:1.25;margin-bottom:5px;color:var(--tx)}
-.rev-exc{font-size:11px;color:var(--tx2);line-height:1.55;flex:1;margin-bottom:9px}
-.rev-ft{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--tx3);flex-wrap:wrap}
+/* MOBILE NAV */
+.bnav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 56px;
+  background: var(--white); border-top: 2px solid var(--cel);
+  display: flex; align-items: center; z-index: 300;
+  box-shadow: 0 -4px 20px rgba(74,144,217,.12);
+}
+.bni {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  gap: 2px; padding: 6px 2px; cursor: pointer;
+  color: var(--tx3); transition: .15s;
+}
+.bni.on { color: var(--cel-d); }
+.bni.on svg { filter: drop-shadow(0 0 3px rgba(74,144,217,.5)); }
+.bni svg { width: 18px; height: 18px; }
+.bni span { font-size: 9px; font-weight: 600; font-family: var(--fd); letter-spacing: .3px; }
+@media(min-width: 900px) { .bnav { display: none; } }
+@media(max-width: 899px) { body { padding-bottom: 56px; } }
 
-/* COMUNIDAD */
-.post-card{background:var(--white);border-radius:var(--r);border:1px solid var(--br);padding:14px;margin-bottom:10px;transition:.15s}
-.post-card:hover{border-color:var(--cel);box-shadow:var(--sh)}
-.post-av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;color:white;font-family:var(--fd);flex-shrink:0}
-.post-user{font-weight:700;font-size:13px;color:var(--tx)}
-.post-time{font-size:10px;color:var(--tx3)}
-.post-body{font-size:14px;line-height:1.6;color:var(--tx2);margin:10px 0}
-.post-actions{display:flex;gap:12px;padding-top:10px;border-top:1px solid var(--br)}
-.thread-card{background:var(--white);border-radius:var(--r);border:1px solid var(--br);padding:13px;margin-bottom:9px;cursor:pointer;transition:.15s}
-.thread-card:hover{border-color:var(--cel);transform:translateX(3px)}
-.thread-tit{font-family:var(--fd);font-size:15px;font-weight:500;margin-bottom:5px;line-height:1.25;color:var(--tx)}
-.thread-mt{display:flex;gap:10px;font-size:10px;color:var(--tx3)}
+/* ══════════════════════════════════════════
+   ATOMS
+══════════════════════════════════════════ */
+.card { background: var(--card); border-radius: var(--r); border: 1px solid var(--br); }
+.cp { padding: 16px; } .cs { padding: 12px; }
+.sh { display: flex; align-items: center; justify-content: space-between; margin-bottom: 13px; }
+.st {
+  font-family: var(--fd); font-size: 14px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  display: flex; align-items: center; gap: 8px; color: var(--tx);
+}
+.st::before {
+  content: ''; width: 4px; height: 16px; background: var(--cel);
+  border-radius: 2px; display: inline-block;
+}
+.sl { font-size: 11px; color: var(--cel); cursor: pointer; font-weight: 600; transition: .15s; }
+.sl:hover { color: var(--cel-d); text-decoration: underline; }
 
-/* STREAMING */
-.stream-hero{border-radius:var(--rl);overflow:hidden;margin-bottom:18px;border:2px solid var(--cel);box-shadow:var(--sh);transition:.2s;cursor:pointer;position:relative}
-.stream-hero:hover{box-shadow:var(--sh2)}
-.stream-hero img{width:100%;display:block;max-height:260px;object-fit:cover}
-.stream-hero-ov{position:absolute;inset:0;background:linear-gradient(transparent 40%,rgba(26,39,68,.92));display:flex;flex-direction:column;justify-content:flex-end;padding:20px}
-.play-circle{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.15);backdrop-filter:blur(8px);border:2px solid rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;margin-bottom:12px;transition:.15s}
-.stream-hero:hover .play-circle{background:var(--cel);border-color:white}
-.sc{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.2s}
-.sc:hover{border-color:var(--cel);box-shadow:var(--sh);transform:translateY(-2px)}
-.sc-thumb{height:130px;background:linear-gradient(135deg,var(--cel-xl),#D6EAF8);display:flex;align-items:center;justify-content:center;font-size:44px;position:relative}
-.live-tag{position:absolute;top:8px;left:8px;background:var(--red);color:white;font-size:9px;font-weight:700;padding:3px 8px;border-radius:20px;font-family:var(--fd);letter-spacing:.8px;display:flex;align-items:center;gap:4px}
-.sc-body{padding:11px 13px}
-.sc-tit{font-family:var(--fd);font-size:14px;font-weight:500;margin-bottom:4px;line-height:1.2;color:var(--tx)}
-.sc-info{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:6px}
+.badge {
+  display: inline-flex; align-items: center; gap: 3px;
+  padding: 2px 8px; border-radius: 20px; font-size: 9px;
+  font-weight: 700; font-family: var(--fd); letter-spacing: .8px; text-transform: uppercase;
+}
+.bc { background: var(--cel-xl); color: var(--cel-d); border: 1px solid var(--br); }
+.br-badge { background: rgba(192,57,43,.1); color: #B03020; border: 1px solid rgba(192,57,43,.2); }
+.bg-badge { background: rgba(22,163,74,.1); color: #15803D; border: 1px solid rgba(22,163,74,.2); }
+.bp-badge { background: rgba(246,180,14,.12); color: #B45309; border: 1px solid rgba(246,180,14,.25); }
+.bpur { background: rgba(99,102,241,.1); color: #4F46E5; border: 1px solid rgba(99,102,241,.2); }
+.banon { background: rgba(148,163,184,.12); color: #475569; border: 1px solid rgba(148,163,184,.25); }
 
-/* CHAT EN VIVO */
-.chat-wrap{border-radius:var(--r);border:1px solid var(--br);overflow:hidden;background:var(--white)}
-.chat-hd{padding:10px 14px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px;background:var(--cel-xl)}
-.chat-bd{height:200px;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:5px}
-.cmsg{padding:6px 10px;border-radius:8px;max-width:80%;font-size:12px;line-height:1.4}
-.cmsg.own{background:var(--cel);color:white;margin-left:auto;border-bottom-right-radius:3px}
-.cmsg.other{background:var(--cel-xl);border-bottom-left-radius:3px}
-.cmsg-u{font-size:9px;font-weight:700;opacity:.65;margin-bottom:2px;color:var(--tx2)}
-.chat-inp{padding:8px;border-top:1px solid var(--br);display:flex;gap:7px;background:var(--cel-xl)}
-.chat-txt{flex:1;background:var(--white);border:1.5px solid var(--br);border-radius:30px;padding:7px 12px;font-size:12px;color:var(--tx)}
-.chat-txt:focus{border-color:var(--cel)}
-.chat-snd{background:var(--cel);border-radius:30px;padding:7px 12px;color:white;display:flex;align-items:center;transition:.15s;border:none;cursor:pointer}
-.chat-snd:hover{background:var(--cel-d)}
+.btn {
+  padding: 8px 18px; border-radius: 30px; font-size: 12px; font-weight: 600;
+  transition: .15s; cursor: pointer; display: inline-flex; align-items: center; gap: 7px;
+}
+.btn-c { background: var(--cel); color: white; border: 2px solid var(--cel); }
+.btn-c:hover { background: var(--cel-d); border-color: var(--cel-d); box-shadow: 0 4px 14px rgba(74,144,217,.4); }
+.btn-out { background: transparent; border: 2px solid var(--cel); color: var(--cel-d); }
+.btn-out:hover { background: var(--cel-xl); }
+.btn-red { background: var(--red); color: white; border: 2px solid var(--red); }
+.btn-red:hover { background: #A93226; }
+.btn-sun { background: var(--sun); color: white; border: 2px solid var(--sun); }
+.btn-sm { padding: 5px 12px; font-size: 11px; }
 
-/* TRENDING */
-.tri{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid var(--br);cursor:pointer}
-.tri:last-child{border-bottom:none}
-.trnum{font-family:var(--fd);font-size:16px;font-weight:700;color:var(--tx3);width:20px;flex-shrink:0}
-.trnum.hot{color:var(--cel)}
-.trn{font-size:12px;font-weight:500;color:var(--tx)}
-.trc{font-size:10px;color:var(--tx3);margin-top:1px}
+.fi {
+  width: 100%; background: var(--card2); border: 1.5px solid var(--br);
+  border-radius: var(--rs); padding: 9px 12px; font-size: 13px; color: var(--tx);
+  transition: .15s;
+}
+.fi:focus { border-color: var(--cel); box-shadow: 0 0 0 3px rgba(74,144,217,.1); }
+.fi::placeholder { color: var(--tx3); }
+.fl { display: block; font-size: 10px; font-weight: 700; color: var(--tx3); letter-spacing: .8px; text-transform: uppercase; margin-bottom: 5px; }
 
-/* FIXTURE */
-.group-hd{background:linear-gradient(135deg,var(--cel-d),var(--cel));color:white;border-radius:var(--rs);padding:7px 12px;margin-bottom:7px;font-family:var(--fd);font-size:12px;font-weight:600;letter-spacing:.5px}
-.group-table{width:100%;border-collapse:collapse;font-size:11px;margin-bottom:12px}
-.group-table th{background:var(--cel-xl);padding:6px 8px;text-align:left;font-size:9px;font-weight:700;color:var(--tx3);letter-spacing:.8px;text-transform:uppercase}
-.group-table td{padding:7px 8px;border-bottom:1px solid var(--br)}
-.group-table tr:last-child td{border-bottom:none}
-.group-table tr:hover td{background:var(--cel-xl)}
+.divhr { height: 1px; background: var(--br); margin: 14px 0; }
+
+/* Toast */
+.toasts { position: fixed; top: calc(var(--h) + 14px); right: 14px; z-index: 600; display: flex; flex-direction: column; gap: 7px; }
+.toast {
+  background: var(--white); border: 1.5px solid var(--br); border-radius: var(--r);
+  padding: 10px 14px; font-size: 12px; font-weight: 600; color: var(--tx);
+  display: flex; align-items: center; gap: 8px;
+  box-shadow: var(--sh2); animation: tin .3s ease; min-width: 200px;
+}
+.toast.ok { border-color: rgba(22,163,74,.4); }
+.toast.err { border-color: rgba(192,57,43,.4); }
+@keyframes tin { from { transform: translateX(50px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+/* Modal */
+.mbg {
+  position: fixed; inset: 0; background: rgba(26,39,68,.6); z-index: 500;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+  backdrop-filter: blur(8px);
+}
+.mdl {
+  background: var(--white); border-radius: var(--rl);
+  border: 2px solid var(--cel); padding: 24px; width: 100%;
+  max-width: 440px; max-height: 88vh; overflow-y: auto;
+  box-shadow: var(--sh2);
+}
+.mdl-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.mdl-t { font-family: var(--fd); font-size: 20px; font-weight: 600; color: var(--tx); }
+.cls { width: 28px; height: 28px; border-radius: 50%; background: var(--cel-xl); display: flex; align-items: center; justify-content: center; color: var(--cel-d); transition: .15s; }
+.cls:hover { background: var(--cel); color: white; }
+.cls svg { width: 14px; height: 14px; }
+
+/* ══════════════════════════════════════════
+   NEWS CARDS
+══════════════════════════════════════════ */
+.nc {
+  background: var(--card); border-radius: var(--r); border: 1px solid var(--br);
+  overflow: hidden; cursor: pointer; transition: .2s; display: flex; flex-direction: column;
+}
+.nc:hover {
+  border-color: var(--cel); transform: translateY(-3px);
+  box-shadow: var(--sh2);
+}
+.nc-img {
+  display: flex; align-items: center; justify-content: center;
+  background: var(--cel-xl); overflow: hidden; position: relative;
+}
+.nc-img.big { height: 180px; }
+.nc-img.sm { height: 130px; }
+.nc-img img { width: 100%; height: 100%; object-fit: cover; }
+.nc-img-em { font-size: 52px; }
+.nc-cat { position: absolute; top: 10px; left: 10px; }
+.nc-body { padding: 13px; flex: 1; display: flex; flex-direction: column; }
+.nc-tit {
+  font-family: var(--fd); font-size: 15px; font-weight: 500;
+  line-height: 1.25; margin-bottom: 6px; color: var(--tx);
+}
+.nc-exc { font-size: 12px; color: var(--tx2); line-height: 1.55; margin-bottom: 9px; flex: 1; }
+.nc-ft {
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 10px; color: var(--tx3); padding-top: 9px; border-top: 1px solid var(--br); margin-top: auto;
+}
+.nc-ac { display: flex; gap: 9px; }
+.abt { display: flex; align-items: center; gap: 3px; font-size: 10px; color: var(--tx2); background: none; transition: .15s; padding: 0; }
+.abt:hover, .abt.lk { color: var(--cel-d); }
+.abt svg { width: 12px; height: 12px; }
 
 /* HERO */
-.hero{position:relative;border-radius:var(--rl);overflow:hidden;cursor:pointer;margin-bottom:20px;border:2px solid var(--cel);box-shadow:var(--sh);transition:.2s}
-.hero:hover{box-shadow:var(--sh2)}
-.hero-bg{height:320px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,var(--cel-xl),#D6EAF8);overflow:hidden}
-@media(min-width:900px){.hero-bg{height:380px}}
-.hero-bg img{width:100%;height:100%;object-fit:cover}
-.hero-ov{position:absolute;bottom:0;left:0;right:0;padding:18px;background:linear-gradient(transparent,rgba(26,39,68,.96))}
-.hero-tit{font-family:var(--fd);font-size:22px;font-weight:700;line-height:1.1;color:white;margin-bottom:7px}
-@media(min-width:900px){.hero-tit{font-size:30px}}
+.hero {
+  position: relative; border-radius: var(--rl); overflow: hidden;
+  cursor: pointer; margin-bottom: 20px; border: 2px solid var(--cel);
+  transition: .2s; box-shadow: var(--sh);
+}
+.hero:hover { box-shadow: var(--sh2); }
+.hero-bg {
+  height: 360px; display: flex; align-items: center; justify-content: center;
+  font-size: 96px; background: linear-gradient(135deg, var(--cel-xl), var(--cel-bg));
+}
+@media(min-width: 900px) { .hero-bg { height: 440px; } }
+.hero-bg img { width: 100%; height: 100%; object-fit: cover; }
+.hero-ov {
+  position: absolute; bottom: 0; left: 0; right: 0; padding: 20px;
+  background: linear-gradient(transparent, rgba(26,39,68,.96));
+}
+.hero-tit { font-family: var(--fd); font-size: 26px; font-weight: 700; line-height: 1.1; color: #fff; margin-bottom: 8px; }
+@media(min-width: 900px) { .hero-tit { font-size: 36px; } }
+.hero-meta { font-size: 12px; color: rgba(255,255,255,.6); }
+
+/* NEWS GRID */
+.ng { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media(min-width: 560px) { .ng { grid-template-columns: 1fr 1fr; } }
+@media(min-width: 1400px) { .ng { grid-template-columns: 1fr 1fr 1fr; } }
+
+/* ══════════════════════════════════════════
+   LIVE SCORES
+══════════════════════════════════════════ */
+.lstrip { display: flex; gap: 10px; overflow-x: auto; margin-bottom: 20px; padding-bottom: 3px; scrollbar-width: none; }
+.lmc {
+  background: var(--card); border: 1.5px solid var(--br); border-radius: var(--r);
+  padding: 11px 14px; cursor: pointer; flex-shrink: 0; min-width: 170px; transition: .15s;
+}
+.lmc:hover { border-color: var(--cel); box-shadow: var(--sh); }
+.lmc.lv { border-color: rgba(192,57,43,.35); background: rgba(192,57,43,.04); }
+.lms { display: flex; align-items: center; gap: 4px; font-size: 9px; font-weight: 700; color: var(--tx3); margin-bottom: 8px; }
+.lms.lv { color: var(--red); }
+.lmt { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.ltm { text-align: center; flex: 1; }
+.lem { font-size: 22px; display: block; margin-bottom: 2px; }
+.lnm { font-size: 10px; color: var(--tx2); font-weight: 500; }
+.lsc { font-family: var(--fd); font-size: 26px; font-weight: 700; color: var(--tx); min-width: 44px; text-align: center; }
+.lsc.lv { color: var(--red); }
+
+/* ══════════════════════════════════════════
+   POLL
+══════════════════════════════════════════ */
+.poll-q { font-family: var(--fd); font-size: 14px; font-weight: 500; margin-bottom: 11px; color: var(--tx); line-height: 1.3; }
+.po {
+  background: var(--card2); border-radius: var(--rs); padding: 10px 13px; margin-bottom: 7px;
+  cursor: pointer; border: 1.5px solid var(--br); position: relative; overflow: hidden; transition: .15s;
+}
+.po:hover { border-color: var(--cel); }
+.po.voted { border-color: var(--cel-d); }
+.po-bar { position: absolute; left: 0; top: 0; bottom: 0; background: var(--cel-xl); transition: width .7s ease; }
+.po.voted .po-bar { background: rgba(74,144,217,.18); }
+.po-row { position: relative; display: flex; justify-content: space-between; align-items: center; font-size: 12px; font-weight: 500; color: var(--tx); }
+.po-pct { font-weight: 700; color: var(--tx3); font-size: 11px; }
+.po-pct.win { color: var(--cel-d); }
+.po-meta { font-size: 10px; color: var(--tx3); margin-top: 7px; }
+
+/* ══════════════════════════════════════════
+   TRENDING
+══════════════════════════════════════════ */
+.tri { display: flex; align-items: flex-start; gap: 9px; padding: 8px 0; border-bottom: 1px solid var(--br); cursor: pointer; transition: .15s; }
+.tri:last-child { border-bottom: none; }
+.tri:hover { padding-left: 4px; }
+.trnum { font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--tx3); width: 20px; flex-shrink: 0; }
+.trnum.hot { color: var(--cel); }
+.trn { font-size: 12px; font-weight: 500; color: var(--tx); }
+.trc { font-size: 10px; color: var(--tx3); margin-top: 1px; }
+
+/* ══════════════════════════════════════════
+   RED DE PERIODISMO — Section
+══════════════════════════════════════════ */
+.red-hero {
+  border-radius: var(--rl); overflow: hidden; margin-bottom: 22px;
+  border: 2px solid var(--cel); box-shadow: var(--sh);
+}
+.red-hero img { width: 100%; display: block; max-height: 320px; object-fit: cover; }
+.red-hero-cap {
+  background: linear-gradient(135deg, var(--cel-d), var(--cel));
+  padding: 16px 20px; color: white;
+}
+.red-hero-cap h2 { font-family: var(--fd); font-size: 22px; font-weight: 700; margin-bottom: 4px; letter-spacing: .5px; }
+.red-hero-cap p { font-size: 13px; opacity: .85; line-height: 1.5; }
+
+/* Column cards */
+.col-card {
+  background: var(--card); border-radius: var(--r); border: 1px solid var(--br);
+  overflow: hidden; transition: .2s; cursor: pointer;
+}
+.col-card:hover { border-color: var(--cel); box-shadow: var(--sh); transform: translateY(-2px); }
+.col-header { padding: 14px 16px 10px; border-bottom: 1px solid var(--br); display: flex; align-items: center; gap: 10px; }
+.col-av {
+  width: 44px; height: 44px; border-radius: 50%; flex-shrink: 0;
+  border: 2px solid var(--cel); object-fit: cover; background: var(--cel-xl);
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--fd); font-size: 18px; font-weight: 700; color: var(--cel-d);
+}
+.col-info { flex: 1; min-width: 0; }
+.col-author { font-weight: 700; font-size: 14px; color: var(--tx); }
+.col-bio { font-size: 11px; color: var(--tx3); margin-top: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.col-body { padding: 14px 16px; }
+.col-tit { font-family: var(--fd); font-size: 16px; font-weight: 600; line-height: 1.2; margin-bottom: 8px; color: var(--tx); }
+.col-exc { font-family: var(--fs); font-size: 13px; color: var(--tx2); line-height: 1.7; margin-bottom: 12px; font-style: italic; }
+.col-ft { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+/* Anonymous column */
+.anon-card {
+  background: linear-gradient(135deg, #F8FAFF, var(--cel-xl));
+  border-radius: var(--r); border: 1px dashed var(--cel);
+  padding: 16px; transition: .2s;
+}
+.anon-card:hover { border-color: var(--cel-d); box-shadow: var(--sh); }
+.anon-label { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+.anon-icon { font-size: 22px; }
+.anon-tag { font-size: 10px; font-weight: 700; color: var(--tx3); text-transform: uppercase; letter-spacing: 1px; font-family: var(--fd); }
+.anon-tit { font-family: var(--fd); font-size: 15px; font-weight: 600; color: var(--tx); margin-bottom: 7px; line-height: 1.3; }
+.anon-exc { font-family: var(--fs); font-size: 12px; color: var(--tx2); line-height: 1.65; font-style: italic; }
+.anon-ft { margin-top: 11px; display: flex; align-items: center; gap: 8px; font-size: 10px; color: var(--tx3); }
+
+/* ══════════════════════════════════════════
+   STREAMING — Entry Image + Section
+══════════════════════════════════════════ */
+.stream-entry {
+  border-radius: var(--rl); overflow: hidden; cursor: pointer;
+  border: 2px solid var(--cel); box-shadow: var(--sh);
+  transition: .25s; position: relative; margin-bottom: 20px;
+}
+.stream-entry:hover { box-shadow: var(--sh2); transform: scale(1.01); border-color: var(--cel-d); }
+.stream-entry img { width: 100%; display: block; max-height: 280px; object-fit: cover; }
+.stream-entry-ov {
+  position: absolute; inset: 0; background: linear-gradient(transparent 40%, rgba(26,39,68,.9));
+  display: flex; flex-direction: column; justify-content: flex-end; padding: 20px;
+}
+.stream-play-btn {
+  width: 60px; height: 60px; border-radius: 50%;
+  background: rgba(255,255,255,.15); backdrop-filter: blur(8px);
+  border: 2px solid rgba(255,255,255,.6); display: flex;
+  align-items: center; justify-content: center; margin-bottom: 12px;
+  transition: .15s;
+}
+.stream-entry:hover .stream-play-btn { background: var(--cel); border-color: white; }
+.stream-play-btn svg { width: 24px; height: 24px; color: white; margin-left: 4px; }
+.stream-entry-tit { font-family: var(--fd); font-size: 24px; font-weight: 700; color: white; line-height: 1.1; margin-bottom: 6px; }
+.stream-entry-sub { font-size: 13px; color: rgba(255,255,255,.7); }
+
+/* Stream cards */
+.sc {
+  background: var(--card); border-radius: var(--r); border: 1px solid var(--br);
+  overflow: hidden; cursor: pointer; transition: .2s;
+}
+.sc:hover { border-color: var(--cel); box-shadow: var(--sh); transform: translateY(-2px); }
+.sc-thumb {
+  height: 140px; background: linear-gradient(135deg, var(--cel-xl), var(--cel-bg));
+  display: flex; align-items: center; justify-content: center; font-size: 44px;
+  position: relative;
+}
+.sc-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.live-tag {
+  position: absolute; top: 8px; left: 8px;
+  background: var(--red); color: white; font-size: 9px; font-weight: 700;
+  padding: 3px 8px; border-radius: 20px; font-family: var(--fd); letter-spacing: .8px;
+  display: flex; align-items: center; gap: 4px;
+}
+.live-tag .ldot { width: 5px; height: 5px; background: white; }
+.sc-body { padding: 11px 13px; }
+.sc-tit { font-family: var(--fd); font-size: 14px; font-weight: 500; margin-bottom: 4px; line-height: 1.2; }
+.sc-info { font-size: 11px; color: var(--tx3); display: flex; align-items: center; gap: 6px; }
+
+/* ══════════════════════════════════════════
+   LIVE CHARLA / TRANSMISIÓN
+══════════════════════════════════════════ */
+.charla-wrap {
+  background: var(--card); border-radius: var(--rl);
+  border: 2px solid var(--cel); overflow: hidden; margin-bottom: 20px;
+}
+.charla-hd {
+  background: linear-gradient(135deg, var(--cel-d), var(--cel));
+  padding: 14px 18px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+}
+.charla-tit { font-family: var(--fd); font-size: 18px; font-weight: 600; color: white; }
+.charla-sts { font-size: 11px; color: rgba(255,255,255,.75); margin-left: auto; display: flex; align-items: center; gap: 5px; }
+.ld-w { width: 6px; height: 6px; border-radius: 50%; background: white; animation: pulse 1.4s infinite; }
+.charla-video-grid { padding: 14px; display: grid; gap: 8px; }
+.charla-video-grid.p1 { grid-template-columns: 1fr; }
+.charla-video-grid.p2 { grid-template-columns: 1fr 1fr; }
+.charla-video-grid.p3 { grid-template-columns: 1fr 1fr 1fr; }
+.charla-video-grid.p4 { grid-template-columns: 1fr 1fr; }
+.vid-cell {
+  border-radius: var(--rs); overflow: hidden;
+  background: linear-gradient(135deg, #1A2744, #2E4070); aspect-ratio: 16/10;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; border: 1px solid rgba(255,255,255,.1);
+}
+.vid-cell-av { font-size: 34px; margin-bottom: 6px; }
+.vid-cell-nm { font-size: 11px; color: rgba(255,255,255,.8); font-weight: 600; font-family: var(--fd); letter-spacing: .3px; }
+.vid-cell-role { font-size: 10px; color: rgba(255,255,255,.45); margin-top: 2px; }
+.vid-cell-lv { position: absolute; top: 6px; left: 6px; }
+.vid-empty { background: linear-gradient(135deg, rgba(74,144,217,.08), rgba(74,144,217,.03)); border: 1.5px dashed var(--br); }
+.vid-empty-txt { font-size: 11px; color: var(--tx3); text-align: center; }
+.charla-join-strip {
+  padding: 12px 16px; border-top: 1px solid var(--br);
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: var(--card2);
+}
+.charla-join-info { flex: 1; min-width: 140px; }
+.charla-join-info h4 { font-family: var(--fd); font-size: 13px; font-weight: 600; color: var(--tx); margin-bottom: 2px; }
+.charla-join-info p { font-size: 11px; color: var(--tx2); }
+.chat-wrap { border-top: 1px solid var(--br); }
+.chat-hd { padding: 11px 16px; background: var(--card2); border-bottom: 1px solid var(--br); display: flex; align-items: center; gap: 8px; }
+.chat-bd { height: 220px; overflow-y: auto; padding: 11px; display: flex; flex-direction: column; gap: 5px; }
+.cm { padding: 7px 10px; border-radius: 9px; max-width: 80%; font-size: 12px; line-height: 1.4; }
+.cm.own { background: var(--cel); color: white; margin-left: auto; border-bottom-right-radius: 3px; }
+.cm.other { background: var(--cel-xl); color: var(--tx); border-bottom-left-radius: 3px; }
+.cm-u { font-size: 9px; font-weight: 700; opacity: .65; margin-bottom: 2px; }
+.chat-inp { padding: 9px 11px; border-top: 1px solid var(--br); display: flex; gap: 7px; background: var(--card2); }
+.chat-txt { flex: 1; background: var(--white); border: 1.5px solid var(--br); border-radius: 30px; padding: 7px 13px; font-size: 12px; color: var(--tx); }
+.chat-txt:focus { border-color: var(--cel); }
+.chat-snd { background: var(--cel); border-radius: 30px; padding: 7px 13px; color: white; display: flex; align-items: center; transition: .15s; }
+.chat-snd:hover { background: var(--cel-d); }
+.chat-snd svg { width: 14px; height: 14px; }
+
+/* ══════════════════════════════════════════
+   COLUMN FORM (write)
+══════════════════════════════════════════ */
+.col-form-wrap { background: var(--card); border-radius: var(--rl); border: 2px solid var(--cel); padding: 20px; }
+.col-form-tit { font-family: var(--fd); font-size: 18px; font-weight: 600; color: var(--tx); margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.col-form-tit span { color: var(--cel); }
+.tabs { display: flex; gap: 4px; background: var(--cel-xl); border-radius: var(--r); padding: 4px; margin-bottom: 16px; }
+.tabx { flex: 1; padding: 7px; text-align: center; border-radius: var(--rs); font-size: 12px; font-weight: 700; font-family: var(--fd); letter-spacing: .5px; cursor: pointer; color: var(--tx2); transition: .15s; }
+.tabx.on { background: var(--cel); color: white; }
+
+/* PROFILE */
+.ph { background: linear-gradient(135deg, var(--cel-d), var(--cel)); border-radius: var(--rl); padding: 24px; text-align: center; margin-bottom: 16px; }
+.pav { width: 72px; height: 72px; border-radius: 50%; margin: 0 auto 12px; background: rgba(255,255,255,.25); display: flex; align-items: center; justify-content: center; font-family: var(--fd); font-size: 28px; font-weight: 700; color: white; border: 3px solid rgba(255,255,255,.5); }
+.pnm { font-family: var(--fd); font-size: 22px; font-weight: 700; color: white; margin-bottom: 3px; }
+.pbio { font-size: 12px; color: rgba(255,255,255,.75); margin-bottom: 12px; }
+.psts { display: flex; gap: 22px; justify-content: center; }
+.psn { font-family: var(--fd); font-size: 22px; font-weight: 700; color: white; }
+.psl { font-size: 10px; color: rgba(255,255,255,.65); }
+
+/* REP */
+.rep-card { background: var(--card); border: 1px solid var(--br); border-radius: var(--r); padding: 13px 15px; margin-bottom: 10px; }
+.rep-bg { height: 6px; background: var(--cel-xl); border-radius: 6px; overflow: hidden; margin: 7px 0 4px; }
+.rep-fill { height: 100%; background: linear-gradient(90deg, var(--cel), var(--sun)); border-radius: 6px; transition: width 1s; }
+
+/* AUTH tabs */
+.auth-tabs { display: flex; background: var(--cel-xl); border-radius: var(--r); padding: 3px; margin-bottom: 18px; }
+.atab { flex: 1; padding: 8px; text-align: center; border-radius: var(--rs); font-size: 12px; font-weight: 700; cursor: pointer; color: var(--tx2); transition: .15s; font-family: var(--fd); }
+.atab.on { background: var(--cel); color: white; }
+.soc-btn {
+  width: 100%; padding: 10px; border-radius: var(--rs);
+  border: 1.5px solid var(--br); background: var(--card2); color: var(--tx);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 13px; font-weight: 500; margin-bottom: 8px; transition: .15s; cursor: pointer;
+}
+.soc-btn:hover { border-color: var(--cel); background: var(--cel-xl); }
+.or-div { display: flex; align-items: center; gap: 10px; margin: 12px 0; color: var(--tx3); font-size: 11px; }
+.or-div::before, .or-div::after { content: ''; flex: 1; height: 1px; background: var(--br); }
+
+/* FORUM */
+.tc { background: var(--card); border-radius: var(--r); border: 1px solid var(--br); padding: 13px 15px; margin-bottom: 9px; cursor: pointer; transition: .15s; }
+.tc:hover { border-color: var(--cel); box-shadow: var(--sh); transform: translateX(4px); }
+.tc-tit { font-family: var(--fd); font-size: 15px; font-weight: 500; margin-bottom: 6px; line-height: 1.25; color: var(--tx); }
+.tc-mt { display: flex; align-items: center; gap: 10px; font-size: 10px; color: var(--tx3); }
+.tc-st { display: flex; align-items: center; gap: 3px; }
+.tc-st svg { width: 11px; height: 11px; }
+
+/* RANKING COLS */
+.rank-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--br); }
+.rank-item:last-child { border-bottom: none; }
+.rank-num { font-family: var(--fd); font-size: 22px; font-weight: 700; width: 24px; flex-shrink: 0; color: var(--tx3); }
+.rank-num.top1 { color: var(--sun); }
+.rank-num.top2 { color: #94A3B8; }
+.rank-num.top3 { color: #CD7F32; }
+.rank-info { flex: 1; min-width: 0; }
+.rank-tit { font-size: 13px; font-weight: 600; color: var(--tx); margin-bottom: 2px; }
+.rank-meta { font-size: 10px; color: var(--tx3); }
+
+/* FLAG BG decorative */
+.flag-bg-strip {
+  background: linear-gradient(180deg, var(--cel) 0%, var(--cel) 20%, var(--white) 20%, var(--white) 40%, var(--cel) 40%, var(--cel) 60%, var(--white) 60%, var(--white) 80%, var(--cel) 80%, var(--cel) 100%);
+  opacity: .04; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+}
+
+.sm-grid { display: grid; gap: 12px; grid-template-columns: 1fr; }
+@media(min-width: 560px) { .sm-grid { grid-template-columns: 1fr 1fr; } }
+@media(min-width: 900px) { .sm-grid { grid-template-columns: 1fr 1fr 1fr; } }
 </style>
 </head>
 <body>
-<div id="root">
-  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;font-family:sans-serif;color:#4A90D9;gap:14px">
-    <div style="font-size:48px">⚽</div>
-    <div style="font-size:18px;font-weight:700">Cargando Tribuna Libre...</div>
-  </div>
-</div>
+
+<!-- FLAG BACKGROUND -->
+<div class="flag-bg-strip"></div>
+<div id="root"></div>
 
 <script type="text/babel">
-const { useState, useEffect, useRef, useCallback } = React;
+const {useState, useEffect, useRef} = React;
 
-/* ══════════════════════════ CONFIG ══════════════════════════ */
-const API = window.API_URL || 'http://localhost:3000';
-const CAT_EMOJI = {Fútbol:'⚽',Rugby:'🏉',Tenis:'🎾',Básquet:'🏀',Automovilismo:'🏎️',Deportes:'📰',Hockey:'🏑',Boxeo:'🥊'};
-
-/* ══════════════════════════ STATIC DATA ══════════════════════════ */
-const STATIC_NEWS = [
-  {_id:'s1',cat:'Fútbol',title:'River aplasta a Boca en el Superclásico más vibrante del año',excerpt:'Doblete de Borja y golazo de Mammana. El Monumental explotó de emoción.',publishedAt:new Date().toISOString(),meta:{sourceName:'TyC Sports',sourceUrl:'#'},coverImage:null},
-  {_id:'s2',cat:'Rugby',title:'Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina',excerpt:'Matera convirtió el try decisivo. Historia pura en el Amalfitani desbordante.',publishedAt:new Date(Date.now()-3.6e6).toISOString(),meta:{sourceName:'Olé'},coverImage:null},
-  {_id:'s3',cat:'Tenis',title:'Cerúndolo avanza a semis del Masters de Madrid',excerpt:'El bonaerense venció a Alcaraz en tres sets emocionantes.',publishedAt:new Date(Date.now()-7.2e6).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
-  {_id:'s4',cat:'Automovilismo',title:'Colapinto lidera los libres de Mónaco con tiempo histórico',excerpt:'1:10.821 del argentino sacude el paddock de la Fórmula 1.',publishedAt:new Date(Date.now()-1.08e7).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
-  {_id:'s5',cat:'Básquet',title:'Obra gana la Liga Nacional con doble de Vildoza',excerpt:'78-77 definitivo en Mar del Plata. Emoción pura.',publishedAt:new Date(Date.now()-1.44e7).toISOString(),meta:{sourceName:'Olé'},coverImage:null},
-  {_id:'s6',cat:'Fútbol',title:'Messi renovaría con Inter Miami hasta 2027',excerpt:'El rosarino seguiría en la MLS al menos dos temporadas más.',publishedAt:new Date(Date.now()-1.8e7).toISOString(),meta:{sourceName:'ESPN'},coverImage:null},
-];
-const STATIC_LIVE = [
-  {id:1,sp:'⚽',h:'River',a:'Racing',sh:2,sa:1,min:"67'",live:true},
-  {id:2,sp:'🏀',h:'Boca',a:'San L.',sh:45,sa:38,min:'3T',live:true},
-  {id:3,sp:'🏉',h:'Pumas',a:'Wallabies',sh:21,sa:14,min:"55'",live:true},
-  {id:4,sp:'⚽',h:'Independiente',a:'Estudiantes',sh:'',sa:'',min:'20:30',live:false},
-];
-const STATIC_POLLS = [
-  {id:1,q:'¿Fue penal el derribo de Almada en el Superclásico?',opts:['Sí, penal claro','No era nada','Muy dudoso'],vs:[1240,880,420]},
-  {id:2,q:'¿Argentina llega al Mundial 2026 como favorita?',opts:['Somos candidatos','Depende del fixture','No al nivel'],vs:[3100,1800,600]},
-];
-const TICKER_D = [
-  {l:'RIVER',t:"2-1 Racing · 67'"},{l:'PUMAS',t:'28-20 All Blacks'},
-  {l:'COLAPINTO',t:'lidera libres Mónaco'},{l:'CERÚNDOLO',t:'semis Madrid'},
-  {l:'MESSI',t:'hat-trick en MLS'},{l:'VILDOZA',t:'campeón Liga Nac.'},
-];
-const PRODE_MATCHES = [
-  {id:1,h:'Argentina',he:'🇦🇷',a:'Colombia',ae:'🇨🇴',date:'15 Jun 2025'},
-  {id:2,h:'Brasil',he:'🇧🇷',a:'Uruguay',ae:'🇺🇾',date:'15 Jun 2025'},
-  {id:3,h:'México',he:'🇲🇽',a:'Ecuador',ae:'🇪🇨',date:'16 Jun 2025'},
-  {id:4,h:'Chile',he:'🇨🇱',a:'Paraguay',ae:'🇵🇾',date:'17 Jun 2025'},
-  {id:5,h:'Venezuela',he:'🇻🇪',a:'Bolivia',ae:'🇧🇴',date:'18 Jun 2025'},
-  {id:6,h:'Perú',he:'🇵🇪',a:'Panamá',ae:'🇵🇦',date:'19 Jun 2025'},
-];
-const LIB_GROUPS = [
-  {name:'Grupo A',teams:[{t:'River',p:9,j:3,gd:5},{t:'Flamengo',p:7,j:3,gd:3},{t:'Millonarios',p:3,j:3,gd:-2},{t:'Cerro Porteño',p:1,j:3,gd:-6}]},
-  {name:'Grupo B',teams:[{t:'Boca',p:7,j:3,gd:4},{t:'Palmeiras',p:6,j:3,gd:2},{t:'Junior',p:4,j:3,gd:-1},{t:'Always Ready',p:1,j:3,gd:-5}]},
-  {name:'Grupo C',teams:[{t:'Racing',p:9,j:3,gd:6},{t:'Fluminense',p:6,j:3,gd:1},{t:'Aucas',p:3,j:3,gd:-3},{t:'Táchira',p:0,j:3,gd:-4}]},
-  {name:'Grupo D',teams:[{t:'San Lorenzo',p:6,j:3,gd:2},{t:'Atl. MG',p:6,j:3,gd:2},{t:'Independiente',p:3,j:3,gd:-1},{t:'Caracas',p:3,j:3,gd:-3}]},
-];
-const REVISTA_ARTICLES = [
-  {id:1,title:'Los pibes del potrero que llegaron a Primera',excerpt:'Historias de jugadores juveniles que rompieron todas las barreras para llegar a la élite del fútbol argentino.',author:'Valentina M.',age:16,emoji:'⚽',cat:'Historias',reads:1200},
-  {id:2,title:'Entrenamiento mental: la clave que no enseñan en la cancha',excerpt:'Los jóvenes deportistas hablan sobre cómo manejan la presión, el fracaso y el éxito.',author:'Tomás R.',age:17,emoji:'🧠',cat:'Psicología',reads:980},
-  {id:3,title:'Las Leonas Sub-20: camino al Mundial Juvenil',excerpt:'El equipo juvenil de hockey femenino argentino se prepara para el certamen internacional.',author:'Sofía B.',age:15,emoji:'🏑',cat:'Hockey',reads:1450},
-  {id:4,title:'Colapinto y el sueño de los pibes',excerpt:'Entrevistas con jóvenes de karting que sueñan con seguir los pasos del ídolo argentino.',author:'Lucas P.',age:16,emoji:'🏎️',cat:'Automovilismo',reads:2100},
-  {id:5,title:'Básquet en el barrio: cuando la cancha cambia vidas',excerpt:'Crónica de los torneos barriales que formaron a varios jugadores de la actual NBA.',author:'Camila V.',age:14,emoji:'🏀',cat:'Básquet',reads:890},
-  {id:6,title:'El VAR con ojos jóvenes',excerpt:'Columna de opinión de nuestros lectores juveniles sobre la tecnología arbitral.',author:'Nahuel C.',age:15,emoji:'📺',cat:'Opinión',reads:1670},
-];
-const COMMUNITY_POSTS = [
-  {id:1,user:'Gonzalo_TL',av:'GT',color:'#E8262A',text:'¿Alguien más vio el golazo de Borja? Pura magia argentina 🔥⚽',likes:89,time:'Hace 30m'},
-  {id:2,user:'PumasFan',av:'PF',color:'#16A34A',text:'Los Pumas hicieron historia. Nunca olvidaré ese try de Matera. Somos grandes 🏉🇦🇷',likes:156,time:'Hace 1h'},
-  {id:3,user:'ColapintoAR',av:'CA',color:'#F59E0B',text:'Franco Colapinto, el orgullo argentino en la F1! Que sigan los resultados 🏎️',likes:234,time:'Hace 2h'},
-];
-const STREAMS = [
-  {id:1,tit:'River vs Racing — Liga Profesional',ch:'ESPN Premium',viewers:14200,live:true,em:'⚽'},
-  {id:2,tit:'Los Pumas vs All Blacks — Análisis',ch:'Rugby Pass TV',viewers:8900,live:true,em:'🏉'},
-  {id:3,tit:'F1 Mónaco — Libres completas',ch:'ESPN F1',viewers:22100,live:false,em:'🏎️'},
-  {id:4,tit:'NBA Playoffs — Boston vs Miami',ch:'NBA League Pass',viewers:31000,live:true,em:'🏀'},
-  {id:5,tit:'ATP Madrid — Semifinales',ch:'Tennis TV',viewers:5600,live:false,em:'🎾'},
-  {id:6,tit:'Copa Argentina — Resumen del día',ch:'TyC Sports',viewers:6800,live:false,em:'⚽'},
-];
-
-/* ══════════════════════════ ICONS ══════════════════════════ */
+/* ══════ ICONS ══════ */
 const Ic = {
-  Home:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>,
-  News:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
-  Com:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>,
-  Stream:p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
-  Prode: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M9 8l2 2 4-4"/></svg>,
-  Copa:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4.8A5 5 0 0012 9a5 5 0 005-4.2M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"/></svg>,
-  Rev:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>,
-  Live:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"/></svg>,
+  Home: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9,22 9,12 15,12 15,22"/></svg>,
+  News: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h7"/></svg>,
+  Red: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="8" r="4"/><path d="M2 21v-1a10 10 0 0120 0v1"/></svg>,
+  Stream: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>,
+  Live: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="2"/><path d="M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"/></svg>,
   Forum: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-  Profile:p=> <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
-  Bell:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
-  Back:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Profile: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Bell: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>,
+  Search: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
   Heart: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>,
-  Comment:p=> <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
-  Send:  p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="2,2 22,12 2,22 4,13 14,12 4,11"/></svg>,
-  X:     p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
-  Plus:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
-  Fire:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
-  Eye:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
-  Pen:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
-  Check: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12"/></svg>,
-  Lock:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
-  Mail:  p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-  Play:  p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>,
-  Globe: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 010 20M12 2a15.3 15.3 0 000 20"/></svg>,
+  Comment: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>,
+  Eye: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>,
+  Send: p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="2,2 22,12 2,22 4,13 14,12 4,11"/></svg>,
+  X: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>,
+  Plus: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>,
+  Back: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>,
+  Play: p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>,
+  Pen: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>,
+  Micro: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>,
+  Shield: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+  Star: p => <svg {...p} viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
+  Trophy: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="8 21 12 17 16 21"/><line x1="12" y1="17" x2="12" y2="11"/><path d="M7 4.8A5 5 0 0012 9a5 5 0 005-4.2M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"/></svg>,
+  Mail: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+  Lock: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>,
+  User: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+  Fire: p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8.5 14.5A2.5 2.5 0 0011 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 11-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 002.5 2.5z"/></svg>,
 };
 
-/* ══════════════════════════ HOOKS ══════════════════════════ */
-function useToasts() {
-  const [toasts, setToasts] = useState([]);
-  const add = useCallback(({ msg, type='ok' }) => {
-    const id = Date.now();
-    setToasts(t => [...t, { id, msg, type }]);
-    setTimeout(() => setToasts(t => t.filter(x => x.id !== id)), 3200);
-  }, []);
-  return { toasts, add };
-}
+/* ══════ DATA ══════ */
+const NEWS = [
+  { id:1, cat:'Fútbol', em:'⚽', title:'River aplasta a Boca en el Superclásico más vibrante del año', ex:'Doblete de Borja y golazo de Mammana sentenciaron el clásico en el Monumental a pleno.', t:'Hace 2h', auth:'Redacción TL', c:148, l:432, hot:true, img: 'https://images.unsplash.com/photo-1517466787929-bc90951d0974?w=600&q=80' },
+  { id:2, cat:'Rugby', em:'🏉', title:'Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina', ex:'Matera convirtió el try decisivo en el Amalfitani desbordante.', t:'Hace 4h', auth:'P. Méndez', c:89, l:287 },
+  { id:3, cat:'Tenis', em:'🎾', title:'Cerúndolo avanza a semis del Masters de Madrid', ex:'El bonaerense venció a Alcaraz en tres sets y hace historia.', t:'Hace 6h', auth:'L. Torres', c:67, l:198 },
+  { id:4, cat:'Básquet', em:'🏀', title:'Obra gana la Liga Nacional con doble de Vildoza sobre la chicharra', ex:'78-77 definitivo en Mar del Plata. Emoción pura.', t:'Hace 8h', auth:'M. Vidal', c:54, l:176 },
+  { id:5, cat:'F1', em:'🏎️', title:'Colapinto lidera los libres de Mónaco con tiempo histórico', ex:'1:10.821 del argentino sacude el paddock de la Fórmula 1.', t:'Hace 10h', auth:'D. Sosa', c:77, l:234 },
+  { id:6, cat:'Fútbol', em:'⚽', title:'Messi renovaría con Inter Miami hasta 2027 según ESPN', ex:'El rosarino seguiría en la MLS al menos dos temporadas más.', t:'Hace 12h', auth:'Redacción', c:203, l:519 },
+];
+const LIVE_EV = [
+  { id:1, sp:'⚽', h:'River', a:'Racing', sh:2, sa:1, min:"67'", live:true },
+  { id:2, sp:'🏀', h:'Boca', a:'San L.', sh:45, sa:38, min:'3T', live:true },
+  { id:3, sp:'🏉', h:'Pumas', a:'Wallabies', sh:21, sa:14, min:"55'", live:true },
+  { id:4, sp:'⚽', h:'Independiente', a:'Estudiantes', sh:'', sa:'', min:'20:30', live:false },
+];
+const POLLS = [
+  { id:1, q:'¿Fue penal el derribo de Almada en el Superclásico?', opts:['Sí, penal claro','No era nada','Muy dudoso'], vs:[1240,880,420] },
+  { id:2, q:'¿Argentina llega al Mundial 2026 como favorita?', opts:['Somos candidatos','Depende del fixture','No al nivel'], vs:[3100,1800,600] },
+];
+const SIGNED_COLS = [
+  { id:1, author:'Marcelo García', av:'MG', bio:'Periodista deportivo · 20 años en el fútbol argentino', title:'La crisis táctica de la Selección: Scaloni en la encrucijada', exc:'Después de cuatro amistosos sin convencer, el cuerpo técnico debe tomar decisiones difíciles antes de la Copa América. El equipo perdió la identidad que lo llevó al mundial...', reads:4200, comments:89, t:'Hace 3h', cat:'Selección' },
+  { id:2, author:'Valentina Ríos', av:'VR', bio:'Ex atleta · Comentarista de Rugby y Tenis', title:'Los Pumas y el sistema Cheika: ¿llegó para quedarse?', exc:'La victoria sobre los All Blacks no fue casualidad. Es el resultado de dos años de trabajo metódico sobre la identidad del juego argentino que finalmente da frutos en el escenario más exigente...', reads:2800, comments:54, t:'Hace 6h', cat:'Rugby' },
+  { id:3, author:'Carlos Benítez', av:'CB', bio:'Analista de datos deportivos · La Plata', title:'Colapinto y la F1: cuando los números respaldan el talento', exc:'El análisis de la telemetría de los últimos tres grandes premios indica que el argentino está consistentemente en el top 5 de tiempo de reacción y eficiencia en curvas lentas...', reads:3100, comments:71, t:'Hace 9h', cat:'F1' },
+];
+const ANON_COLS = [
+  { id:1, title:'El negocio del VAR en Argentina: nadie quiere ver la verdad', exc:'Tres años después de la implementación del VAR, el fútbol argentino sigue siendo el campeonato con más errores arbitrales de América. El problema no es la tecnología...', reads:6800, comments:234, t:'Hace 2h', cat:'Fútbol' },
+  { id:2, title:'Por qué la Liga Nacional es el mejor básquet del continente', exc:'Con escuadras como Quimsa, Peñarol y San Lorenzo compitiendo al nivel de equipos NBA G League, la liga argentina es sin dudas el circuito más competitivo de América Latina...', reads:2100, comments:67, t:'Hace 5h', cat:'Básquet' },
+];
+const STREAMS = [
+  { id:1, tit:'River vs Racing — Liga Profesional', ch:'ESPN Premium', viewers:14200, live:true, em:'⚽' },
+  { id:2, tit:'Los Pumas vs All Blacks — Análisis', ch:'Rugby Pass TV', viewers:8900, live:true, em:'🏉' },
+  { id:3, tit:'F1 Mónaco — Libres completas', ch:'ESPN F1', viewers:22100, live:false, em:'🏎️' },
+  { id:4, tit:'NBA Playoffs — Boston vs Miami', ch:'NBA League Pass', viewers:31000, live:true, em:'🏀' },
+  { id:5, tit:'ATP Madrid — Semifinales', ch:'Tennis TV', viewers:5600, live:false, em:'🎾' },
+  { id:6, tit:'Copa Argentina — Resumen del día', ch:'TyC Sports', viewers:6800, live:false, em:'⚽' },
+];
+const CHARLA_PARTS = [
+  { id:1, name:'Marcelo García', role:'Periodista', em:'🎙️', connected:true },
+  { id:2, name:'Fan_BsAs', role:'Comunidad', em:'👤', connected:true },
+  { id:3, name:'Valentina R.', role:'Columnista', em:'✍️', connected:true },
+  { id:4, name:'', role:'', em:'', connected:false },
+];
+const THREADS = [
+  { id:1, cat:'futbol', title:'El VAR en Argentina: ¿solución o mayor caos?', r:87, v:1240, hot:true, author:'Gonzalo_TL', t:'Hace 1h' },
+  { id:2, cat:'rugby', title:'Los Pumas y la formación ideal para el Mundial 2027', r:54, v:890, hot:true, author:'ScrumMaster', t:'Hace 3h' },
+  { id:3, cat:'auto', title:'Colapinto 2025: ¿puede pelear el título de F1?', r:34, v:670, hot:false, author:'SpeedFreak', t:'Hace 5h' },
+  { id:4, cat:'basquet', title:'Vildoza: el mejor base argentino de la historia', r:29, v:445, hot:false, author:'LaVioleta', t:'Hace 7h' },
+];
+const RANK_COLS = [
+  { tit:'La crisis táctica de la Selección', auth:'Marcelo García', reads:4200 },
+  { tit:'El negocio del VAR en Argentina', auth:'Anónimo', reads:3800 },
+  { tit:'Colapinto y la F1: cuando los números hablan', auth:'Carlos Benítez', reads:3100 },
+  { tit:'Los Pumas y el sistema Cheika', auth:'Valentina Ríos', reads:2800 },
+  { tit:'Por qué la Liga Nacional es la mejor del continente', auth:'Anónimo', reads:2100 },
+];
+const TICKER_DATA = [
+  { l:'RIVER', t:"2-1 Racing · 67'" },
+  { l:'PUMAS', t:'28-20 All Blacks' },
+  { l:'COLAPINTO', t:'lidera libres Mónaco' },
+  { l:'CERÚNDOLO', t:'semis Madrid' },
+  { l:'MESSI', t:'renovaría con Miami' },
+  { l:'VILDOZA', t:'Liga Nac. campeón' },
+];
+const REP_LEVELS = [
+  { name:'Visitante', max:100 },
+  { name:'Fanático', max:500 },
+  { name:'Hincha', max:1500 },
+  { name:'Periodista Activo', max:3000 },
+  { name:'Referente', max:99999 },
+];
+function getLevel(r) { return REP_LEVELS.find(l => r < l.max) || REP_LEVELS[REP_LEVELS.length-1]; }
+function getRepPct(r) { const l=getLevel(r); if(l.max===99999)return 100; const prev=REP_LEVELS[REP_LEVELS.indexOf(l)-1]; const base=prev?prev.max:0; return Math.round((r-base)/(l.max-base)*100); }
 
-function useNews(page=1, cat='', search='') {
-  const [state, setState] = useState({ posts:[], total:0, pages:1, loading:true, fromApi:false });
-  useEffect(() => {
-    setState(s => ({ ...s, loading: true }));
-    const params = new URLSearchParams({ page, limit: 18 });
-    if (cat)    params.set('category', cat);
-    if (search) params.set('search', search);
-    const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 5000);
-    fetch(`${API}/api/news?${params}`, { signal: ctrl.signal })
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => {
-        clearTimeout(timeout);
-        setState({ posts: d.posts||[], total: d.pagination?.total||0, pages: d.pagination?.pages||1, loading: false, fromApi: true });
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        const filtered = cat ? STATIC_NEWS.filter(n => n.cat === cat) : STATIC_NEWS;
-        setState({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
-      });
-    return () => clearTimeout(timeout);
-  }, [page, cat, search]);
-  return state;
-}
-
-/* ══════════════════════════ COMPONENTS ══════════════════════════ */
-
-function Poll({ poll }) {
-  const [voted, setVoted] = useState(null);
-  const [vs, setVs] = useState([...poll.vs]);
-  const tot = vs.reduce((a,b) => a+b, 0);
+/* ══════ POLL ══════ */
+function Poll({poll}) {
+  const [voted,setVoted]=useState(null);
+  const [vs,setVs]=useState([...poll.vs]);
+  const tot=vs.reduce((a,b)=>a+b,0);
+  function vote(i){if(voted!==null)return;setVoted(i);setVs(v=>v.map((x,j)=>j===i?x+1:x));}
   return (
     <div>
       <div className="poll-q">{poll.q}</div>
       {poll.opts.map((o,i) => {
-        const pct = voted!==null ? Math.round(vs[i]/tot*100) : null;
-        const win = voted!==null && vs[i]===Math.max(...vs);
+        const pct=voted!==null?Math.round(vs[i]/tot*100):null;
+        const win=voted!==null&&vs[i]===Math.max(...vs);
         return (
-          <div key={i} className={`po${voted===i?' voted':''}`}
-            onClick={() => { if (voted===null) { setVoted(i); setVs(v=>v.map((x,j)=>j===i?x+1:x)); } }}>
-            {pct!==null && <div className="po-bar" style={{width:pct+'%'}}/>}
+          <div key={i} className={`po${voted===i?' voted':''}`} onClick={()=>vote(i)}>
+            {pct!==null&&<div className="po-bar" style={{width:pct+'%'}}/>}
             <div className="po-row">
               <span>{o}</span>
-              {pct!==null && <span className={`po-pct${win?' win':''}`}>{pct}%</span>}
+              {pct!==null&&<span className={`po-pct${win?' win':''}`}>{pct}%</span>}
             </div>
           </div>
         );
       })}
-      <div className="po-meta">{voted===null ? `${tot.toLocaleString()} votos` : `✓ ${tot.toLocaleString()} votos`}</div>
+      <div className="po-meta">{voted===null?`${tot.toLocaleString()} votos · Tocá para votar`:`✓ ${tot.toLocaleString()} votos`}</div>
     </div>
   );
 }
 
-function NewsCard({ post, onClick }) {
-  const [lk, setLk] = useState(false);
-  const cat = post.category || post.cat || 'Deportes';
-  const em  = CAT_EMOJI[cat] || '📰';
-  const ago = (() => {
-    const d = new Date(post.publishedAt);
-    const diff = Math.floor((Date.now()-d)/60000);
-    if (diff < 60)   return `Hace ${diff}m`;
-    if (diff < 1440) return `Hace ${Math.floor(diff/60)}h`;
-    return d.toLocaleDateString('es-AR');
-  })();
-  return (
-    <div className="nc" onClick={onClick}>
-      <div className="nc-img big">
-        {post.coverImage && <img src={post.coverImage} alt={post.title} loading="lazy" onError={e=>e.target.style.display='none'}/>}
-        <div className="nc-em" style={{display:post.coverImage?'none':'flex'}}>{em}</div>
-        <div className="nc-cat"><span className="badge bc">{cat}</span></div>
-      </div>
-      <div className="nc-body">
-        <div className="nc-tit">{post.title}</div>
-        {post.excerpt && <div className="nc-exc">{post.excerpt.slice(0,110)}</div>}
-        <div className="nc-ft">
-          <div>
-            {post.meta?.sourceName && <div style={{color:'var(--cel-d)',fontWeight:600}}>{post.meta.sourceName}</div>}
-            <div>{ago}</div>
-          </div>
-          <div className="nc-ac">
-            <button className={`abt${lk?' lk':''}`} onClick={e=>{e.stopPropagation();setLk(!lk);}}><Ic.Heart/>{lk?1:0}</button>
-            <button className="abt"><Ic.Comment/>0</button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+/* ══════ AUTH MODAL ══════ */
+function AuthModal({onClose, onLogin, addToast}) {
+  const [tab,setTab]=useState('login');
+  const [email,setEmail]=useState('');
+  const [pass,setPass]=useState('');
+  const [uname,setUname]=useState('');
+  const [loading,setLoading]=useState(false);
 
-function SkeletonCards({ n=6 }) {
+  function submit(e) {
+    e.preventDefault();
+    setLoading(true);
+    setTimeout(()=>{
+      setLoading(false);
+      const u = {
+        name: tab==='reg' ? uname : email.split('@')[0],
+        av: ((tab==='reg'?uname:email)[0]||'U').toUpperCase(),
+        color: '#4A90D9', rep: 50, isGuest: false, email
+      };
+      onLogin(u);
+      addToast({msg:`¡Bienvenido${tab==='reg'?' a Tribuna Libre':' de vuelta'}! 🇦🇷`, type:'ok'});
+      onClose();
+    }, 900);
+  }
+  function guest() {
+    onLogin({name:'Invitado',av:'?',color:'#94A3B8',rep:0,isGuest:true});
+    addToast({msg:'Entraste como invitado. Registrate para publicar columnas.', type:'ok'});
+    onClose();
+  }
   return (
-    <div className="ng-grid">
-      {Array.from({length:n}).map((_,i) => (
-        <div key={i} style={{background:'var(--white)',borderRadius:'var(--r)',border:'1px solid var(--br)',overflow:'hidden'}}>
-          <div className="sk" style={{height:170}}/>
-          <div style={{padding:12}}>
-            <div className="sk" style={{height:14,width:'55%',marginBottom:8}}/>
-            <div className="sk" style={{height:12,marginBottom:5}}/>
-            <div className="sk" style={{height:12,width:'75%',marginBottom:8}}/>
-            <div className="sk" style={{height:10,width:'40%'}}/>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function LiveStrip({ onNav }) {
-  const [min, setMin] = useState(67);
-  useEffect(() => { const t=setInterval(()=>setMin(m=>m<90?m+1:m),12000); return()=>clearInterval(t); }, []);
-  return (
-    <div className="lstrip">
-      {STATIC_LIVE.map(e => (
-        <div key={e.id} className={`lmc${e.live?' lv':''}`} onClick={()=>onNav&&onNav('live')}>
-          <div className={`lms${e.live?' lv':''}`}>
-            {e.live && <><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',animation:'pulse 1.4s infinite',display:'inline-block',marginRight:3}}/>EN VIVO · </>}
-            {e.id===1 ? min+"'" : e.min}
-          </div>
-          <div className="lmt">
-            <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
-            {e.sh!=='' ? <div className={`lsc${e.live?' lv':''}`}>{e.id===1?`2-1`:e.sh+'-'+e.sa}</div>
-              : <div style={{fontFamily:'var(--fd)',fontSize:10,color:'var(--tx3)',textAlign:'center'}}>vs</div>}
-            <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/* ══════ HOME PAGE ══════ */
-function HomePage({ onArticle, onNav }) {
-  const { posts, loading, fromApi } = useNews(1,'','');
-  const hero = posts[0];
-  return (
-    <div>
-      {!loading && !fromApi && (
-        <div style={{background:'rgba(74,144,217,.1)',border:'1px solid var(--br)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:9,fontSize:12}}>
-          <span style={{fontSize:18}}>📡</span>
-          <div>
-            <b style={{color:'var(--cel-d)'}}>Modo sin servidor</b>
-            <div style={{color:'var(--tx2)'}}>Mostrando contenido de ejemplo. Corrí <code style={{background:'var(--cel-xl)',padding:'1px 5px',borderRadius:3}}>node server.js</code> para noticias reales.</div>
-          </div>
-        </div>
-      )}
-      {/* HERO */}
-      {loading ? <div className="sk" style={{height:320,borderRadius:'var(--rl)',marginBottom:20}}/> : hero && (
-        <div className="hero" onClick={()=>onArticle(hero)}>
-          <div className="hero-bg">
-            {hero.coverImage ? <img src={hero.coverImage} alt={hero.title} onError={e=>e.target.style.display='none'}/> : <span style={{fontSize:80}}>{CAT_EMOJI[hero.category||hero.cat]||'📰'}</span>}
-          </div>
-          <div className="hero-ov">
-            <span className="badge bc" style={{marginBottom:8,display:'inline-block'}}>{hero.category||hero.cat}</span>
-            <div className="hero-tit">{hero.title}</div>
-            <div style={{fontSize:12,color:'rgba(255,255,255,.55)'}}>📡 {hero.meta?.sourceName||'Tribuna Libre'}</div>
-            <div style={{display:'flex',gap:8,marginTop:11}}>
-              <button className="btn btn-c btn-sm" onClick={e=>{e.stopPropagation();onArticle(hero);}}>Leer nota</button>
-              <button className="btn btn-sm" style={{background:'rgba(255,255,255,.15)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}}>Compartir</button>
+    <div className="mbg" onClick={onClose}>
+      <div className="mdl" onClick={e=>e.stopPropagation()}>
+        <div className="mdl-h">
+          <div className="mdl-t" style={{display:'flex',alignItems:'center',gap:10}}>
+            <div className="logo-fallback" style={{width:36,height:36,flexShrink:0}}>
+              <div className="logo-flag-strip"><div className="lfs-c"/><div className="lfs-w"/><div className="lfs-c2"/></div>
+              <span className="logo-tl" style={{fontSize:12,padding:'1px 4px'}}>TL</span>
             </div>
+            <span>Tribuna <span style={{color:'var(--cel)'}}>Libre</span></span>
           </div>
+          <button className="cls" onClick={onClose}><Ic.X/></button>
         </div>
-      )}
-      {/* LIVE */}
-      <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div><span className="sl" onClick={()=>onNav('live')}>Ver todo →</span></div>
-      <LiveStrip onNav={onNav}/>
-      {/* ACCESOS RÁPIDOS */}
-      <div style={{display:'grid',gap:10,gridTemplateColumns:'1fr 1fr',marginBottom:18}}>
-        {[
-          {id:'comunidad',em:'👥',tit:'Comunidad',sub:'Foro y debates',col:'var(--cel-d)',bg:'var(--cel-xl)'},
-          {id:'streaming',em:'📡',tit:'Streaming',sub:'En vivo ahora',col:'var(--red)',bg:'rgba(192,57,43,.07)'},
-          {id:'prode',em:'🏆',tit:'El Prode',sub:'Participá gratis',col:'#B7770D',bg:'#FFFBEB'},
-          {id:'revista',em:'✏️',tit:'Revista Juvenil',sub:'Para los pibes',col:'#9D174D',bg:'#FDF2F8'},
-        ].map(s => (
-          <div key={s.id} onClick={()=>onNav(s.id)}
-            style={{background:s.bg,border:`1.5px solid ${s.col}22`,borderRadius:'var(--r)',padding:'14px 12px',cursor:'pointer',transition:'.2s',textAlign:'center'}}
-            onMouseEnter={e=>e.currentTarget.style.borderColor=s.col}
-            onMouseLeave={e=>e.currentTarget.style.borderColor=s.col+'22'}>
-            <div style={{fontSize:26,marginBottom:5}}>{s.em}</div>
-            <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,color:s.col,marginBottom:2}}>{s.tit}</div>
-            <div style={{fontSize:10,color:'var(--tx3)'}}>{s.sub}</div>
-          </div>
-        ))}
-      </div>
-      {/* NOTICIAS */}
-      <div className="sh"><div className="st">Últimas Noticias</div><span className="sl" onClick={()=>onNav('news')}>Ver todas →</span></div>
-      {loading ? <SkeletonCards n={6}/> : (
-        <div className="ng-grid" style={{marginBottom:18}}>
-          {posts.slice(1,7).map(p => <NewsCard key={p._id} post={p} onClick={()=>onArticle(p)}/>)}
+        <div className="auth-tabs">
+          <div className={`atab${tab==='login'?' on':''}`} onClick={()=>setTab('login')}>Ingresar</div>
+          <div className={`atab${tab==='reg'?' on':''}`} onClick={()=>setTab('reg')}>Registrarse</div>
         </div>
-      )}
-      {/* POLL */}
-      <div className="sh"><div className="st">Encuesta del Día</div></div>
-      <div className="card cp"><Poll poll={STATIC_POLLS[0]}/></div>
-    </div>
-  );
-}
-
-/* ══════ NEWS PAGE ══════ */
-function NewsPage({ onArticle }) {
-  const [page, setPage] = useState(1);
-  const [cat, setCat]   = useState('');
-  const [inp, setInp]   = useState('');
-  const [search, setSearch] = useState('');
-  const { posts, total, pages, loading, fromApi } = useNews(page, cat, search);
-  const cats = ['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Deportes'];
-  return (
-    <div>
-      <div className="sh"><div className="st">Noticias</div>{!loading&&<span style={{fontSize:11,color:'var(--tx3)'}}>{total} · {fromApi?'en vivo':'demo'}</span>}</div>
-      <div style={{position:'relative',marginBottom:12}}>
-        <input className="fi" value={inp} onChange={e=>setInp(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(setSearch(inp),setPage(1))} placeholder="Buscar noticias..." style={{paddingRight:38}}/>
-        <button onClick={()=>{setSearch(inp);setPage(1);}} style={{position:'absolute',right:8,top:'50%',transform:'translateY(-50%)',background:'none',color:'var(--cel-d)',border:'none',cursor:'pointer',display:'flex',alignItems:'center'}}>
-          <svg style={{width:15,height:15}} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <button className="soc-btn" onClick={()=>{onLogin({name:'UsuarioGoogle',av:'G',color:'#4285F4',rep:0,isGuest:false});onClose();addToast({msg:'Ingresaste con Google ✓',type:'ok'});}}>
+          <span style={{fontSize:18}}>🔵</span> Continuar con Google
         </button>
-      </div>
-      <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:14,scrollbarWidth:'none'}}>
-        {['Todos',...cats].map(c => (
-          <button key={c} onClick={()=>{setCat(c==='Todos'?'':c);setPage(1);}}
-            style={{flexShrink:0,padding:'5px 12px',borderRadius:20,background:cat===(c==='Todos'?'':c)?'var(--cel)':'var(--white)',border:`1.5px solid ${cat===(c==='Todos'?'':c)?'var(--cel)':'var(--br)'}`,color:cat===(c==='Todos'?'':c)?'white':'var(--tx2)',fontSize:11,fontWeight:600,cursor:'pointer',transition:'.15s'}}>
-            {c}
-          </button>
-        ))}
-      </div>
-      {loading ? <SkeletonCards n={12}/> : (
-        <>
-          <div className="ng-grid">
-            {posts.map(p => <NewsCard key={p._id} post={p} onClick={()=>onArticle(p)}/>)}
-          </div>
-          {posts.length===0 && <div style={{textAlign:'center',padding:'40px 0',color:'var(--tx3)'}}>📭 Sin resultados</div>}
-          {pages>1 && (
-            <div style={{display:'flex',justifyContent:'center',gap:8,marginTop:18}}>
-              <button className="btn btn-o btn-sm" disabled={page===1} onClick={()=>setPage(p=>p-1)}>← Anterior</button>
-              <span style={{alignSelf:'center',fontSize:12,color:'var(--tx3)'}}>Pág {page}/{pages}</span>
-              <button className="btn btn-o btn-sm" disabled={page===pages} onClick={()=>setPage(p=>p+1)}>Siguiente →</button>
+        <button className="soc-btn" onClick={()=>{onLogin({name:'UsuarioFB',av:'F',color:'#1877F2',rep:0,isGuest:false});onClose();addToast({msg:'Ingresaste con Facebook ✓',type:'ok'});}}>
+          <span style={{fontSize:18}}>📘</span> Continuar con Facebook
+        </button>
+        <div className="or-div">o con tu correo</div>
+        <form onSubmit={submit}>
+          {tab==='reg' && (
+            <div style={{marginBottom:10}}>
+              <label className="fl">Nombre de usuario</label>
+              <div style={{position:'relative'}}>
+                <input className="fi" value={uname} onChange={e=>setUname(e.target.value)} placeholder="mi_usuario" required style={{paddingLeft:34}}/>
+                <Ic.User style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+              </div>
             </div>
           )}
-        </>
-      )}
-    </div>
-  );
-}
-
-/* ══════ ARTICLE PAGE ══════ */
-function ArticlePage({ post, onBack, user, addToast }) {
-  const [comments, setComments] = useState([]);
-  const [cmtTxt, setCmtTxt] = useState('');
-  const [sending, setSending] = useState(false);
-  const token = localStorage.getItem('tl_token');
-  useEffect(() => {
-    if (!post._id || post._id.startsWith('s')) return;
-    fetch(`${API}/api/comments?post=${post._id}`).then(r=>r.json()).then(d=>setComments(d.comments||[])).catch(()=>{});
-  }, [post._id]);
-  async function submit(e) {
-    e.preventDefault();
-    if (!cmtTxt.trim()) return;
-    setSending(true);
-    try {
-      const r = await fetch(`${API}/api/comments`, { method:'POST', headers:{'Content-Type':'application/json',...(token&&{Authorization:`Bearer ${token}`})}, body:JSON.stringify({post:post._id,content:cmtTxt.trim(),author:user?.isGuest===false?(user.displayName||user.username):'Invitado'}) });
-      const d = await r.json();
-      if (r.ok) setComments(c => [d.comment,...c]);
-      else setComments(c => [{_id:Date.now(),author:'Vos',content:cmtTxt.trim(),createdAt:new Date().toISOString()},...c]);
-    } catch {
-      setComments(c => [{_id:Date.now(),author:'Vos',content:cmtTxt.trim(),createdAt:new Date().toISOString()},...c]);
-    }
-    setCmtTxt('');
-    setSending(false);
-    addToast({msg:'Comentario publicado ✓',type:'ok'});
-  }
-  const cat = post.category || post.cat || 'Deportes';
-  return (
-    <div style={{maxWidth:720,margin:'0 auto'}}>
-      <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--cel)',marginBottom:16,fontSize:12,fontWeight:600,cursor:'pointer',border:'none'}}><Ic.Back style={{width:13,height:13}}/> Volver</button>
-      {post.coverImage && <img src={post.coverImage} alt={post.title} style={{width:'100%',maxHeight:300,objectFit:'cover',borderRadius:'var(--rl)',border:'2px solid var(--cel)',marginBottom:16}} onError={e=>e.target.style.display='none'}/>}
-      <div style={{marginBottom:10,display:'flex',gap:7,flexWrap:'wrap'}}>
-        <span className="badge bc">{cat}</span>
-        {post.meta?.sourceName && <span className="badge bc">📡 {post.meta.sourceName}</span>}
-      </div>
-      <h1 style={{fontFamily:'var(--fd)',fontSize:24,fontWeight:700,lineHeight:1.1,marginBottom:10}}>{post.title}</h1>
-      <div style={{fontSize:12,color:'var(--tx3)',marginBottom:18}}>{new Date(post.publishedAt).toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'})}</div>
-      <div style={{fontFamily:"'Merriweather',serif",fontSize:14,lineHeight:1.85,color:'var(--tx2)',marginBottom:18}}>
-        {post.excerpt || post.content || 'Leé la nota completa en la fuente original.'}
-        {post.meta?.sourceUrl && post.meta.sourceUrl !== '#' && (
-          <div style={{marginTop:12}}>
-            <a href={post.meta.sourceUrl} target="_blank" rel="noopener noreferrer" style={{color:'var(--cel)',fontWeight:600}}>→ Leer nota completa en {post.meta.sourceName}</a>
+          <div style={{marginBottom:10}}>
+            <label className="fl">Correo electrónico</label>
+            <div style={{position:'relative'}}>
+              <input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vos@correo.com" required style={{paddingLeft:34}}/>
+              <Ic.Mail style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+            </div>
           </div>
-        )}
-      </div>
-      <div className="card cp" style={{marginBottom:20}}><Poll poll={STATIC_POLLS[0]}/></div>
-      <div className="sh"><div className="st">Comentarios</div><span style={{fontSize:11,color:'var(--tx3)'}}>{comments.length}</span></div>
-      <div className="card cp" style={{marginBottom:14}}>
-        <form onSubmit={submit}>
-          <textarea className="fi" value={cmtTxt} onChange={e=>setCmtTxt(e.target.value)} placeholder="Sumate al debate..." style={{minHeight:60,resize:'vertical',marginBottom:9}}/>
-          <div style={{display:'flex',justifyContent:'flex-end'}}><button type="submit" className="btn btn-c btn-sm" disabled={sending}>{sending?'Publicando...':'Publicar'}</button></div>
+          <div style={{marginBottom:16}}>
+            <label className="fl">Contraseña</label>
+            <div style={{position:'relative'}}>
+              <input className="fi" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required style={{paddingLeft:34}}/>
+              <Ic.Lock style={{width:14,height:14,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+            </div>
+          </div>
+          <button type="submit" className="btn btn-c" style={{width:'100%',justifyContent:'center'}} disabled={loading}>
+            {loading ? 'Un momento...' : (tab==='login' ? 'Ingresar a Tribuna Libre' : 'Crear mi cuenta gratis')}
+          </button>
         </form>
+        <div className="divhr"/>
+        <button onClick={guest} className="btn btn-out" style={{width:'100%',justifyContent:'center',fontSize:12}}>
+          <Ic.User style={{width:13,height:13}}/> Entrar como invitado
+        </button>
+        <p style={{textAlign:'center',fontSize:10,color:'var(--tx3)',marginTop:9,lineHeight:1.5}}>
+          Como invitado podés leer y comentar. Registrate para publicar columnas y participar en charlas en vivo.
+        </p>
       </div>
-      {comments.map(c => (
-        <div key={c._id||Math.random()} style={{borderBottom:'1px solid var(--br)',paddingBottom:12,marginBottom:12}}>
-          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:6}}>
-            <div style={{width:28,height:28,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:10,color:'white'}}>{(c.author||'?')[0].toUpperCase()}</div>
-            <div><div style={{fontWeight:700,fontSize:12}}>{c.author||'Invitado'}</div><div style={{fontSize:10,color:'var(--tx3)'}}>{c.createdAt?new Date(c.createdAt).toLocaleDateString('es-AR'):'Ahora'}</div></div>
-          </div>
-          <div style={{fontSize:13,lineHeight:1.55,color:'var(--tx2)'}}>{c.content}</div>
-        </div>
-      ))}
     </div>
   );
 }
 
-/* ══════ COMUNIDAD PAGE (NUEVA SECCIÓN) ══════ */
-function ComunidadPage({ user, addToast, onNav }) {
-  const [tab, setTab]       = useState('feed');
-  const [text, setText]     = useState('');
-  const [posts, setPosts]   = useState(COMMUNITY_POSTS);
-  const [liked, setLiked]   = useState({});
-  const [chatMsg, setChatMsg] = useState('');
-  const [chatMsgs, setChatMsgs] = useState([
-    {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
-    {id:2,u:'ScrumMaster',text:'¡Increíble! Los Pumas también la rompen 🏉',own:false},
-    {id:3,u:'Vos',text:'¡Esto es Tribuna Libre en vivo!',own:true},
-  ]);
-  const chatRef = useRef();
-  function publish() {
-    if (!text.trim()) return;
-    setPosts(p => [{id:Date.now(),user:user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado',av:(user?.displayName||'I')[0].toUpperCase(),color:'#4A90D9',text,likes:0,time:'Ahora'},...p]);
-    setText('');
-    addToast({msg:'¡Publicado en la comunidad!',type:'ok'});
-  }
-  function sendChat() {
-    if (!chatMsg.trim()) return;
-    setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
-    setChatMsg('');
-    setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
-  }
-  const THREADS = [
-    {id:1,cat:'futbol',title:'El VAR en Argentina: ¿solución o mayor caos?',r:87,v:1240,hot:true,author:'Gonzalo_TL',t:'Hace 1h'},
-    {id:2,cat:'rugby',title:'Los Pumas: formación ideal para el Mundial 2027',r:54,v:890,hot:true,author:'ScrumMaster',t:'Hace 3h'},
-    {id:3,cat:'auto',title:'Colapinto 2025: ¿puede pelear el título de F1?',r:34,v:670,hot:false,author:'SpeedFreak',t:'Hace 5h'},
-    {id:4,cat:'basquet',title:'Vildoza: el mejor base argentino de la historia',r:29,v:445,hot:false,author:'LaVioleta',t:'Hace 7h'},
-  ];
+/* ══════ NEWS CARD ══════ */
+function NewsCard({n, onClick, size='sm'}) {
+  const [lk,setLk]=useState(false);
   return (
-    <div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-        <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--cel)'}}>Tribuna Libre</span></h1>
+    <div className="nc" onClick={onClick}>
+      <div className={`nc-img ${size}`}>
+        {n.img ? <img src={n.img} alt={n.title} loading="lazy"/> : <span className="nc-img-em">{n.em}</span>}
+        <div className="nc-cat"><span className="badge bc">{n.cat}</span></div>
       </div>
-      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
-      {/* Tabs */}
-      <div className="tabs">
-        {[{id:'feed',l:'Feed'},{id:'chat',l:'Chat en Vivo'},{id:'debates',l:'Debates'}].map(t => (
-          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
-        ))}
+      <div className="nc-body">
+        <div className="nc-tit">{n.title}</div>
+        {n.ex && <div className="nc-exc">{n.ex}</div>}
+        <div className="nc-ft">
+          <div>{n.auth} · {n.t}</div>
+          <div className="nc-ac">
+            <button className={`abt${lk?' lk':''}`} onClick={e=>{e.stopPropagation();setLk(!lk)}}><Ic.Heart/>{n.l+(lk?1:0)}</button>
+            <button className="abt"><Ic.Comment/>{n.c}</button>
+          </div>
+        </div>
       </div>
-      {/* FEED */}
-      {tab==='feed' && (
-        <div>
-          <div className="card cp" style={{marginBottom:14}}>
-            <div style={{display:'flex',gap:10,marginBottom:9}}>
-              <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>
-                {user?.isGuest===false ? (user.displayName||user.username||'V')[0].toUpperCase() : '?'}
-              </div>
-              <textarea value={text} onChange={e=>setText(e.target.value)} className="fi" placeholder="¿Qué pensás del deporte argentino?" style={{minHeight:60,resize:'none'}}/>
-            </div>
-            <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <button className="btn btn-c btn-sm" onClick={publish}>Publicar</button>
-            </div>
-          </div>
-          {posts.map(p => (
-            <div key={p.id} className="post-card">
-              <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
-                <div className="post-av" style={{background:p.color}}>{p.av}</div>
-                <div><div className="post-user">{p.user}</div><div className="post-time">{p.time}</div></div>
-              </div>
-              <div className="post-body">{p.text}</div>
-              <div className="post-actions">
-                <button className={`abt${liked[p.id]?' lk':''}`} onClick={()=>setLiked(l=>({...l,[p.id]:!l[p.id]}))}>
-                  <Ic.Heart/> {p.likes+(liked[p.id]?1:0)}
-                </button>
-                <button className="abt"><Ic.Comment/> Responder</button>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {/* CHAT EN VIVO */}
-      {tab==='chat' && (
-        <div>
-          <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,padding:'9px 12px',background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)'}}>
-            <div className="ldot"/><span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>Chat en vivo</span>
-            <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>234 conectados</span>
-          </div>
-          <div className="chat-wrap">
-            <div ref={chatRef} className="chat-bd">
-              {chatMsgs.map(m => (
-                <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
-                  {!m.own && <div className="cmsg-u">{m.u}</div>}
-                  <div>{m.text}</div>
-                </div>
-              ))}
-            </div>
-            <div className="chat-inp">
-              <input className="chat-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Escribí tu mensaje..."/>
-              <button className="chat-snd" onClick={sendChat}><Ic.Send style={{width:14,height:14}}/></button>
-            </div>
-          </div>
-        </div>
-      )}
-      {/* DEBATES */}
-      {tab==='debates' && (
-        <div>
-          <div className="sh"><div className="st">Hilos activos</div><span className="sl">+ Nuevo hilo</span></div>
-          {THREADS.map(t => (
-            <div key={t.id} className="thread-card">
-              <div style={{display:'flex',gap:5,marginBottom:5}}>
-                {t.hot && <span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
-                <span className="badge bc" style={{fontSize:9}}>{t.cat}</span>
-                <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
-              </div>
-              <div className="thread-tit">{t.title}</div>
-              <div className="thread-mt">
-                <span style={{display:'flex',alignItems:'center',gap:3}}><Ic.Comment style={{width:11,height:11}}/>{t.r}</span>
-                <span style={{display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:11,height:11}}/>{t.v}</span>
-                <span>@{t.author}</span>
-              </div>
-            </div>
-          ))}
-          <div className="sh" style={{marginTop:18}}><div className="st">Encuestas</div></div>
-          {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
-        </div>
-      )}
     </div>
   );
 }
 
-/* ══════ STREAMING PAGE (NUEVA SECCIÓN) ══════ */
-function StreamingPage({ addToast }) {
-  const [streamOpen, setStreamOpen] = useState(false);
-  const [chatMsg, setChatMsg]  = useState('');
-  const [chatMsgs, setChatMsgs] = useState([
-    {id:1,u:'GonzaB',text:'Que partido 🔥⚽',own:false},
-    {id:2,u:'PumasFan',text:'¡Los Pumas también la rompen!',own:false},
+/* ══════ CHARLA EN VIVO ══════ */
+function CharlaVivo({addToast, user}) {
+  const [msgs,setMsgs]=useState([
+    {id:1,u:'Marcelo García',text:'Buenas noches a todos. Arrancamos con la cobertura del Superclásico.',own:false},
+    {id:2,u:'Fan_BsAs',text:'¡Que empiece! Vamos River 🔴⚪',own:false},
+    {id:3,u:'Valentina R.',text:'El análisis táctico que hicimos esta semana va a cobrar sentido ahora.',own:false},
   ]);
-  const chatRef = useRef();
-  function sendChat() {
-    if (!chatMsg.trim()) return;
-    setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
+  const [chatMsg,setChatMsg]=useState('');
+  const [showJoin,setShowJoin]=useState(false);
+  const ref=useRef();
+  const parts=CHARLA_PARTS;
+  const count=parts.filter(p=>p.connected).length;
+
+  function send() {
+    if(!chatMsg.trim())return;
+    setMsgs(m=>[...m,{id:Date.now(),u:user?.name||'Vos',text:chatMsg,own:true}]);
     setChatMsg('');
-    setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
+    setTimeout(()=>{if(ref.current)ref.current.scrollTop=ref.current.scrollHeight;},50);
   }
-  if (!streamOpen) return (
-    <div>
-      <div className="sh"><div className="st">Streaming Deportivo</div></div>
-      {/* Imagen de acceso al streaming — clic para entrar */}
-      <div className="stream-hero" onClick={()=>setStreamOpen(true)}>
-        <img
-          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/stremmers.png"
-          alt="Acceso Streaming Tribuna Libre"
-          onError={e=>{e.target.style.display='none';e.target.nextSibling.style.display='flex';}}
-        />
-        <div style={{display:'none',height:200,alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,var(--cel-d),var(--cel))',fontSize:60}}>📡</div>
-        <div className="stream-hero-ov">
-          <div className="play-circle"><Ic.Play style={{width:22,height:22,color:'white',marginLeft:3}}/></div>
-          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,color:'white',marginBottom:5}}>Streaming en Vivo</div>
-          <div style={{fontSize:13,color:'rgba(255,255,255,.7)'}}>Hacé clic para ver todas las transmisiones · {STREAMS.filter(s=>s.live).length} en vivo ahora</div>
-        </div>
-      </div>
-    </div>
-  );
+
   return (
-    <div>
-      <div className="sh">
-        <div className="st">Streaming</div>
-        <button className="btn btn-o btn-sm" onClick={()=>setStreamOpen(false)}>← Volver</button>
+    <div className="charla-wrap">
+      <div className="charla-hd">
+        <span style={{fontSize:20}}>🎙️</span>
+        <div className="charla-tit">Charla en Vivo · Superclásico 2025</div>
+        <div className="charla-sts"><div className="ld-w"/>EN VIVO · {count}/{parts.length} participantes</div>
       </div>
-      <div style={{background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)',padding:'9px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:8}}>
-        <div className="ldot"/><span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>{STREAMS.filter(s=>s.live).length} transmisiones en vivo ahora mismo</span>
-        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>{STREAMS.filter(s=>s.live).reduce((a,s)=>a+s.viewers,0).toLocaleString()} viendo</span>
-      </div>
-      <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr',marginBottom:20}}>
-        {[null,null].map((_,r) => (
-          <div key={r} style={{display:'grid',gap:12,gridTemplateColumns:'repeat(auto-fill,minmax(220px,1fr))'}}>
-            {STREAMS.slice(r*3,(r+1)*3).map(s => (
-              <div key={s.id} className="sc" onClick={()=>addToast({msg:`Abriendo ${s.tit}...`,type:'ok'})}>
-                <div className="sc-thumb">
-                  <span>{s.em}</span>
-                  {s.live && <div className="live-tag"><div style={{width:5,height:5,borderRadius:'50%',background:'white',animation:'pulse 1.4s infinite'}}/>LIVE</div>}
-                </div>
-                <div className="sc-body">
-                  <div className="sc-tit">{s.tit}</div>
-                  <div className="sc-info">
-                    <span>{s.ch}</span>
-                    {s.live && <><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',flexShrink:0}}/><span style={{color:'var(--red)'}}>{s.viewers.toLocaleString()}</span></>}
-                  </div>
-                </div>
+      {/* Video grid */}
+      <div className={`charla-video-grid p${parts.length}`}>
+        {parts.map((p,i) => (
+          <div key={i} className={`vid-cell${!p.connected?' vid-empty':''}`}>
+            {p.connected ? (
+              <>
+                <div className="vid-cell-lv"><div className="live-tag"><div className="ldot" style={{width:5,height:5}}/>{i===0?'HOST':'LIVE'}</div></div>
+                <div className="vid-cell-av">{p.em}</div>
+                <div className="vid-cell-nm">{p.name}</div>
+                <div className="vid-cell-role">{p.role}</div>
+              </>
+            ) : (
+              <div className="vid-empty-txt">
+                <div style={{fontSize:24,marginBottom:6,opacity:.3}}>+</div>
+                <span>Lugar disponible</span>
               </div>
-            ))}
+            )}
           </div>
         ))}
       </div>
-      {/* Chat del streaming */}
-      <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>Chat del streaming</div></div>
+      {/* Join strip */}
+      <div className="charla-join-strip">
+        <div className="charla-join-info">
+          <h4>¿Querés participar de la charla?</h4>
+          <p>Moderadores e invitados pueden sumarse con cámara y micrófono.</p>
+        </div>
+        <button className="btn btn-c btn-sm" onClick={()=>{if(!user||user.isGuest){addToast({msg:'Necesitás registrarte para participar.',type:'err'});}else{setShowJoin(true);addToast({msg:'Solicitud enviada al moderador 🎙️',type:'ok'});}}}>
+          <Ic.Micro style={{width:13,height:13}}/> Sumate a la charla
+        </button>
+      </div>
+      {/* Chat */}
       <div className="chat-wrap">
         <div className="chat-hd">
-          <div className="ldot"/><span style={{fontWeight:600,fontSize:13}}>Chat en vivo</span>
-          <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3)'}}>1.2k online</span>
+          <div className="ldot" style={{background:'var(--red)'}}/>
+          <span style={{fontWeight:600,fontSize:13,color:'var(--tx)'}}>Chat de la comunidad</span>
+          <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3)'}}>2,341 viendo</span>
         </div>
-        <div ref={chatRef} className="chat-bd">
-          {chatMsgs.map(m => (
-            <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
-              {!m.own && <div className="cmsg-u">{m.u}</div>}
+        <div ref={ref} className="chat-bd">
+          {msgs.map(m => (
+            <div key={m.id} className={`cm ${m.own?'own':'other'}`}>
+              {!m.own && <div className="cm-u">{m.u}</div>}
               <div>{m.text}</div>
             </div>
           ))}
         </div>
         <div className="chat-inp">
-          <input className="chat-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&sendChat()} placeholder="Comentá el partido..."/>
-          <button className="chat-snd" onClick={sendChat}><Ic.Send style={{width:14,height:14}}/></button>
+          <input className="chat-txt" value={chatMsg} onChange={e=>setChatMsg(e.target.value)} onKeyDown={e=>e.key==='Enter'&&send()} placeholder="Opiná sobre la charla..."/>
+          <button className="chat-snd" onClick={send}><Ic.Send/></button>
         </div>
       </div>
     </div>
   );
 }
 
-/* ══════ PRODE PAGE ══════ */
-function ProdePage({ user, addToast }) {
-  const [picks, setPicks] = useState({});
-  const [submitted, setSubmitted] = useState(false);
-  const totalPicked = Object.keys(picks).length;
-  function pick(id, r) { setPicks(p => ({...p,[id]:r})); }
-  function submit() {
-    if (totalPicked < PRODE_MATCHES.length) { addToast({msg:'Completá todas las predicciones antes de enviar',type:'err'}); return; }
-    if (!user || user.isGuest) { addToast({msg:'Necesitás registrarte para guardar tus predicciones 🔒',type:'err'}); return; }
-    setSubmitted(true);
-    addToast({msg:'¡Predicciones guardadas! ¡Mucha suerte! 🏆',type:'ok'});
-  }
-  return (
-    <div>
-      <div style={{background:'linear-gradient(135deg,#B7770D,var(--sun))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:18,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>🏆</span>
-        <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>El Prode de Tribuna Libre</div>
-          <div style={{fontSize:12,opacity:.8}}>100% gratis para todos los usuarios</div>
-        </div>
-      </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,flexWrap:'wrap',gap:8}}>
-        <div style={{fontSize:12,color:'var(--tx2)'}}>Completadas: <b style={{color:'var(--cel-d)'}}>{totalPicked}/{PRODE_MATCHES.length}</b></div>
-        {!submitted ? <button className="btn btn-s btn-sm" onClick={submit}>Enviar predicciones</button>
-          : <span className="badge bg-b" style={{display:'flex',alignItems:'center',gap:4}}><Ic.Check style={{width:10,height:10}}/>Enviado</span>}
-      </div>
-      {PRODE_MATCHES.map(m => {
-        const p = picks[m.id];
-        return (
-          <div key={m.id} className={`prode-match${submitted?' locked':''}`}>
-            <div className="prode-teams">
-              <div className="prode-team"><span className="prode-em">{m.he}</span><div className="prode-nm">{m.h}</div></div>
-              <div className="prode-vs">vs</div>
-              <div className="prode-team"><span className="prode-em">{m.ae}</span><div className="prode-nm">{m.a}</div></div>
-            </div>
-            <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8,textAlign:'center'}}>📅 {m.date}</div>
-            <div className="prode-pickers">
-              <div className={`prode-btn${p==='h'?' sel-h':''}`} onClick={()=>!submitted&&pick(m.id,'h')}>{m.h} gana</div>
-              <div className={`prode-btn${p==='e'?' sel-e':''}`} onClick={()=>!submitted&&pick(m.id,'e')}>Empate</div>
-              <div className={`prode-btn${p==='a'?' sel-a':''}`} onClick={()=>!submitted&&pick(m.id,'a')}>{m.a} gana</div>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
+/* ══════ RED DE PERIODISMO PAGE ══════ */
+function RedPage({user, addToast}) {
+  const [tab,setTab]=useState('firma');
+  const [showForm,setShowForm]=useState(false);
+  const [col,setCol]=useState({title:'',body:'',cat:'Fútbol'});
 
-/* ══════ COPA PAGE ══════ */
-function CopaPage() {
-  const [tab, setTab] = useState('fixture');
-  return (
-    <div>
-      <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:18,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>🌎</span>
-        <div><div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Copa del Mundo 2026</div><div style={{fontSize:12,opacity:.8}}>EE.UU · México · Canadá</div></div>
-      </div>
-      <div className="tabs">
-        {[{id:'fixture',l:'Fixture'},{id:'grupos',l:'Grupos'},{id:'libertadores',l:'Libertadores'}].map(t => (
-          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
-        ))}
-      </div>
-      {tab==='fixture' && (
-        <div>
-          {[{r:'Cuartos',h:'🇦🇷 Argentina',a:'🇧🇷 Brasil',d:'15 Jul 2026'},{r:'Cuartos',h:'🇺🇾 Uruguay',a:'🇨🇴 Colombia',d:'16 Jul 2026'},{r:'Semifinal',h:'Ganador Q1',a:'Ganador Q2',d:'19 Jul 2026'},{r:'Final',h:'TBD',a:'TBD',d:'26 Jul 2026'}].map((m,i,arr) => (
-            <div key={i}>
-              {(i===0||arr[i-1].r!==m.r) && <div style={{background:'var(--cel)',color:'white',borderRadius:'var(--r)',padding:'7px 13px',marginBottom:9,marginTop:i>0?13:0,fontFamily:'var(--fd)',fontSize:12,fontWeight:600}}>{m.r}</div>}
-              <div style={{background:'var(--white)',border:'1px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 13px',marginBottom:7,display:'flex',alignItems:'center',justifyContent:'space-between',transition:'.15s'}} onMouseEnter={e=>e.currentTarget.style.background='var(--cel-xl)'} onMouseLeave={e=>e.currentTarget.style.background='var(--white)'}>
-                <span style={{fontSize:13,fontWeight:500,flex:1}}>{m.h}</span>
-                <span style={{fontFamily:'var(--fd)',fontSize:11,color:'var(--tx3)',padding:'0 12px'}}>{m.d}</span>
-                <span style={{fontSize:13,fontWeight:500,flex:1,textAlign:'right'}}>{m.a}</span>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {tab==='grupos' && (
-        <div>
-          {[{name:'A',teams:[{t:'Argentina 🇦🇷',pt:9},{t:'Colombia 🇨🇴',pt:6},{t:'Brasil 🇧🇷',pt:3},{t:'México 🇲🇽',pt:0}]},{name:'B',teams:[{t:'Uruguay 🇺🇾',pt:7},{t:'Ecuador 🇪🇨',pt:5},{t:'Chile 🇨🇱',pt:4},{t:'Venezuela 🇻🇪',pt:1}]}].map((g,i) => (
-            <div key={i}><div className="group-hd">Grupo {g.name}</div>
-              <table className="group-table">
-                <thead><tr><th>Equipo</th><th>PTS</th></tr></thead>
-                <tbody>{g.teams.map((t,j) => <tr key={j}><td style={{fontWeight:j<2?700:400}}>{t.t}</td><td style={{fontWeight:700,color:j<2?'var(--cel-d)':'var(--tx)'}}>{t.pt}</td></tr>)}</tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-      {tab==='libertadores' && (
-        <div>
-          {LIB_GROUPS.map((g,i) => (
-            <div key={i}><div className="group-hd" style={{background:'linear-gradient(135deg,#1E8449,#27AE60)'}}>{g.name}</div>
-              <table className="group-table">
-                <thead><tr><th>Club</th><th>PJ</th><th>PTS</th><th>DG</th></tr></thead>
-                <tbody>{g.teams.map((t,j) => <tr key={j}><td style={{fontWeight:j<2?700:400}}>{j<2?'✦ ':''}{t.t}</td><td>{t.j}</td><td style={{fontWeight:700,color:j<2?'#1E8449':'var(--tx)'}}>{t.p}</td><td style={{color:t.gd>0?'#1E8449':t.gd<0?'var(--red)':'var(--tx3)'}}>{t.gd>0?'+':''}{t.gd}</td></tr>)}</tbody>
-              </table>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ══════ REVISTA PAGE ══════ */
-function RevistaPage({ user, addToast }) {
-  const [tab, setTab]     = useState('notas');
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm]   = useState({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
-  function submitNota(e) {
+  function submitCol(e) {
     e.preventDefault();
-    addToast({msg:'¡Tu nota fue enviada para revisión! 🎉',type:'ok'});
-    setShowForm(false); setForm({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
+    if(!user||user.isGuest){addToast({msg:'Necesitás registrarte para publicar columnas.',type:'err'});return;}
+    addToast({msg:'¡Columna enviada para revisión! Te notificaremos. +20 pts 🎉',type:'ok'});
+    setShowForm(false);
+    setCol({title:'',body:'',cat:'Fútbol'});
   }
+
   return (
     <div>
-      <div style={{background:'linear-gradient(135deg,#9D174D,var(--pink))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:16,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>✏️</span>
-        <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Revista Tribuna Libre</div>
-          <div style={{fontSize:12,opacity:.8}}>El espacio de los jóvenes periodistas deportivos</div>
+      {/* Hero image from GitHub */}
+      <div className="red-hero">
+        <img
+          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/reddeperiodismo.png"
+          alt="Red de Periodismo Deportivo"
+          onError={e=>{e.target.style.display='none';}}
+        />
+        <div className="red-hero-cap">
+          <h2>Red de Periodismo Deportivo</h2>
+          <p>Espacio para periodistas, analistas y fanáticos. Tu voz en el deporte argentino.</p>
         </div>
-        <button className="btn btn-sm" style={{marginLeft:'auto',background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}} onClick={()=>setShowForm(true)}>
-          <Ic.Pen style={{width:12,height:12}}/> Publicar
+      </div>
+
+      {/* Action bar */}
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16,flexWrap:'wrap',gap:8}}>
+        <div className="tabs" style={{flex:'none',margin:0}}>
+          <div className={`tabx${tab==='firma'?' on':''}`} onClick={()=>setTab('firma')}>Columnas Firmadas</div>
+          <div className={`tabx${tab==='anon'?' on':''}`} onClick={()=>setTab('anon')}>Columnas Anónimas</div>
+          <div className={`tabx${tab==='charla'?' on':''}`} onClick={()=>setTab('charla')}>Charlas en Vivo</div>
+          <div className={`tabx${tab==='ranking'?' on':''}`} onClick={()=>setTab('ranking')}>Ranking</div>
+        </div>
+        <button className="btn btn-c btn-sm" onClick={()=>setShowForm(true)}>
+          <Ic.Pen style={{width:13,height:13}}/> Publicar columna
         </button>
       </div>
-      <div className="tabs">
-        {[{id:'notas',l:'📰 Notas'},{id:'opinion',l:'💬 Opinión'},{id:'tips',l:'💡 Tips'},{id:'enviar',l:'✍️ Publicá'}].map(t => (
-          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
-        ))}
-      </div>
-      {(tab==='notas'||tab==='opinion') && (
-        <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr'}}>
-          {REVISTA_ARTICLES.map(a => (
-            <div key={a.id} className="rev-article">
-              <div className="rev-img"><span>{a.emoji}</span></div>
-              <div className="rev-body">
-                <div style={{marginBottom:7}}><span className="badge bp">{a.cat}</span></div>
-                <div className="rev-tit">{a.title}</div>
-                <div className="rev-exc">{a.excerpt}</div>
-                <div className="rev-ft">
-                  <span>{a.author}</span><span>{a.age} años</span>
-                  <span style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:11,height:11}}/>{a.reads}</span>
+
+      {/* COLUMNAS FIRMADAS */}
+      {tab==='firma' && (
+        <div>
+          <div className="sh"><div className="st">Columnistas destacados</div><span className="badge bc" style={{fontSize:10}}>Verificados</span></div>
+          <div style={{display:'grid',gap:14,gridTemplateColumns:'1fr'}}>
+            {SIGNED_COLS.map(c => (
+              <div key={c.id} className="col-card">
+                <div className="col-header">
+                  <div className="col-av">{c.av}</div>
+                  <div className="col-info">
+                    <div className="col-author" style={{display:'flex',alignItems:'center',gap:7}}>
+                      {c.author}
+                      <span className="badge bg-badge" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Shield style={{width:8,height:8}}/>Verificado</span>
+                    </div>
+                    <div className="col-bio">{c.bio}</div>
+                  </div>
+                  <span className="badge bc">{c.cat}</span>
+                </div>
+                <div className="col-body">
+                  <div className="col-tit">{c.title}</div>
+                  <div className="col-exc">"{c.exc}"</div>
+                  <div className="col-ft">
+                    <span className="badge bc" style={{display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:9,height:9}}/>{c.reads.toLocaleString()} lecturas</span>
+                    <span className="badge bc" style={{display:'flex',alignItems:'center',gap:3}}><Ic.Comment style={{width:9,height:9}}/>{c.comments}</span>
+                    <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{c.t}</span>
+                    <button className="btn btn-out btn-sm">Leer columna</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
-      {tab==='tips' && (
-        <div>
-          {[{em:'🎯',t:'Cómo escribir una crónica deportiva',b:'Contá el partido como si lo estuvieras viendo. Describí las emociones, los momentos clave y las jugadas que definieron el resultado.'},
-            {em:'📊',t:'Analizar táctica sin ser experto',b:'Fijate en las posiciones en el campo, cómo presionan en defensa, y si hay patrones en el ataque. Con ver 3-4 jugadas podés sacar conclusiones.'},
-            {em:'🎙️',t:'Tu primera entrevista a un deportista',b:'Prepará las preguntas antes. Hacé preguntas abiertas con "¿Cómo...?" o "¿Por qué...?". Escuchá activamente y no interrumpas.'},
-          ].map((tip,i) => (
-            <div key={i} className="card cp" style={{marginBottom:10,display:'flex',gap:12}}>
-              <span style={{fontSize:24,flexShrink:0}}>{tip.em}</span>
-              <div><div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600,marginBottom:4}}>{tip.t}</div><div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6}}>{tip.b}</div></div>
-            </div>
-          ))}
-        </div>
-      )}
-      {tab==='enviar' && (
-        <div>
-          <div style={{background:'linear-gradient(135deg,#FDF2F8,#FCE7F3)',border:'1.5px solid var(--pink)',borderRadius:'var(--rl)',padding:18,marginBottom:16}}>
-            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'#9D174D',marginBottom:5}}>¿Querés publicar en la Revista?</div>
-            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:12}}>Si tenés entre 10 y 22 años y amás el deporte, este es tu espacio. Mandanos tu nota y te ayudamos a mejorarla.</div>
-            <button className="btn btn-pk" onClick={()=>setShowForm(true)}><Ic.Pen style={{width:13,height:13}}/> Mandar mi nota ahora</button>
+            ))}
           </div>
         </div>
       )}
+
+      {/* COLUMNAS ANÓNIMAS */}
+      {tab==='anon' && (
+        <div>
+          <div className="sh">
+            <div className="st">La voz de la comunidad</div>
+            <span className="badge banon">Sin firma · Libres</span>
+          </div>
+          <div style={{background:'linear-gradient(135deg,var(--cel-xl),var(--card2))',border:'1px solid var(--br)',borderRadius:'var(--r)',padding:'12px 14px',marginBottom:16,display:'flex',alignItems:'flex-start',gap:10}}>
+            <span style={{fontSize:22}}>🛡️</span>
+            <div>
+              <div style={{fontWeight:700,fontSize:13,color:'var(--tx)',marginBottom:3}}>Tu identidad está protegida</div>
+              <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.5}}>Las columnas anónimas son revisadas por nuestro equipo antes de publicarse. No se guarda información del autor.</div>
+            </div>
+          </div>
+          <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr'}}>
+            {ANON_COLS.map(c => (
+              <div key={c.id} className="anon-card">
+                <div className="anon-label">
+                  <div className="anon-icon">🎭</div>
+                  <div>
+                    <div className="anon-tag">Columna anónima de la comunidad</div>
+                    <span className="badge bc" style={{fontSize:9}}>{c.cat}</span>
+                  </div>
+                  <span style={{marginLeft:'auto',fontSize:10,color:'var(--tx3)'}}>{c.t}</span>
+                </div>
+                <div className="anon-tit">{c.title}</div>
+                <div className="anon-exc">"{c.exc}"</div>
+                <div className="anon-ft">
+                  <Ic.Eye style={{width:12,height:12}}/> {c.reads.toLocaleString()} lecturas
+                  <Ic.Comment style={{width:12,height:12}}/> {c.comments} comentarios
+                  <button className="btn btn-out btn-sm" style={{marginLeft:'auto'}}>Leer</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* CHARLAS EN VIVO */}
+      {tab==='charla' && (
+        <div>
+          <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>Transmisión en curso</div></div>
+          <CharlaVivo user={user} addToast={addToast}/>
+          <div className="sh" style={{marginTop:20}}><div className="st">Próximas charlas</div></div>
+          {[
+            {t:'Análisis post-Superclásico con Marcelo García y Valentina Ríos',date:'Hoy 21:00',parts:2},
+            {t:'Debate: ¿Los Pumas pueden ganar el Mundial de Rugby 2027?',date:'Mañana 19:30',parts:3},
+            {t:'Mesa redonda: el futuro del automovilismo argentino con Colapinto',date:'Sab 18:00',parts:4},
+          ].map((ev,i) => (
+            <div key={i} className="card cp" style={{marginBottom:10,display:'flex',alignItems:'center',gap:12}}>
+              <div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'10px 12px',textAlign:'center',flexShrink:0,minWidth:60}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:11,fontWeight:700,color:'var(--cel-d)'}}>{ev.date.split(' ')[0]}</div>
+                <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'var(--cel)'}}>{ev.date.split(' ').slice(1).join(' ')}</div>
+              </div>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600,color:'var(--tx)',marginBottom:3,lineHeight:1.25}}>{ev.t}</div>
+                <div style={{fontSize:11,color:'var(--tx3)'}}>{ev.parts} participantes esperados · <Ic.Micro style={{width:11,height:11,verticalAlign:'middle'}}/> Charla abierta</div>
+              </div>
+              <button className="btn btn-out btn-sm" onClick={()=>addToast({msg:'Recordatorio activado 🔔',type:'ok'})}>Recordarme</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* RANKING */}
+      {tab==='ranking' && (
+        <div>
+          <div className="sh"><div className="st">Columnas más leídas</div><span className="badge bp-badge">Esta semana</span></div>
+          <div className="card cp" style={{marginBottom:16}}>
+            {RANK_COLS.map((c,i) => (
+              <div key={i} className="rank-item">
+                <div className={`rank-num${i===0?' top1':i===1?' top2':i===2?' top3':''}`}>{i+1}</div>
+                <div className="rank-info">
+                  <div className="rank-tit">{c.tit}</div>
+                  <div className="rank-meta">Por <b>{c.auth}</b> · <Ic.Eye style={{width:10,height:10,verticalAlign:'middle'}}/> {c.reads.toLocaleString()}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="sh"><div className="st">Charlas más vistas</div></div>
+          <div className="card cp">
+            {[
+              {t:'Superclásico post-análisis · Abril 2025',views:18400},
+              {t:'Los Pumas vs Springboks: el debate completo',views:12200},
+              {t:'F1 · ¿Colapinto a Ferrari? Mesa de expertos',views:9800},
+            ].map((c,i) => (
+              <div key={i} className="rank-item">
+                <div className={`rank-num${i===0?' top1':i===1?' top2':i===2?' top3':''}`}>{i+1}</div>
+                <div className="rank-info">
+                  <div className="rank-tit">{c.t}</div>
+                  <div className="rank-meta"><Ic.Eye style={{width:10,height:10,verticalAlign:'middle'}}/> {c.views.toLocaleString()} vistas</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* COLUMN FORM MODAL */}
       {showForm && (
         <div className="mbg" onClick={()=>setShowForm(false)}>
-          <div className="mdl" onClick={e=>e.stopPropagation()}>
-            <div className="mdl-h"><div className="mdl-t" style={{color:'#9D174D'}}>✏️ Publicar nota</div><button className="cls" onClick={()=>setShowForm(false)}><Ic.X/></button></div>
-            <form onSubmit={submitNota}>
-              <div style={{marginBottom:10}}><label className="fl">Tu nombre</label><input className="fi" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Juan o 'El_Pibe_10'" required/></div>
-              <div style={{marginBottom:10}}><label className="fl">Tu edad</label><input className="fi" type="number" value={form.edad} onChange={e=>setForm(f=>({...f,edad:e.target.value}))} placeholder="15" min="8" max="25" required/></div>
-              <div style={{marginBottom:10}}><label className="fl">Categoría</label>
-                <select className="fi" style={{background:'var(--cel-xl)'}} value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))}>
-                  {['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Hockey','Opinión','Crónica','Historia'].map(s=><option key={s}>{s}</option>)}
+          <div className="mdl" onClick={e=>e.stopPropagation()} style={{maxWidth:500}}>
+            <div className="mdl-h">
+              <div className="mdl-t">
+                <Ic.Pen style={{width:18,height:18,color:'var(--cel)',marginRight:7}}/> Publicar columna
+              </div>
+              <button className="cls" onClick={()=>setShowForm(false)}><Ic.X/></button>
+            </div>
+            <div className="tabs" style={{marginBottom:14}}>
+              <div className={`tabx${tab!=='anon'?' on':''}`} onClick={()=>setTab('firma')}>Con mi nombre</div>
+              <div className={`tabx${tab==='anon'?' on':''}`} onClick={()=>setTab('anon')}>Anónima</div>
+            </div>
+            {tab==='anon' && (
+              <div style={{background:'var(--cel-xl)',border:'1px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 12px',marginBottom:14,fontSize:12,color:'var(--cel-d)'}}>
+                🛡️ Tu identidad no será revelada. La columna se publicará con la etiqueta "Columna anónima de la comunidad".
+              </div>
+            )}
+            <form onSubmit={submitCol}>
+              <div style={{marginBottom:11}}><label className="fl">Título de tu columna</label><input className="fi" value={col.title} onChange={e=>setCol(c=>({...c,title:e.target.value}))} placeholder="El título que más impacte..." required/></div>
+              <div style={{marginBottom:11}}>
+                <label className="fl">Categoría</label>
+                <select className="fi" style={{background:'var(--card2)'}} value={col.cat} onChange={e=>setCol(c=>({...c,cat:e.target.value}))}>
+                  {['Fútbol','Rugby','Tenis','Básquet','F1','Hockey','Boxeo','Selección','General'].map(s=><option key={s}>{s}</option>)}
                 </select>
               </div>
-              <div style={{marginBottom:10}}><label className="fl">Título</label><input className="fi" value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="El título más llamativo" required/></div>
-              <div style={{marginBottom:16}}><label className="fl">Tu nota</label><textarea className="fi" value={form.texto} onChange={e=>setForm(f=>({...f,texto:e.target.value}))} placeholder="Escribí tu nota aquí. Mínimo 3 párrafos." required style={{minHeight:100,resize:'vertical'}}/></div>
-              <button type="submit" className="btn btn-pk" style={{width:'100%',justifyContent:'center'}}>Enviar mi nota 🚀</button>
+              <div style={{marginBottom:14}}><label className="fl">Texto de la columna</label><textarea className="fi" value={col.body} onChange={e=>setCol(c=>({...c,body:e.target.value}))} placeholder="Escribí tu columna aquí..." required style={{minHeight:120,resize:'vertical',lineHeight:1.6}}/></div>
+              <button type="submit" className="btn btn-c" style={{width:'100%',justifyContent:'center'}}>
+                {tab==='anon' ? '🎭 Publicar de forma anónima' : '✍️ Publicar con mi nombre'}
+              </button>
             </form>
           </div>
         </div>
@@ -1189,179 +1229,175 @@ function RevistaPage({ user, addToast }) {
   );
 }
 
-/* ══════ AUTH MODAL ══════ */
-function AuthModal({ onClose, onLogin, addToast }) {
-  const [tab, setTab]     = useState('login');
-  const [email, setEmail] = useState('');
-  const [pass, setPass]   = useState('');
-  const [uname, setUname] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [err, setErr]     = useState('');
-
-  async function handleGoogle() {
-    if (!window.__fbReady) { addToast({msg:'Ingresá con email (Firebase no configurado)',type:'err'}); return; }
-    setLoading(true); setErr('');
-    try {
-      const cred = await window.__fbGoogleSignIn();
-      // Intentar sync con backend, si falla usar datos de Firebase
-      try {
-        const r = await fetch(`${API}/api/auth/firebase-sync`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({uid:cred.user.uid,email:cred.user.email,displayName:cred.user.displayName}) });
-        if (r.ok) { const d=await r.json(); localStorage.setItem('tl_token',d.token); onLogin({...d.user,isGuest:false}); }
-        else throw new Error('sin backend');
-      } catch {
-        onLogin({displayName:cred.user.displayName||'Usuario',email:cred.user.email,rep:0,isGuest:false});
-      }
-      addToast({msg:'¡Bienvenido! 🇦🇷',type:'ok'}); onClose();
-    } catch(e) { setErr(e.message||'Error con Google'); }
-    setLoading(false);
-  }
-
-  async function handleEmail(e) {
-    e.preventDefault(); setLoading(true); setErr('');
-    try {
-      const ep = tab==='login' ? '/api/auth/login' : '/api/auth/register';
-      const body = tab==='login' ? {email,password:pass} : {email,password:pass,username:uname,displayName:uname};
-      const r = await fetch(`${API}${ep}`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-      const d = await r.json();
-      if (!r.ok) throw new Error(d.error||'Error');
-      localStorage.setItem('tl_token', d.token);
-      onLogin({...d.user,isGuest:false});
-      addToast({msg:`¡Bienvenido${tab==='reg'?' a Tribuna Libre':' de vuelta'}! 🇦🇷`,type:'ok'});
-      onClose();
-    } catch(e) {
-      if (e.message.includes('fetch')||e.message.includes('Failed')||e.message.includes('NetworkError')) {
-        // Sin backend: login local
-        const u = {displayName:uname||email.split('@')[0], email, rep:50, isGuest:false};
-        onLogin(u);
-        addToast({msg:'Sesión local activa (backend offline) ✓',type:'ok'});
-        onClose();
-      } else { setErr(e.message); }
-    }
-    setLoading(false);
-  }
-
+/* ══════ STREAMING PAGE ══════ */
+function StreamPage({onBack}) {
   return (
-    <div className="mbg" onClick={onClose}>
-      <div className="mdl" onClick={e=>e.stopPropagation()}>
-        <div className="mdl-h">
-          <div className="mdl-t" style={{display:'flex',alignItems:'center',gap:9}}>
-            <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png"
-              style={{height:34,width:34,borderRadius:'50%',border:'2px solid var(--cel)',objectFit:'cover'}}
-              onError={e=>e.target.style.display='none'} alt="Logo"/>
-            <span>Tribuna <span style={{color:'var(--cel)'}}>Libre</span></span>
-          </div>
-          <button className="cls" onClick={onClose}><Ic.X/></button>
-        </div>
-        <div className="auth-tabs">
-          <div className={`atab${tab==='login'?' on':''}`} onClick={()=>{setTab('login');setErr('');}}>Ingresar</div>
-          <div className={`atab${tab==='reg'?' on':''}`} onClick={()=>{setTab('reg');setErr('');}}>Registrarse</div>
-        </div>
-        {err && <div className="err-msg">⚠️ {err}</div>}
-        <button className="soc-btn" onClick={handleGoogle} disabled={loading}><span style={{fontSize:18}}>🔵</span> Continuar con Google</button>
-        <div className="or-div">o con tu correo</div>
-        <form onSubmit={handleEmail}>
-          {tab==='reg' && (
-            <div style={{marginBottom:10}}>
-              <label className="fl">Usuario</label>
-              <div style={{position:'relative'}}>
-                <input className="fi" value={uname} onChange={e=>setUname(e.target.value)} placeholder="mi_usuario" required style={{paddingLeft:34}}/>
-                <Ic.Lock style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
+    <div>
+      <button onClick={onBack} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--cel)',marginBottom:16,fontSize:12,fontWeight:600}}>
+        <Ic.Back style={{width:13,height:13}}/> Volver
+      </button>
+      <div className="sh"><div className="st">Streaming Deportivo</div></div>
+      <div style={{marginBottom:16,display:'flex',alignItems:'center',gap:8,padding:'10px 14px',background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)'}}>
+        <div className="ldot" style={{background:'var(--red)'}}/>
+        <span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>3 transmisiones en vivo ahora mismo</span>
+        <span style={{fontSize:11,color:'var(--tx3)',marginLeft:'auto'}}>62,700 personas viendo</span>
+      </div>
+      <div className="sm-grid">
+        {STREAMS.map(s => (
+          <div key={s.id} className="sc">
+            <div className="sc-thumb">
+              <span>{s.em}</span>
+              {s.live && <div className="live-tag"><div className="ldot" style={{width:5,height:5,background:'white'}}/>LIVE</div>}
+            </div>
+            <div className="sc-body">
+              <div className="sc-tit">{s.tit}</div>
+              <div className="sc-info">
+                <span>{s.ch}</span>
+                {s.live && <><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',flexShrink:0}}/><span style={{color:'var(--red)'}}>{s.viewers.toLocaleString()}</span></>}
               </div>
             </div>
-          )}
-          <div style={{marginBottom:10}}>
-            <label className="fl">Email</label>
-            <div style={{position:'relative'}}>
-              <input className="fi" type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="vos@correo.com" required style={{paddingLeft:34}}/>
-              <Ic.Mail style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
-            </div>
           </div>
-          <div style={{marginBottom:16}}>
-            <label className="fl">Contraseña</label>
-            <div style={{position:'relative'}}>
-              <input className="fi" type="password" value={pass} onChange={e=>setPass(e.target.value)} placeholder="••••••••" required style={{paddingLeft:34}}/>
-              <Ic.Lock style={{width:13,height:13,position:'absolute',left:10,top:'50%',transform:'translateY(-50%)',color:'var(--tx3)'}}/>
-            </div>
-          </div>
-          <button type="submit" className="btn btn-c" style={{width:'100%',justifyContent:'center'}} disabled={loading}>
-            {loading ? 'Un momento...' : (tab==='login'?'Ingresar':'Crear cuenta gratis')}
-          </button>
-        </form>
-        <div className="divhr"/>
-        <button onClick={()=>{onLogin({displayName:'Invitado',rep:0,isGuest:true});addToast({msg:'Entraste como invitado 👋',type:'ok'});onClose();}}
-          className="btn btn-o" style={{width:'100%',justifyContent:'center',fontSize:12}}>Entrar como invitado</button>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ══════ LOGO ══════ */
-function Logo({ onClick }) {
-  const [failed, setFailed] = useState(false);
+/* ══════ HOME PAGE ══════ */
+function HomePage({onNews, onNav, user}) {
+  const hero = NEWS[0];
+  const rest = NEWS.slice(1);
   return (
-    <div className="logo-w" onClick={onClick}>
-      {!failed ? (
-        <img className="logo-img" src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png" alt="Logo" onError={()=>setFailed(true)}/>
-      ) : (
-        <div className="logo-fb">TL</div>
-      )}
-      <div className="logo-txt">
-        <div className="logo-main">Tribuna Libre</div>
-        <div className="logo-sub">Red de Periodismo <b>Deportivo</b></div>
+    <div>
+      {/* HERO */}
+      <div className="hero" onClick={()=>onNews(hero)}>
+        <div className="hero-bg">
+          {hero.img ? <img src={hero.img} alt={hero.title} loading="lazy"/> : <span>{hero.em}</span>}
+        </div>
+        <div className="hero-ov">
+          <div style={{display:'flex',gap:6,marginBottom:9,flexWrap:'wrap'}}>
+            <span className="badge bc">{hero.cat}</span>
+            {hero.hot && <span className="badge br-badge" style={{display:'flex',alignItems:'center',gap:3}}><Ic.Fire style={{width:9,height:9}}/>Destacado</span>}
+          </div>
+          <div className="hero-tit">{hero.title}</div>
+          <div className="hero-meta">{hero.auth} · {hero.t} · ❤ {hero.l} · 💬 {hero.c}</div>
+          <div style={{display:'flex',gap:8,marginTop:12}}>
+            <button className="btn btn-c btn-sm" onClick={e=>{e.stopPropagation();onNews(hero);}}>Leer nota</button>
+            <button className="btn btn-out btn-sm" style={{border:'1.5px solid rgba(255,255,255,.4)',color:'rgba(255,255,255,.8)',background:'rgba(255,255,255,.1)'}}>Compartir</button>
+          </div>
+        </div>
       </div>
+
+      {/* LIVE SCORES */}
+      <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div><span className="sl" onClick={()=>onNav('live')}>Ver todo →</span></div>
+      <div className="lstrip">
+        {LIVE_EV.map(e => (
+          <div key={e.id} className={`lmc${e.live?' lv':''}`} onClick={()=>onNav('live')}>
+            <div className={`lms${e.live?' lv':''}`}>
+              {e.live && <><div className="ldot" style={{width:5,height:5,background:'var(--red)'}}/> EN VIVO · </>}{e.min}
+            </div>
+            <div className="lmt">
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
+              {e.sh !== '' ? <div className={`lsc${e.live?' lv':''}`}>{e.sh}-{e.sa}</div> : <div style={{fontFamily:'var(--fd)',fontSize:11,color:'var(--tx3)',textAlign:'center'}}>vs</div>}
+              <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* STREAMING ENTRY — click to open full section */}
+      <div className="sh"><div className="st">Streaming</div><span className="sl" onClick={()=>onNav('stream-full')}>Ver todo →</span></div>
+      <div className="stream-entry" onClick={()=>onNav('stream-full')}>
+        <img
+          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/stremmers.png"
+          alt="Acceso a Streaming Tribuna Libre"
+          loading="lazy"
+          onError={e=>{
+            e.target.style.display='none';
+            e.target.nextSibling.style.display='flex';
+          }}
+        />
+        <div style={{display:'none',height:200,alignItems:'center',justifyContent:'center',background:'linear-gradient(135deg,var(--cel-d),var(--cel))',fontSize:48}}>📡</div>
+        <div className="stream-entry-ov">
+          <div className="stream-play-btn"><Ic.Play/></div>
+          <div className="stream-entry-tit">Streaming Deportivo en Vivo</div>
+          <div className="stream-entry-sub">Hacé clic para ver todas las transmisiones · 3 en vivo ahora</div>
+        </div>
+      </div>
+
+      {/* RED DE PERIODISMO PREVIEW */}
+      <div className="sh"><div className="st">Red de Periodismo</div><span className="sl" onClick={()=>onNav('red')}>Ver todo →</span></div>
+      <div style={{borderRadius:'var(--r)',overflow:'hidden',marginBottom:18,border:'1.5px solid var(--cel)',cursor:'pointer'}} onClick={()=>onNav('red')}>
+        <img
+          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/reddeperiodismo.png"
+          alt="Red de Periodismo Deportivo"
+          style={{width:'100%',display:'block',maxHeight:180,objectFit:'cover'}}
+          loading="lazy"
+          onError={e=>{e.target.style.display='none';}}
+        />
+        <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',padding:'12px 16px',display:'flex',alignItems:'center',justifyContent:'space-between',gap:10,flexWrap:'wrap'}}>
+          <div>
+            <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'white',marginBottom:3}}>Red de Periodismo Deportivo</div>
+            <div style={{fontSize:12,color:'rgba(255,255,255,.75)'}}>Columnas firmadas · Columnas anónimas · Charlas en vivo</div>
+          </div>
+          <button className="btn btn-sm" style={{background:'rgba(255,255,255,.15)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}}>Explorar →</button>
+        </div>
+      </div>
+
+      {/* ULTIMAS NOTICIAS */}
+      <div className="sh"><div className="st">Últimas Noticias</div><span className="sl" onClick={()=>onNav('news')}>Ver todas →</span></div>
+      <div className="ng" style={{marginBottom:18}}>
+        {rest.slice(0,4).map(n=><NewsCard key={n.id} n={n} onClick={()=>onNews(n)}/>)}
+      </div>
+
+      {/* POLL */}
+      <div className="sh"><div className="st">Encuesta del Día</div><span className="badge br-badge">EL VAR</span></div>
+      <div className="card cp" style={{marginBottom:18}}><Poll poll={POLLS[0]}/></div>
+
+      {/* ÚLTIMOS FOROS */}
+      <div className="sh"><div className="st">Debates activos</div><span className="sl" onClick={()=>onNav('forum')}>Ver todos →</span></div>
+      {THREADS.slice(0,3).map(t => (
+        <div key={t.id} className="tc" onClick={()=>onNav('forum')}>
+          <div style={{display:'flex',gap:5,marginBottom:5,flexWrap:'wrap'}}>
+            {t.hot && <span className="badge br-badge" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+            <span className="badge bc" style={{fontSize:9}}>{t.cat}</span>
+            <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
+          </div>
+          <div className="tc-tit">{t.title}</div>
+          <div className="tc-mt">
+            <div className="tc-st"><Ic.Comment/>{t.r} resp.</div>
+            <div className="tc-st"><Ic.Eye/>{t.v} vistas</div>
+            <div style={{marginLeft:'auto',fontSize:10}}>@{t.author}</div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
 
 /* ══════ RIGHT SIDEBAR ══════ */
-function RightSidebar({ onNav, posts=[] }) {
+function RightSidebar({onNav}) {
   return (
-    <div style={{display:'flex',flexDirection:'column',gap:15}}>
-      {posts.length>0 && (
-        <div>
-          <div className="sh"><div className="st">Más recientes</div></div>
-          <div className="card cs">
-            {posts.slice(0,5).map((p,i) => (
-              <div key={p._id} style={{paddingBottom:9,marginBottom:9,borderBottom:'1px solid var(--br)'}}>
-                <div style={{display:'flex',gap:6,marginBottom:3}}>
-                  <span style={{fontFamily:'var(--fd)',fontWeight:700,color:'var(--tx3)',fontSize:13,width:18}}>{i+1}</span>
-                  <div style={{fontSize:12,fontWeight:500,color:'var(--tx)',lineHeight:1.25}}>{p.title}</div>
-                </div>
-                {p.meta?.sourceName && <div style={{fontSize:10,color:'var(--tx3)',paddingLeft:24}}>📡 {p.meta.sourceName}</div>}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+    <div style={{display:'flex',flexDirection:'column',gap:16}}>
+      {/* Trending */}
       <div>
-        <div className="sh"><div className="st">Secciones</div></div>
-        <div style={{display:'grid',gap:6}}>
-          {[{id:'comunidad',em:'👥',l:'Comunidad',c:'var(--cel-d)',bg:'var(--cel-xl)'},
-            {id:'streaming',em:'📡',l:'Streaming',c:'var(--red)',bg:'rgba(192,57,43,.07)'},
-            {id:'prode',em:'🏆',l:'El Prode',c:'#B7770D',bg:'#FFFBEB'},
-            {id:'copa',em:'🌎',l:'Copa del Mundo',c:'var(--cel-d)',bg:'var(--cel-xl)'},
-            {id:'revista',em:'✏️',l:'Revista Juvenil',c:'#9D174D',bg:'#FDF2F8'},
-          ].map((s,i) => (
-            <div key={i} onClick={()=>onNav(s.id)}
-              style={{background:s.bg,border:`1px solid ${s.c}22`,borderRadius:'var(--rs)',padding:'8px 11px',cursor:'pointer',display:'flex',alignItems:'center',gap:8,transition:'.15s'}}
-              onMouseEnter={e=>e.currentTarget.style.borderColor=s.c}
-              onMouseLeave={e=>e.currentTarget.style.borderColor=s.c+'22'}>
-              <span style={{fontSize:14}}>{s.em}</span>
-              <span style={{fontSize:12,fontWeight:600,color:s.c}}>{s.l}</span>
+        <div className="sh"><div className="st">Trending</div></div>
+        <div className="card cs">
+          {['#Superclásico2025','#LosPumas','#Colapinto2025','#LigaProfesional','#CopaArgentina','#TribunasArgentinas'].map((tag,i) => (
+            <div key={i} className="tri">
+              <div className={`trnum${i<2?' hot':''}`}>#{i+1}</div>
+              <div><div className="trn">{tag}{i<2&&' 🔥'}</div><div className="trc">{Math.round((8000-i*900)/100)*100} posts</div></div>
             </div>
           ))}
         </div>
       </div>
-      <div>
-        <div className="sh"><div className="st">El VAR</div></div>
-        <div className="card cp"><Poll poll={STATIC_POLLS[0]}/></div>
-      </div>
+      {/* En Vivo */}
       <div>
         <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div></div>
-        {STATIC_LIVE.filter(e=>e.live).map(e => (
-          <div key={e.id} className="card cs" style={{marginBottom:7,cursor:'pointer'}} onClick={()=>onNav('live')}>
+        {LIVE_EV.filter(e=>e.live).map(e => (
+          <div key={e.id} className="card cs" style={{marginBottom:8,cursor:'pointer'}} onClick={()=>onNav('live')}>
             <div style={{fontSize:9,fontWeight:700,color:'var(--red)',marginBottom:4,display:'flex',alignItems:'center',gap:4}}>
-              <div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',animation:'pulse 1.4s infinite'}}/>EN VIVO · {e.min}
+              <div className="ldot" style={{width:5,height:5,background:'var(--red)'}}/>EN VIVO · {e.min}
             </div>
             <div style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
               <span style={{fontSize:12,fontWeight:500}}>{e.sp} {e.h}</span>
@@ -1371,13 +1407,23 @@ function RightSidebar({ onNav, posts=[] }) {
           </div>
         ))}
       </div>
+      {/* Poll */}
       <div>
-        <div className="sh"><div className="st">Trending</div></div>
+        <div className="sh"><div className="st">Encuesta del Día</div></div>
+        <div className="card cp"><Poll poll={POLLS[1]}/></div>
+      </div>
+      {/* Columnas destacadas */}
+      <div>
+        <div className="sh"><div className="st">Columnas Destacadas</div></div>
         <div className="card cs">
-          {['#Superclásico2025','#LosPumas','#Colapinto2025','#LigaProfesional','#Copa26'].map((tag,i) => (
-            <div key={i} className="tri">
-              <div className={`trnum${i<2?' hot':''}`}>#{i+1}</div>
-              <div><div className="trn">{tag}{i<2&&' 🔥'}</div><div className="trc">{Math.round((7000-i*800)/100)*100} posts</div></div>
+          {SIGNED_COLS.map((c,i) => (
+            <div key={i} style={{paddingBottom:10,marginBottom:10,borderBottom:'1px solid var(--br)'}}>
+              <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:5}}>
+                <div className="col-av" style={{width:28,height:28,fontSize:12}}>{c.av}</div>
+                <div style={{fontWeight:700,fontSize:11,color:'var(--tx)'}}>{c.author}</div>
+              </div>
+              <div style={{fontSize:12,fontWeight:500,color:'var(--tx)',lineHeight:1.25,marginBottom:3}}>{c.title}</div>
+              <div style={{fontSize:10,color:'var(--tx3)'}}><Ic.Eye style={{width:10,height:10,verticalAlign:'middle'}}/> {c.reads.toLocaleString()}</div>
             </div>
           ))}
         </div>
@@ -1386,186 +1432,303 @@ function RightSidebar({ onNav, posts=[] }) {
   );
 }
 
-/* ══════════════════════════ NAV CONFIG ══════════════════════════ */
-// FIX: Agregadas las secciones faltantes (comunidad y streaming)
+/* ══════ LOGO COMPONENT ══════ */
+function Logo({onClick}) {
+  const [imgFailed, setImgFailed] = useState(false);
+  return (
+    <div className="logo-wrap" onClick={onClick}>
+      {!imgFailed ? (
+        <img
+          className="logo-img"
+          src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logo.png"
+          alt="Tribuna Libre Logo"
+          onError={()=>setImgFailed(true)}
+        />
+      ) : (
+        <div className="logo-fallback">
+          <div className="logo-flag-strip"><div className="lfs-c"/><div className="lfs-w"/><div className="lfs-c2"/></div>
+          <span className="logo-tl">TL</span>
+        </div>
+      )}
+      <div className="logo-text">
+        <div className="logo-main">Tribuna Libre</div>
+        <div className="logo-sub">Red de Periodismo <span className="logo-arg">Deportivo Arg.</span></div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════ APP ══════ */
 const NAV = [
-  {id:'home',      l:'Inicio',         icon:'Home'},
-  {id:'news',      l:'Noticias',       icon:'News'},
-  {id:'comunidad', l:'Comunidad',      icon:'Com'},    // ← NUEVA
-  {id:'streaming', l:'Streaming',      icon:'Stream'}, // ← NUEVA
-  {id:'prode',     l:'El Prode',       icon:'Prode'},
-  {id:'copa',      l:'Copas',          icon:'Copa'},
-  {id:'revista',   l:'Revista Juvenil',icon:'Rev'},
-  {id:'live',      l:'En Vivo',        icon:'Live'},
-  {id:'forum',     l:'Debates',        icon:'Forum'},
-  {id:'profile',   l:'Mi perfil',      icon:'Profile'},
+  {id:'home',l:'Inicio',icon:'Home'},
+  {id:'news',l:'Noticias',icon:'News'},
+  {id:'red',l:'Red de Periodismo',icon:'Red'},
+  {id:'stream-full',l:'Streaming',icon:'Stream'},
+  {id:'live',l:'En Vivo',icon:'Live'},
+  {id:'forum',l:'Debates',icon:'Forum'},
+  {id:'profile',l:'Mi perfil',icon:'Profile'},
 ];
 const MOBILE_NAV = [
-  {id:'home',      l:'Inicio',    icon:'Home'},
-  {id:'news',      l:'Noticias',  icon:'News'},
-  {id:'comunidad', l:'Comunidad', icon:'Com'},    // ← NUEVA
-  {id:'streaming', l:'Streaming', icon:'Stream'}, // ← NUEVA
-  {id:'profile',   l:'Perfil',    icon:'Profile'},
+  {id:'home',l:'Inicio',icon:'Home'},
+  {id:'news',l:'Noticias',icon:'News'},
+  {id:'red',l:'Periodismo',icon:'Red'},
+  {id:'live',l:'En Vivo',icon:'Live'},
+  {id:'profile',l:'Perfil',icon:'Profile'},
 ];
 
-/* ══════════════════════════ APP ══════════════════════════ */
 function App() {
-  const [page, setPage]     = useState('home');
+  const [page, setPage] = useState('home');
   const [article, setArticle] = useState(null);
-  const [user, setUser]     = useState({ isGuest: true });
+  const [toasts, setToasts] = useState([]);
   const [authOpen, setAuthOpen] = useState(false);
-  const { toasts, add: addToast } = useToasts();
-  const { posts } = useNews(1,'','');
+  const [user, setUser] = useState({name:'Invitado',av:'?',color:'#94A3B8',rep:0,isGuest:true});
+  const [themeOpen, setThemeOpen] = useState(false);
 
-  // Restaurar sesión JWT
-  useEffect(() => {
-    const token = localStorage.getItem('tl_token');
-    if (!token) return;
-    fetch(`${API}/api/auth/me`, { headers:{ Authorization:`Bearer ${token}` } })
-      .then(r => r.ok ? r.json() : null)
-      .then(d => { if (d?.user) setUser({...d.user, isGuest:false}); })
-      .catch(() => localStorage.removeItem('tl_token'));
-  }, []);
-
+  function addToast({msg, type='ok'}) {
+    const id = Date.now();
+    setToasts(t => [...t, {id, msg, type}]);
+    setTimeout(()=>setToasts(t=>t.filter(x=>x.id!==id)), 3200);
+  }
   function nav(p) { setPage(p); setArticle(null); window.scrollTo(0,0); }
-  function openArticle(p) { setArticle(p); setPage('article'); window.scrollTo(0,0); }
-  function logout() {
-    localStorage.removeItem('tl_token');
-    if (window.__fbSignOut) window.__fbSignOut().catch(()=>{});
-    setUser({ isGuest: true });
-    addToast({ msg:'Sesión cerrada', type:'ok' });
-    nav('home');
+  function openNews(n) { setArticle(n); setPage('article'); window.scrollTo(0,0); }
+
+  const themeOptions = [
+    {id:'light',l:'☀️ Claro (Argentina)'},
+    {id:'dark-blue',l:'🌙 Noche'},
+    {id:'high',l:'⚡ Alto contraste'},
+  ];
+
+  function setTheme(t) {
+    setThemeOpen(false);
+    if(t==='dark-blue') {
+      document.documentElement.style.setProperty('--bg','#0A0F1E');
+      document.documentElement.style.setProperty('--card','#111827');
+      document.documentElement.style.setProperty('--card2','#1A2340');
+      document.documentElement.style.setProperty('--tx','#E8F0FE');
+      document.documentElement.style.setProperty('--tx2','#94AFDB');
+      document.documentElement.style.setProperty('--surf','#0D1526');
+      addToast({msg:'Modo noche activado 🌙',type:'ok'});
+    } else {
+      ['--bg','--card','--card2','--tx','--tx2'].forEach(k=>document.documentElement.style.removeProperty(k));
+      addToast({msg:'Modo claro activado ☀️',type:'ok'});
+    }
   }
 
   return (
     <>
-      {/* TOASTS */}
-      <div className="toasts">
-        {toasts.map(t => <div key={t.id} className={`toast ${t.type}`}><span>{t.type==='ok'?'✅':'⚠️'}</span>{t.msg}</div>)}
-      </div>
+      {/* Toasts */}
+      <div className="toasts">{toasts.map(t=><div key={t.id} className={`toast ${t.type}`}><span>{t.type==='ok'?'✅':'⚠️'}</span>{t.msg}</div>)}</div>
 
       {/* FLAG STRIPE */}
       <div className="flag-stripe"/>
 
-      {/* TOPBAR */}
+      {/* HEADER */}
       <div className="hdr">
-        <Logo onClick={()=>nav('home')}/>
-        <div className="ticker">
-          <div className="tk-tr">
-            {[...TICKER_D,...TICKER_D].map((t,i) => <div key={i} className="tk-it"><b>{t.l}</b>{t.t}</div>)}
-          </div>
-        </div>
-        <div className="hdr-r">
-          {user.isGuest ? (
-            <button className="sign-btn" onClick={()=>setAuthOpen(true)}>Ingresar / Registrarse</button>
-          ) : (
-            <div className="usr-btn" onClick={()=>nav('profile')}>
-              <div className="usr-av">{(user.displayName||user.username||'U')[0].toUpperCase()}</div>
-              <span className="usr-nm">{user.displayName||user.username}</span>
+        <div className="hdr-inner">
+          <Logo onClick={()=>nav('home')}/>
+          <div className="ticker" style={{display:'none'}} id="ticker-wrap">
+            <div className="ticker-tr">
+              {[...TICKER_DATA,...TICKER_DATA].map((t,i)=><div key={i} className="tk"><b>{t.l}</b>{t.t}</div>)}
             </div>
-          )}
+          </div>
+          {/* Ticker visible on larger screens */}
+          <style>{`@media(min-width:640px){#ticker-wrap{display:block}}`}</style>
+          <div id="ticker-wrap" className="ticker">
+            <div className="ticker-tr">
+              {[...TICKER_DATA,...TICKER_DATA].map((t,i)=><div key={i} className="tk"><b>{t.l}</b>{t.t}</div>)}
+            </div>
+          </div>
+          <div className="hdr-r">
+            {/* Theme */}
+            <div style={{position:'relative'}}>
+              <button className="hib" style={{width:'auto',padding:'0 10px',gap:5,fontSize:11,fontWeight:600,color:'var(--cel-d)'}} onClick={()=>setThemeOpen(!themeOpen)}>
+                🎨 <span style={{display:'none',fontSize:11}} id="th-lbl">Tema</span>
+              </button>
+              <style>{`@media(min-width:768px){#th-lbl{display:inline}}`}</style>
+              {themeOpen && (
+                <div style={{position:'absolute',top:'calc(100% + 5px)',right:0,background:'var(--card)',border:'1.5px solid var(--br)',borderRadius:'var(--r)',padding:'4px',zIndex:400,minWidth:180,boxShadow:'var(--sh2)'}} onClick={e=>e.stopPropagation()}>
+                  {themeOptions.map(t=><div key={t.id} style={{padding:'8px 12px',borderRadius:'var(--rs)',cursor:'pointer',fontSize:12,fontWeight:500}} onClick={()=>setTheme(t.id)}>{t.l}</div>)}
+                </div>
+              )}
+            </div>
+            <button className="hib" onClick={()=>addToast({msg:'Sin notificaciones nuevas',type:'ok'})}><Ic.Bell/><div className="ndot"/></button>
+            {user.isGuest ? (
+              <button className="sign-btn" onClick={()=>setAuthOpen(true)}>Ingresar / Registrarse</button>
+            ) : (
+              <div className="usr-btn" onClick={()=>nav('profile')}>
+                <div className="usr-av" style={{background:user.color}}>{user.av}</div>
+                <span className="usr-nm">{user.name}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      <div className="shell">
+      {/* SHELL */}
+      <div className="shell" onClick={()=>setThemeOpen(false)}>
         {/* LEFT NAV */}
         <nav className="lnav">
           <div className="nl-live" onClick={()=>nav('live')}>
-            <div className="ldot"/><span className="nl-live-t">EN VIVO</span><span className="nl-live-c">3</span>
+            <div className="ldot" style={{background:'var(--red)'}}/><span className="nl-live-txt">EN VIVO</span><span className="nl-live-ct">3</span>
           </div>
-          <div className="ng">
-            <span className="nlbl">Navegación</span>
-            {NAV.map(n => {
-              const Icon = Ic[n.icon];
-              return (
-                <div key={n.id} className={`nl${page===n.id||(page==='article'&&n.id==='news')?' on':''}`} onClick={()=>nav(n.id)}>
-                  <Icon/><span>{n.l}</span>
-                  {n.id==='prode'     && <span className="nl-badge" style={{background:'var(--sun)'}}>!</span>}
-                  {n.id==='live'      && <span className="nl-badge">3</span>}
-                  {n.id==='comunidad' && <span className="nl-badge" style={{background:'var(--cel-d)'}}>●</span>}
-                  {n.id==='streaming' && <span className="nl-badge" style={{background:'var(--red)'}}>▶</span>}
-                </div>
-              );
-            })}
+          <div className="nav-sec">
+            <span className="nav-lbl">Navegación</span>
+            {NAV.map(n=>{const Icon=Ic[n.icon];return(
+              <div key={n.id} className={`nl${page===n.id||page==='article'&&n.id==='news'?' on':''}`} onClick={()=>nav(n.id)}>
+                <Icon/><span>{n.l}</span>
+                {n.id==='red'&&<span className="nl-badge">5</span>}
+                {n.id==='live'&&<span className="nl-badge" style={{background:'var(--red)'}}>3</span>}
+              </div>
+            );})}
           </div>
           <div className="nav-hr"/>
-          <div className="ng">
-            <span className="nlbl">Equipos</span>
-            {[['🔴','River Plate'],['🔵','Boca Juniors'],['⚡','Racing Club'],['🏉','Los Pumas']].map(([em,nm],i) => (
-              <div key={i} className="nl"><span style={{fontSize:14,width:20,textAlign:'center'}}>{em}</span>{nm}</div>
+          <div className="nav-sec">
+            <span className="nav-lbl">Mis equipos</span>
+            {[{em:'🔴',n:'River Plate'},{em:'🔵',n:'Boca Juniors'},{em:'⚡',n:'Racing Club'},{em:'🟡',n:'Peñarol'}].map((t,i)=>(
+              <div key={i} className="team-row"><span className="team-em">{t.em}</span><div className="team-nm">{t.n}</div></div>
             ))}
           </div>
           {!user.isGuest && (
-            <><div className="nav-hr"/>
-            <div className="ng">
-              <div className="nl" onClick={logout} style={{color:'var(--red)'}}><Ic.X style={{width:13,height:13}}/><span>Cerrar sesión</span></div>
-            </div></>
+            <>
+              <div className="nav-hr"/>
+              <div className="nav-sec">
+                <span className="nav-lbl">Mi cuenta</span>
+                <div style={{padding:'8px 9px',background:'var(--cel-xl)',borderRadius:'var(--rs)',border:'1px solid var(--br)'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:7}}>
+                    <div className="usr-av" style={{background:user.color,width:26,height:26,fontSize:10}}>{user.av}</div>
+                    <div>
+                      <div style={{fontSize:12,fontWeight:700,color:'var(--tx)'}}>{user.name}</div>
+                      <div style={{fontSize:10,color:'var(--cel-d)'}}>{getLevel(user.rep||0).name}</div>
+                    </div>
+                  </div>
+                  <div className="rep-bg" style={{marginTop:7,marginBottom:3}}>
+                    <div className="rep-fill" style={{width:getRepPct(user.rep||0)+'%'}}/>
+                  </div>
+                  <div style={{fontSize:9,color:'var(--tx3)',textAlign:'right'}}>{user.rep||0} pts</div>
+                </div>
+              </div>
+            </>
           )}
         </nav>
 
-        {/* MAIN CONTENT — FIX: Routing completo con todas las secciones */}
+        {/* MAIN CONTENT */}
         <main className="main">
-          <div style={{maxWidth:760,margin:'0 auto'}}>
-            {page==='home'      && <HomePage onArticle={openArticle} onNav={nav}/>}
-            {page==='news'      && <NewsPage onArticle={openArticle}/>}
-            {page==='article'   && article && <ArticlePage post={article} onBack={()=>nav('news')} user={user} addToast={addToast}/>}
-            {page==='comunidad' && <ComunidadPage user={user} addToast={addToast} onNav={nav}/>}
-            {page==='streaming' && <StreamingPage addToast={addToast}/>}
-            {page==='prode'     && <ProdePage user={user} addToast={addToast}/>}
-            {page==='copa'      && <CopaPage/>}
-            {page==='revista'   && <RevistaPage user={user} addToast={addToast}/>}
-            {page==='live'      && (
+          <div style={{maxWidth:780, margin:'0 auto'}}>
+            {page==='home' && <HomePage onNews={openNews} onNav={nav} user={user}/>}
+            {page==='news' && (
+              <div>
+                <div className="sh"><div className="st">Noticias Deportivas</div></div>
+                <div className="ng">{NEWS.map(n=><NewsCard key={n.id} n={n} onClick={()=>openNews(n)} size="big"/>)}</div>
+              </div>
+            )}
+            {page==='article' && article && (
+              <div>
+                <button onClick={()=>nav('news')} style={{display:'flex',alignItems:'center',gap:5,background:'none',color:'var(--cel)',marginBottom:16,fontSize:12,fontWeight:600}}><Ic.Back style={{width:13,height:13}}/>Volver a noticias</button>
+                <div style={{height:240,background:'var(--cel-xl)',borderRadius:'var(--rl)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:72,marginBottom:14,border:'2px solid var(--cel)',overflow:'hidden'}}>
+                  {article.img ? <img src={article.img} alt={article.title} style={{width:'100%',height:'100%',objectFit:'cover'}}/> : <span>{article.em}</span>}
+                </div>
+                <span className="badge bc" style={{marginBottom:10,display:'inline-block'}}>{article.cat}</span>
+                <h1 style={{fontFamily:'var(--fd)',fontSize:28,fontWeight:700,lineHeight:1.1,marginBottom:10,color:'var(--tx)'}}>{article.title}</h1>
+                <div style={{fontSize:12,color:'var(--tx3)',marginBottom:18}}>{article.auth} · {article.t} · ❤ {article.l} · 💬 {article.c}</div>
+                <p style={{fontFamily:'var(--fs)',fontSize:14,lineHeight:1.8,color:'var(--tx2)',marginBottom:18}}>{article.ex} El partido comenzó con un dominio claro del equipo local que propuso un juego vertical y dinámico. La apertura del marcador llegó en el minuto 23 tras una combinación magistral. El resultado refuerza el liderazgo en el campeonato y genera enorme expectativa para los próximos compromisos internacionales.</p>
+                <div className="card cp" style={{marginBottom:14}}><Poll poll={POLLS[0]}/></div>
+              </div>
+            )}
+            {page==='red' && <RedPage user={user} addToast={addToast}/>}
+            {page==='stream-full' && <StreamPage onBack={()=>nav('home')}/>}
+            {page==='live' && (
               <div>
                 <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div></div>
-                <LiveStrip onNav={nav}/>
-                <div className="card cp" style={{marginTop:14}}><Poll poll={STATIC_POLLS[0]}/></div>
+                <div className="lstrip" style={{marginBottom:16}}>
+                  {LIVE_EV.map(e=>(
+                    <div key={e.id} className={`lmc${e.live?' lv':''}`}>
+                      <div className={`lms${e.live?' lv':''}`}>{e.live&&<><div style={{width:5,height:5,borderRadius:'50%',background:'var(--red)',animation:'pulse 1.4s infinite',display:'inline-block',marginRight:3}}/>EN VIVO · </>}{e.min}</div>
+                      <div className="lmt">
+                        <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.h}</div></div>
+                        {e.sh!==''?<div className={`lsc${e.live?' lv':''}`}>{e.sh}-{e.sa}</div>:<div style={{fontFamily:'var(--fd)',fontSize:10,color:'var(--tx3)',textAlign:'center'}}>vs</div>}
+                        <div className="ltm"><span className="lem">{e.sp}</span><div className="lnm">{e.a}</div></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <CharlaVivo user={user} addToast={addToast}/>
               </div>
             )}
             {page==='forum' && (
               <div>
-                <div className="sh"><div className="st">Debates</div></div>
-                {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
+                <div className="sh"><div className="st">Debates</div><button className="btn btn-c btn-sm" onClick={()=>{if(!user||user.isGuest){addToast({msg:'Necesitás registrarte para crear un debate.',type:'err'});}else addToast({msg:'Modo de creación de hilo',type:'ok'})}}><Ic.Plus style={{width:12,height:12}}/>Nuevo hilo</button></div>
+                {THREADS.map(t=>(
+                  <div key={t.id} className="tc">
+                    <div style={{display:'flex',gap:5,marginBottom:5,flexWrap:'wrap'}}>
+                      {t.hot&&<span className="badge br-badge" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+                      <span className="badge bc">{t.cat}</span>
+                      <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
+                    </div>
+                    <div className="tc-tit">{t.title}</div>
+                    <div className="tc-mt">
+                      <div className="tc-st"><Ic.Comment/>{t.r}</div>
+                      <div className="tc-st"><Ic.Eye/>{t.v}</div>
+                      <div style={{marginLeft:'auto',fontSize:10,color:'var(--tx2)'}}>@{t.author}</div>
+                    </div>
+                  </div>
+                ))}
+                <div className="sh" style={{marginTop:20}}><div className="st">Encuestas rápidas</div></div>
+                {POLLS.map(p=><div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
               </div>
             )}
             {page==='profile' && (
               <div>
-                <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',borderRadius:'var(--rl)',padding:24,textAlign:'center',marginBottom:16}}>
-                  <div style={{width:70,height:70,borderRadius:'50%',background:'rgba(255,255,255,.2)',margin:'0 auto 12px',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:28,fontWeight:700,color:'white',border:'2.5px solid rgba(255,255,255,.4)'}}>
-                    {user.isGuest ? '?' : (user.displayName||user.username||'U')[0].toUpperCase()}
-                  </div>
-                  <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,color:'white',marginBottom:5}}>{user.isGuest?'Invitado':(user.displayName||user.username)}</div>
+                <div className="ph">
+                  <div className="pav" style={{background:user.isGuest?'rgba(255,255,255,.2)':user.color}}>{user.isGuest?'?':user.av}</div>
+                  <div className="pnm">{user.isGuest?'Invitado':user.name}</div>
+                  <div className="pbio">{user.isGuest?'Registrate para personalizar tu perfil':'Periodista y fanático del deporte argentino 🇦🇷'}</div>
                   {user.isGuest ? (
                     <button className="btn btn-sm" style={{background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.5)',color:'white',borderRadius:30}} onClick={()=>setAuthOpen(true)}>Crear cuenta gratis</button>
                   ) : (
-                    <div style={{fontSize:13,color:'rgba(255,255,255,.75)'}}>{user.email}</div>
+                    <div style={{display:'flex',gap:16,justifyContent:'center'}}>
+                      {[{n:'12',l:'Columnas'},{n:user.rep||50,l:'Reputación'},{n:'234',l:'Seguidores'},{n:'8',l:'Charlas'}].map((s,i)=>(
+                        <div key={i} className="psts" style={{gap:0,flexDirection:'column',alignItems:'center'}}>
+                          <div className="psn">{s.n}</div><div className="psl">{s.l}</div>
+                        </div>
+                      ))}
+                    </div>
                   )}
                 </div>
                 {!user.isGuest && (
-                  <div style={{display:'flex',gap:8,marginBottom:14}}>
-                    <button className="btn btn-o btn-sm" style={{flex:1,justifyContent:'center'}}>Editar perfil</button>
-                    <button className="btn btn-red btn-sm" style={{flex:1,justifyContent:'center'}} onClick={logout}>Cerrar sesión</button>
+                  <div className="rep-card">
+                    <div style={{display:'flex',justifyContent:'space-between',marginBottom:5,alignItems:'center'}}>
+                      <div style={{fontSize:12,fontWeight:700,display:'flex',alignItems:'center',gap:5,color:'var(--tx)'}}><Ic.Trophy style={{width:14,height:14,color:'var(--sun)'}}/> Nivel: {getLevel(user.rep||0).name}</div>
+                      <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700,color:'var(--sun)'}}>{user.rep||0} pts</div>
+                    </div>
+                    <div className="rep-bg"><div className="rep-fill" style={{width:getRepPct(user.rep||0)+'%'}}/></div>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:9,color:'var(--tx3)',marginTop:4}}>
+                      <span>{getLevel(user.rep||0).name}</span><span>Siguiente nivel: {getLevel(user.rep||0).max} pts</span>
+                    </div>
                   </div>
                 )}
+                <div style={{display:'flex',gap:8,marginBottom:16}}>
+                  <button className="btn btn-out" style={{flex:1,justifyContent:'center'}}>Editar perfil</button>
+                  <button className="btn btn-c" style={{flex:1,justifyContent:'center'}} onClick={()=>nav('red')}>Publicar columna</button>
+                </div>
               </div>
             )}
           </div>
         </main>
 
-        <aside className="rsb"><RightSidebar onNav={nav} posts={posts}/></aside>
+        {/* RIGHT SIDEBAR */}
+        <aside className="rsb"><RightSidebar onNav={nav}/></aside>
       </div>
 
       {/* MOBILE BOTTOM NAV */}
       <div className="bnav">
-        {MOBILE_NAV.map(n => {
-          const Icon = Ic[n.icon];
-          return (
-            <div key={n.id} className={`bni${page===n.id?' on':''}`} onClick={()=>nav(n.id)}>
-              <Icon/><span>{n.l}</span>
-            </div>
-          );
-        })}
+        {MOBILE_NAV.map(n=>{const Icon=Ic[n.icon];return(
+          <div key={n.id} className={`bni${page===n.id?' on':''}`} onClick={()=>nav(n.id)}>
+            <Icon/><span>{n.l}</span>
+          </div>
+        );})}
       </div>
 
+      {/* AUTH MODAL */}
       {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onLogin={setUser} addToast={addToast}/>}
     </>
   );
