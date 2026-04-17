@@ -20,28 +20,27 @@ window.SUPABASE_ANON = 'TU_SUPABASE_ANON_KEY';   // clave pública anon
 window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 (function loadSupabase() {
+  if (!window.SUPABASE_URL || window.SUPABASE_URL === 'TU_SUPABASE_URL_AQUI') {
+    console.log('Supabase: modo demo (sin credenciales)');
+    return;
+  }
   var s = document.createElement('script');
   s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js';
   s.onload = function() {
     try {
-      if (window.SUPABASE_URL && window.SUPABASE_URL !== 'TU_SUPABASE_URL_AQUI') {
-        window.__supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON);
-        // Sincronizar sesión si el usuario ya estaba logueado
-        window.__supabase.auth.getSession().then(function(res) {
-          if (res.data && res.data.session) {
-            var user = res.data.session.user;
-            window.__supabaseUser = {
-              displayName: user.user_metadata?.displayName || user.email?.split('@')[0] || 'Usuario',
-              email: user.email,
-              rep: 0,
-              isGuest: false
-            };
-          }
-        });
-        console.info('Supabase inicializado ✓');
-      } else {
-        console.info('Supabase: modo demo (sin credenciales)');
-      }
+      window.__supabase = window.supabase.createClient(window.SUPABASE_URL, window.SUPABASE_ANON);
+      window.__supabase.auth.getSession().then(function(res) {
+        if (res.data && res.data.session) {
+          var user = res.data.session.user;
+          window.__supabaseUser = {
+            displayName: user.user_metadata?.displayName || user.email?.split('@')[0] || 'Usuario',
+            email: user.email,
+            rep: 0,
+            isGuest: false
+          };
+        }
+      });
+      console.log('Supabase inicializado ✓');
     } catch(e) {
       console.warn('Supabase no disponible:', e.message);
     }
@@ -49,47 +48,65 @@ window.__supabase = null;  // se inicializa cuando cargue el SDK
   s.onerror = function() { console.warn('Supabase SDK no cargó'); };
   document.head.appendChild(s);
 })();
-</script><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+</script>
 
 <script>
-// API URL — si tenés backend propio en Railway/Render
-window.API_URL = 'http://localhost:3000';
+// ═══════════════════════════════════════════════════════════
+// RSS CON IMÁGENES — usa rss2json.com como proxy CORS.
+// Funciona 100% desde GitHub Pages sin backend.
+// Gratuito: 500 req/día. Para más, registrá un api_key gratis
+// en https://rss2json.com y reemplazá RSS2JSON_KEY abajo.
+// ═══════════════════════════════════════════════════════════
+window.RSS2JSON_KEY = '';  // opcional: clave gratis de rss2json.com
 
-// ═══════════════════════════════════════════════════════════
-// RSS CON IMÁGENES — usa rss2json.com como proxy estable.
-// Funciona sin backend. Gratuito hasta 500 req/día.
-// ═══════════════════════════════════════════════════════════
 window.RSS_FEEDS = [
-  { name: 'TyC Sports',    url: 'https://www.tycsports.com/rss.xml' },
-  { name: 'Infobae Dep.',  url: 'https://www.infobae.com/feeds/rss/deportes/' },
-  { name: 'Olé',           url: 'https://www.ole.com.ar/rss/home/' },
+  { name: 'TyC Sports',   url: 'https://www.tycsports.com/rss.xml' },
+  { name: 'Infobae Dep.', url: 'https://www.infobae.com/feeds/rss/deportes/' },
+  { name: 'Olé',          url: 'https://www.ole.com.ar/rss/home/' },
+  { name: 'La Nación',    url: 'https://www.lanacion.com.ar/arcio/rss/?category=deportes' },
 ];
 
+// Extrae la primera imagen de HTML de contenido RSS
+function extractImgFromHtml(html) {
+  if (!html) return null;
+  const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
+  return m ? m[1] : null;
+}
+
 window.fetchRSSFeed = async function(feedUrl, sourceName) {
-  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20`;
+  const key = window.RSS2JSON_KEY ? `&api_key=${window.RSS2JSON_KEY}` : '';
+  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20&order_by=pubDate${key}`;
   try {
-    // AbortSignal.timeout no está en Safari <16.4 ni Chrome <103 — usamos fallback manual
     const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 6000);
+    const tId = setTimeout(() => ctrl.abort(), 8000);
     const resp = await fetch(endpoint, { signal: ctrl.signal }).finally(() => clearTimeout(tId));
-    if (!resp.ok) throw new Error('rss2json error');
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
-    if (data.status !== 'ok') throw new Error('feed inválido');
-    return data.items.map(item => ({
-      _id:         item.guid || item.link,
-      title:       item.title,
-      excerpt:     item.description ? item.description.replace(/<[^>]+>/g,'').slice(0,180) : '',
-      publishedAt: item.pubDate || new Date().toISOString(),
-      coverImage:  item.thumbnail || item.enclosure?.link || null,
-      cat:         item.categories?.[0] || 'Deportes',
-      category:    item.categories?.[0] || 'Deportes',
-      meta: {
-        sourceName: sourceName,
-        sourceUrl:  item.link || '#',
-      }
-    }));
+    if (data.status !== 'ok') throw new Error('feed inválido: ' + data.message);
+    return data.items.map(item => {
+      // Cadena de prioridad para la imagen: thumbnail > enclosure > og > primer <img> en content/description
+      const img =
+        item.thumbnail ||
+        (item.enclosure?.link && item.enclosure.link.match(/\.(jpe?g|png|webp|gif)/i) ? item.enclosure.link : null) ||
+        extractImgFromHtml(item.content) ||
+        extractImgFromHtml(item.description) ||
+        null;
+      return {
+        _id:         item.guid || item.link,
+        title:       item.title,
+        excerpt:     item.description ? item.description.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0,200) : '',
+        publishedAt: item.pubDate || new Date().toISOString(),
+        coverImage:  img,
+        cat:         item.categories?.[0] || 'Deportes',
+        category:    item.categories?.[0] || 'Deportes',
+        meta: {
+          sourceName: sourceName,
+          sourceUrl:  item.link || '#',
+        }
+      };
+    });
   } catch(e) {
-    console.warn('RSS fetch fallback:', e.message);
+    console.warn(`RSS [${sourceName}] falló:`, e.message);
     return [];
   }
 };
@@ -468,7 +485,6 @@ const ls = {
   del: (k) => { try { localStorage.removeItem(k); } catch {} },
 };
 
-const API = window.API_URL || 'http://localhost:3000';
 const CAT_EMOJI = {Fútbol:'⚽',Rugby:'🏉',Tenis:'🎾',Básquet:'🏀',Automovilismo:'🏎️',Deportes:'📰',Hockey:'🏑',Boxeo:'🥊'};
 
 /* ══════════════════════════ STATIC DATA ══════════════════════════ */
@@ -595,45 +611,36 @@ function useToasts() {
   return { toasts, add };
 }
 
-/* useNews — FIX: usa rss2json como fuente de imágenes reales, sin backend requerido */
+/* useNews — carga RSS directo desde GitHub Pages (sin backend) */
 function useNews(page=1, cat='', search='') {
   const [state, setState] = useState({ posts:[], total:0, pages:1, loading:true, fromApi:false });
   useEffect(() => {
     let unmounted = false;
     const safe = (fn) => (...args) => { if (!unmounted) fn(...args); };
     setState(s => ({ ...s, loading: true }));
-    const params = new URLSearchParams({ page, limit: 18 });
-    if (cat)    params.set('category', cat);
-    if (search) params.set('search', search);
-    const ctrl = new AbortController();
-    const timeout = setTimeout(() => ctrl.abort(), 4000);
-    fetch(`${API}/api/news?${params}`, { signal: ctrl.signal })
-      .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
-      .then(d => {
-        clearTimeout(timeout);
-        safe(setState)({ posts: d.posts||[], total: d.pagination?.total||0, pages: d.pagination?.pages||1, loading: false, fromApi: true });
-      })
-      .catch(() => {
-        clearTimeout(timeout);
-        if (page === 1 && !cat && !search) {
-          Promise.all(
-            (window.RSS_FEEDS || []).slice(0,2).map(f => window.fetchRSSFeed(f.url, f.name))
-          ).then(results => {
-            const allPosts = results.flat().sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
-            if (allPosts.length > 0) {
-              safe(setState)({ posts: allPosts, total: allPosts.length, pages: 1, loading: false, fromApi: true });
-              return;
-            }
-            safe(setState)({ posts: STATIC_NEWS, total: STATIC_NEWS.length, pages: 1, loading: false, fromApi: false });
-          }).catch(() => {
-            safe(setState)({ posts: STATIC_NEWS, total: STATIC_NEWS.length, pages: 1, loading: false, fromApi: false });
-          });
-        } else {
-          const filtered = cat ? STATIC_NEWS.filter(n => n.cat === cat) : STATIC_NEWS;
-          safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
-        }
-      });
-    return () => { unmounted = true; clearTimeout(timeout); ctrl.abort(); };
+
+    Promise.all(
+      (window.RSS_FEEDS || []).map(f => window.fetchRSSFeed(f.url, f.name))
+    ).then(results => {
+      let allPosts = results.flat().sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
+      if (cat)    allPosts = allPosts.filter(p => (p.cat||p.category||'').toLowerCase().includes(cat.toLowerCase()));
+      if (search) allPosts = allPosts.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || (p.excerpt||'').toLowerCase().includes(search.toLowerCase()));
+      const limit = 18;
+      const total = allPosts.length;
+      const pages = Math.max(1, Math.ceil(total / limit));
+      const pagePosts = allPosts.slice((page-1)*limit, page*limit);
+      if (pagePosts.length > 0) {
+        safe(setState)({ posts: pagePosts, total, pages, loading: false, fromApi: true });
+      } else {
+        const filtered = cat ? STATIC_NEWS.filter(n => n.cat===cat) : STATIC_NEWS;
+        safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
+      }
+    }).catch(() => {
+      const filtered = cat ? STATIC_NEWS.filter(n => n.cat===cat) : STATIC_NEWS;
+      safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
+    });
+
+    return () => { unmounted = true; };
   }, [page, cat, search]);
   return state;
 }
@@ -765,8 +772,8 @@ function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false }) 
         <div style={{background:'rgba(74,144,217,.1)',border:'1px solid var(--br)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:9,fontSize:12}}>
           <span style={{fontSize:18}}>📡</span>
           <div>
-            <b style={{color:'var(--cel-d)'}}>Modo sin servidor</b>
-            <div style={{color:'var(--tx2)'}}>Mostrando contenido de ejemplo. Las noticias RSS se cargan automáticamente cuando hay conexión.</div>
+            <b style={{color:'var(--cel-d)'}}>Cargando noticias…</b>
+            <div style={{color:'var(--tx2)'}}>Mostrando contenido de ejemplo mientras llegan los feeds RSS.</div>
           </div>
         </div>
       )}
