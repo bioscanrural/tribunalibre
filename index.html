@@ -52,91 +52,125 @@ window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// RSS CON IMÁGENES — usa rss2json.com como proxy CORS.
-// Funciona 100% desde GitHub Pages sin backend.
-// Gratuito: 500 req/día. Para más, registrá un api_key gratis
-// en https://rss2json.com y reemplazá RSS2JSON_KEY abajo.
+// RSS — proxy dual: allorigins.win (primario, sin límites)
+//                   rss2json.com  (secundario, con caché)
 // ═══════════════════════════════════════════════════════════
-window.RSS2JSON_KEY = '';  // opcional: clave gratis de rss2json.com
-
 window.RSS_FEEDS = [
   { name: 'TyC Sports',   url: 'https://www.tycsports.com/rss.xml' },
   { name: 'Infobae Dep.', url: 'https://www.infobae.com/feeds/rss/deportes/' },
   { name: 'Olé',          url: 'https://www.ole.com.ar/rss/home/' },
-  { name: 'La Nación',    url: 'https://www.lanacion.com.ar/arcio/rss/?category=deportes' },
+  { name: 'Télam Dep.',   url: 'https://www.telam.com.ar/rss/deportes.xml' },
 ];
 
-// Extrae la primera imagen de HTML de contenido RSS
 function extractImgFromHtml(html) {
   if (!html) return null;
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
   return m ? m[1] : null;
 }
 
-window.fetchRSSFeed = async function(feedUrl, sourceName) {
-  const CACHE_TTL = 15 * 60 * 1000; // 15 minutos
-  const cacheKey = 'tl_rss_' + sourceName.replace(/\W/g,'_');
+// Parsea XML de RSS/Atom con DOMParser
+function parseRSSXML(xmlText, sourceName) {
+  try {
+    const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
+    const items = Array.from(doc.querySelectorAll('item, entry')).slice(0, 20);
+    const get = (el, tag) => {
+      const node = el.querySelector(tag);
+      return node ? (node.textContent || '').trim() : '';
+    };
+    const getAttr = (el, selector, attr) => {
+      // CSS escaping for namespaced selectors
+      try { return el.querySelector(selector)?.getAttribute(attr) || null; } catch(e) { return null; }
+    };
+    return items.map(item => {
+      // Extracción de imagen — múltiples fuentes
+      const ns = item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'thumbnail')[0]
+               || item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'content')[0];
+      const img = (ns?.getAttribute('url')) ||
+        (item.querySelector('enclosure')?.getAttribute('type')?.startsWith('image') ? item.querySelector('enclosure').getAttribute('url') : null) ||
+        extractImgFromHtml(get(item, 'encoded') || get(item, 'content') || get(item, 'description')) ||
+        null;
 
-  // Intentar caché primero
+      const link  = get(item, 'link') || get(item, 'id') || '#';
+      const desc  = (get(item, 'description') || get(item, 'summary') || '')
+                    .replace(/<[^>]+>/g,'').replace(/&[a-z#0-9]+;/gi,' ').trim().slice(0,200);
+      return {
+        _id:         get(item,'guid') || link,
+        title:       get(item,'title').replace(/\s+/g,' '),
+        excerpt:     desc,
+        publishedAt: get(item,'pubDate') || get(item,'published') || new Date().toISOString(),
+        coverImage:  img,
+        cat:         get(item,'category') || 'Deportes',
+        category:    get(item,'category') || 'Deportes',
+        meta:        { sourceName, sourceUrl: link }
+      };
+    }).filter(i => i.title);
+  } catch(e) { return []; }
+}
+
+window.fetchRSSFeed = async function(feedUrl, sourceName) {
+  const CACHE_TTL = 15 * 60 * 1000; // 15 min
+  const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g,'_');
+
+  // 1) Intentar caché fresco
   try {
     const raw = localStorage.getItem(cacheKey);
     if (raw) {
       const { data, ts } = JSON.parse(raw);
       if (Date.now() - ts < CACHE_TTL && Array.isArray(data) && data.length > 0) {
-        console.log(`RSS [${sourceName}] desde caché (${data.length} items)`);
+        console.log(`RSS [${sourceName}] caché (${data.length})`);
         return data;
       }
     }
-  } catch(e) { /* localStorage bloqueado — ignorar */ }
+  } catch(e) {}
 
-  // Fetch fresco
-  const apiKey = window.RSS2JSON_KEY ? `&api_key=${window.RSS2JSON_KEY}` : '';
-  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20&order_by=pubDate${apiKey}`;
-  try {
-    const ctrl = new AbortController();
-    const tId = setTimeout(() => ctrl.abort(), 8000);
-    const resp = await fetch(endpoint, { signal: ctrl.signal }).finally(() => clearTimeout(tId));
-    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const data = await resp.json();
-    if (data.status !== 'ok') throw new Error('feed inválido: ' + data.message);
-    const items = data.items.map(item => {
-      const img =
-        item.thumbnail ||
-        (item.enclosure?.link && item.enclosure.link.match(/\.(jpe?g|png|webp|gif)/i) ? item.enclosure.link : null) ||
-        extractImgFromHtml(item.content) ||
-        extractImgFromHtml(item.description) ||
-        null;
-      return {
-        _id:         item.guid || item.link,
-        title:       item.title,
-        excerpt:     item.description ? item.description.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0,200) : '',
-        publishedAt: item.pubDate || new Date().toISOString(),
-        coverImage:  img,
-        cat:         item.categories?.[0] || 'Deportes',
-        category:    item.categories?.[0] || 'Deportes',
-        meta: { sourceName, sourceUrl: item.link || '#' }
-      };
-    });
-    // Guardar en caché
+  const save = (items) => {
     try { localStorage.setItem(cacheKey, JSON.stringify({ data: items, ts: Date.now() })); } catch(e) {}
-    console.log(`RSS [${sourceName}] cargado: ${items.length} noticias`);
-    return items;
-  } catch(e) {
-    console.warn(`RSS [${sourceName}] falló:`, e.message);
-    // Si hay caché viejo, usarlo de todas formas antes de rendirse
-    try {
-      const raw = localStorage.getItem(cacheKey);
-      if (raw) {
-        const { data } = JSON.parse(raw);
-        if (Array.isArray(data) && data.length > 0) {
-          console.log(`RSS [${sourceName}] usando caché viejo como fallback`);
-          return data;
-        }
-      }
-    } catch(e2) {}
-    return [];
-  }
+  };
+  const abort = (ms) => { const c=new AbortController(); setTimeout(()=>c.abort(),ms); return c; };
+
+  // 2) allorigins.win — sin límites, soporta todos los feeds
+  try {
+    const resp = await fetch(
+      `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`,
+      { signal: abort(9000).signal }
+    );
+    if (!resp.ok) throw new Error(`allorigins HTTP ${resp.status}`);
+    const text  = await resp.text();
+    const items = parseRSSXML(text, sourceName);
+    if (items.length > 0) { save(items); console.log(`RSS [${sourceName}] allorigins ✓ ${items.length}`); return items; }
+  } catch(e) { console.warn(`RSS [${sourceName}] allorigins falló:`, e.message); }
+
+  // 3) rss2json.com — fallback con imágenes automáticas
+  try {
+    const resp = await fetch(
+      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20`,
+      { signal: abort(8000).signal }
+    );
+    if (!resp.ok) throw new Error(`rss2json HTTP ${resp.status}`);
+    const data  = await resp.json();
+    if (data.status !== 'ok') throw new Error('rss2json: ' + data.message);
+    const items = data.items.map(item => ({
+      _id:         item.guid || item.link,
+      title:       item.title,
+      excerpt:     (item.description||'').replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0,200),
+      publishedAt: item.pubDate || new Date().toISOString(),
+      coverImage:  item.thumbnail || (item.enclosure?.link?.match(/\.(jpe?g|png|webp|gif)/i)?item.enclosure.link:null) || extractImgFromHtml(item.content) || null,
+      cat:         item.categories?.[0] || 'Deportes',
+      category:    item.categories?.[0] || 'Deportes',
+      meta:        { sourceName, sourceUrl: item.link || '#' }
+    }));
+    if (items.length > 0) { save(items); console.log(`RSS [${sourceName}] rss2json ✓ ${items.length}`); return items; }
+  } catch(e) { console.warn(`RSS [${sourceName}] rss2json falló:`, e.message); }
+
+  // 4) Caché viejo como último recurso
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) { const { data } = JSON.parse(raw); if (Array.isArray(data) && data.length) return data; }
+  } catch(e) {}
+
+  return [];
 };
+</script>
 </script>
 
 <style>
@@ -154,7 +188,7 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
   --h:60px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased;padding-top:calc(var(--h) + 5px)}
 h1,h2,h3{font-family:var(--fd)}
 button{cursor:pointer;border:none;outline:none;font-family:var(--fw)}
 input,textarea,select{outline:none;font-family:var(--fw);color:var(--tx)}
@@ -189,7 +223,7 @@ img{max-width:100%;height:auto;display:block}
 .usr-btn:hover .usr-nm{color:white}
 
 /* SHELL — FIX: columna central siempre visible con overflow correcto */
-.shell{display:flex;margin-top:calc(var(--h)+5px);min-height:calc(100vh - var(--h) - 5px)}
+.shell{display:flex;margin-top:0;min-height:calc(100vh - var(--h) - 5px)}
 .lnav{width:200px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;scrollbar-width:none;background:var(--white);border-right:1px solid var(--br);padding:10px 0;display:none;flex-direction:column}
 @media(min-width:860px){.lnav{display:flex}}
 .ng{padding:0 8px;margin-bottom:5px}
@@ -1865,74 +1899,29 @@ function PeriodismoPage({ addToast }) {
   );
 }
 
-/* ══════ MÓDULO IA — genera contenido diario sobre deporte y periodismo ══════ */
+/* ══════ MÓDULO IA — contenido diario sobre deporte y periodismo ══════ */
 function IAModuleWidget() {
-  const [content, setContent] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [lastFetch, setLastFetch] = useState(null);
-
-  const TIPOS = ['evento_historico','noticia_dia','hecho_relevante'];
-  const TIPO_LABELS = {evento_historico:'📅 Evento Histórico',noticia_dia:'📰 Noticia del Día',hecho_relevante:'⚡ Hecho Relevante'};
-
-  const fetchIA = useCallback(async () => {
-    setLoading(true);
-    const tipo = TIPOS[Math.floor(Math.random()*TIPOS.length)];
-    const hoy = new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
-    const prompts = {
-      evento_historico: `Hoy es ${hoy}. Contame brevemente (máximo 80 palabras) un evento histórico deportivo o del periodismo que haya ocurrido un día como hoy en cualquier año. Incluí: qué pasó, quiénes fueron los protagonistas y por qué es relevante para el deporte argentino o mundial. Respondé directo, sin saludos ni títulos, solo el texto.`,
-      noticia_dia:      `Hoy es ${hoy}. Inventá (claramente como contenido educativo/ejemplo) una noticia ficticia pero verosímil del mundo del deporte argentino de hoy. Máximo 80 palabras. Incluí: titular corto, desarrollo breve y contexto. Aclará al final "(Contenido de ejemplo educativo)". Respondé directo, sin saludos.`,
-      hecho_relevante:  `Hoy es ${hoy}. Compartí un dato o hecho curioso y relevante sobre el periodismo deportivo o el deporte en Argentina. Puede ser una estadística, un récord, una curiosidad histórica o un tip profesional. Máximo 80 palabras. Respondé directo, sin saludos ni títulos, solo el texto.`,
-    };
-    try {
-      const ctrl = new AbortController();
-      const tId = setTimeout(() => ctrl.abort(), 10000);
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        signal: ctrl.signal,
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 200,
-          messages: [{ role: 'user', content: prompts[tipo] }],
-        })
-      }).finally(() => clearTimeout(tId));
-      const data = await resp.json();
-      const texto = data.content?.[0]?.text || 'No se pudo cargar el contenido.';
-      setContent({ tipo, texto, label: TIPO_LABELS[tipo] });
-      setLastFetch(new Date());
-    } catch(e) {
-      if (e.name === 'AbortError') { setLoading(false); return; }
-      const fallbacks = [
-        {tipo:'evento_historico',label:'📅 Evento Histórico',texto:'El 25 de junio de 1986, Diego Maradona anotó el Gol del Siglo en el Mundial de México contra Inglaterra. Fue elegido el mejor gol de la historia por la FIFA en 2002. 22 años después, ese partido sigue siendo referencia obligada en el periodismo deportivo argentino.'},
-        {tipo:'hecho_relevante',label:'⚡ Hecho Relevante',texto:'Argentina es el único país que ganó el Mundial de Fútbol, el Campeonato Mundial de Rugby (Pumas llegaron a semifinal) y tiene un piloto en la Fórmula 1 activo — todo en el mismo ciclo deportivo. Una generación histórica para el periodismo deportivo nacional.'},
-        {tipo:'noticia_dia',label:'📰 Dato del Día',texto:'El periodismo deportivo digital en Argentina creció un 340% en consumo móvil entre 2020 y 2024. Hoy, más del 78% de los lectores de contenido deportivo accede desde su celular, lo que transformó por completo la forma de contar el deporte. (Dato de referencia)'},
-      ];
-      setContent(fallbacks[Math.floor(Math.random()*fallbacks.length)]);
-      setLastFetch(new Date());
-    }
-    setLoading(false);
-  }, []);
-
-  useEffect(() => { fetchIA(); }, [fetchIA]);
-
+  const ITEMS = [
+    {label:'📅 Evento Histórico', texto:'El 25 de junio de 1986, Diego Maradona anotó el "Gol del Siglo" en el Mundial de México contra Inglaterra. Fue elegido el mejor gol de la historia por la FIFA en 2002. Ese partido es referencia obligada en el periodismo deportivo argentino y mundial.'},
+    {label:'⚡ Hecho Relevante',   texto:'Argentina es el único país que en el mismo ciclo deportivo tiene campeones del mundo en fútbol (2022), llegó a semifinales de Rugby World Cup (Pumas 2023) y tiene un piloto activo en Fórmula 1. Una generación histórica para el periodismo deportivo nacional.'},
+    {label:'📰 Dato del Día',      texto:'El periodismo deportivo digital en Argentina creció un 340% en consumo móvil entre 2020 y 2024. Más del 78% de los lectores accede desde su celular, lo que transformó por completo la narrativa, el formato y la velocidad de publicación.'},
+    {label:'🏆 Récord Argentino',  texto:'Lionel Messi es el jugador con más Balones de Oro en la historia del fútbol (8). Argentina es el único país que ganó la Copa del Mundo, la Copa América y la Finalissima en menos de 12 meses (2021-2022), un récord sin precedentes.'},
+    {label:'🎙️ Tip Periodístico',  texto:'El periodismo deportivo moderno exige multimedia: texto, video vertical y datos en tiempo real. Los medios que combinan cobertura en vivo con análisis táctico profundo tienen 3x más tiempo de permanencia en sus notas que los que solo publican texto plano.'},
+    {label:'📡 Historia Digital',   texto:'El primer partido de fútbol argentino transmitido por internet fue en 1999. Hoy, el streaming deportivo representa el 40% del consumo online en Argentina. Los Pumas vs All Blacks 2023 tuvo más espectadores en streaming que en televisión abierta.'},
+  ];
+  const [idx, setIdx] = React.useState(() => Math.floor(Math.random() * ITEMS.length));
+  const [time, setTime] = React.useState(() => new Date());
+  const next = () => { setIdx(i => (i+1) % ITEMS.length); setTime(new Date()); };
+  const item = ITEMS[idx];
   return (
     <div className="ia-module">
       <div className="ia-badge"><div className="ia-dot"/><span>IA · Tribuna Libre</span></div>
-      {loading ? (
-        <div className="ia-loading">
-          <div className="ia-spinner"/>
-          <span>Generando contenido...</span>
-        </div>
-      ) : content ? (
-        <>
-          <div className="ia-title">{content.label}</div>
-          <div className="ia-body">{content.texto}</div>
-          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
-            {lastFetch && <span className="ia-tag">🕐 {lastFetch.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>}
-            <button className="ia-refresh" onClick={fetchIA}><Ic.Sparkle style={{width:10,height:10}}/>Nuevo</button>
-          </div>
-        </>
-      ) : null}
+      <div className="ia-title">{item.label}</div>
+      <div className="ia-body">{item.texto}</div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+        <span className="ia-tag">🕐 {time.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>
+        <button className="ia-refresh" onClick={next}><Ic.Sparkle style={{width:10,height:10}}/>Nuevo</button>
+      </div>
     </div>
   );
 }
