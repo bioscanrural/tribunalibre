@@ -74,8 +74,24 @@ function extractImgFromHtml(html) {
 }
 
 window.fetchRSSFeed = async function(feedUrl, sourceName) {
-  const key = window.RSS2JSON_KEY ? `&api_key=${window.RSS2JSON_KEY}` : '';
-  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20&order_by=pubDate${key}`;
+  const CACHE_TTL = 15 * 60 * 1000; // 15 minutos
+  const cacheKey = 'tl_rss_' + sourceName.replace(/\W/g,'_');
+
+  // Intentar caché primero
+  try {
+    const raw = localStorage.getItem(cacheKey);
+    if (raw) {
+      const { data, ts } = JSON.parse(raw);
+      if (Date.now() - ts < CACHE_TTL && Array.isArray(data) && data.length > 0) {
+        console.log(`RSS [${sourceName}] desde caché (${data.length} items)`);
+        return data;
+      }
+    }
+  } catch(e) { /* localStorage bloqueado — ignorar */ }
+
+  // Fetch fresco
+  const apiKey = window.RSS2JSON_KEY ? `&api_key=${window.RSS2JSON_KEY}` : '';
+  const endpoint = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20&order_by=pubDate${apiKey}`;
   try {
     const ctrl = new AbortController();
     const tId = setTimeout(() => ctrl.abort(), 8000);
@@ -83,8 +99,7 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const data = await resp.json();
     if (data.status !== 'ok') throw new Error('feed inválido: ' + data.message);
-    return data.items.map(item => {
-      // Cadena de prioridad para la imagen: thumbnail > enclosure > og > primer <img> en content/description
+    const items = data.items.map(item => {
       const img =
         item.thumbnail ||
         (item.enclosure?.link && item.enclosure.link.match(/\.(jpe?g|png|webp|gif)/i) ? item.enclosure.link : null) ||
@@ -99,14 +114,26 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
         coverImage:  img,
         cat:         item.categories?.[0] || 'Deportes',
         category:    item.categories?.[0] || 'Deportes',
-        meta: {
-          sourceName: sourceName,
-          sourceUrl:  item.link || '#',
-        }
+        meta: { sourceName, sourceUrl: item.link || '#' }
       };
     });
+    // Guardar en caché
+    try { localStorage.setItem(cacheKey, JSON.stringify({ data: items, ts: Date.now() })); } catch(e) {}
+    console.log(`RSS [${sourceName}] cargado: ${items.length} noticias`);
+    return items;
   } catch(e) {
     console.warn(`RSS [${sourceName}] falló:`, e.message);
+    // Si hay caché viejo, usarlo de todas formas antes de rendirse
+    try {
+      const raw = localStorage.getItem(cacheKey);
+      if (raw) {
+        const { data } = JSON.parse(raw);
+        if (Array.isArray(data) && data.length > 0) {
+          console.log(`RSS [${sourceName}] usando caché viejo como fallback`);
+          return data;
+        }
+      }
+    } catch(e2) {}
     return [];
   }
 };
@@ -613,16 +640,19 @@ function useToasts() {
 
 /* useNews — carga RSS directo desde GitHub Pages (sin backend) */
 function useNews(page=1, cat='', search='') {
-  const [state, setState] = useState({ posts:[], total:0, pages:1, loading:true, fromApi:false });
+  const [state, setState] = useState({ posts:[], total:0, pages:1, loading:true, fromApi:false, feedStatus:[] });
   useEffect(() => {
     let unmounted = false;
     const safe = (fn) => (...args) => { if (!unmounted) fn(...args); };
     setState(s => ({ ...s, loading: true }));
 
     Promise.all(
-      (window.RSS_FEEDS || []).map(f => window.fetchRSSFeed(f.url, f.name))
+      (window.RSS_FEEDS || []).map(f =>
+        window.fetchRSSFeed(f.url, f.name).then(items => ({ name: f.name, count: items.length, items }))
+      )
     ).then(results => {
-      let allPosts = results.flat().sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
+      const feedStatus = results.map(r => ({ name: r.name, count: r.count }));
+      let allPosts = results.flatMap(r => r.items).sort((a,b) => new Date(b.publishedAt)-new Date(a.publishedAt));
       if (cat)    allPosts = allPosts.filter(p => (p.cat||p.category||'').toLowerCase().includes(cat.toLowerCase()));
       if (search) allPosts = allPosts.filter(p => p.title.toLowerCase().includes(search.toLowerCase()) || (p.excerpt||'').toLowerCase().includes(search.toLowerCase()));
       const limit = 18;
@@ -630,14 +660,14 @@ function useNews(page=1, cat='', search='') {
       const pages = Math.max(1, Math.ceil(total / limit));
       const pagePosts = allPosts.slice((page-1)*limit, page*limit);
       if (pagePosts.length > 0) {
-        safe(setState)({ posts: pagePosts, total, pages, loading: false, fromApi: true });
+        safe(setState)({ posts: pagePosts, total, pages, loading: false, fromApi: true, feedStatus });
       } else {
         const filtered = cat ? STATIC_NEWS.filter(n => n.cat===cat) : STATIC_NEWS;
-        safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
+        safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false, feedStatus });
       }
     }).catch(() => {
       const filtered = cat ? STATIC_NEWS.filter(n => n.cat===cat) : STATIC_NEWS;
-      safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false });
+      safe(setState)({ posts: filtered, total: filtered.length, pages: 1, loading: false, fromApi: false, feedStatus:[] });
     });
 
     return () => { unmounted = true; };
@@ -751,8 +781,9 @@ function LiveStrip({ onNav }) {
 }
 
 /* ══════ HOME PAGE — FIX: columna central completa y visible ══════ */
-function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false }) {
+function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false, feedStatus=[] }) {
   const hero = posts[0];
+  const totalNews = feedStatus.reduce((s,f) => s + f.count, 0);
   return (
     <div>
       {/* WELCOME HERO */}
@@ -768,6 +799,20 @@ function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false }) 
         </div>
       </div>
 
+      {/* BANNER DE ESTADO RSS */}
+      {!loading && fromApi && feedStatus.length > 0 && (
+        <div style={{background:'rgba(39,174,96,.08)',border:'1px solid rgba(39,174,96,.25)',borderRadius:'var(--r)',padding:'8px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:9,fontSize:11,flexWrap:'wrap'}}>
+          <span style={{fontSize:15}}>📡</span>
+          <span style={{fontWeight:700,color:'#1E8449'}}>{totalNews} noticias en vivo</span>
+          <span style={{color:'var(--tx3)',margin:'0 2px'}}>·</span>
+          {feedStatus.map((f,i) => (
+            <span key={i} style={{color: f.count>0 ? 'var(--tx2)' : 'var(--tx3)'}}>
+              {f.count>0 ? '✓' : '✗'} {f.name} <b style={{color:'var(--cel-d)'}}>{f.count>0 ? `(${f.count})` : '(sin datos)'}</b>
+              {i < feedStatus.length-1 && <span style={{color:'var(--tx3)',margin:'0 6px'}}>·</span>}
+            </span>
+          ))}
+        </div>
+      )}
       {!loading && !fromApi && (
         <div style={{background:'rgba(74,144,217,.1)',border:'1px solid var(--br)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,display:'flex',alignItems:'center',gap:9,fontSize:12}}>
           <span style={{fontSize:18}}>📡</span>
@@ -2145,7 +2190,7 @@ function App() {
     nav('home');
   }
 
-  const { posts, loading: newsLoading, fromApi } = useNews(1,'','');
+  const { posts, loading: newsLoading, fromApi, feedStatus } = useNews(1,'','');
 
   return (
     <>
@@ -2217,7 +2262,7 @@ function App() {
         {/* MAIN CONTENT */}
         <main className="main">
           <div style={{maxWidth:760,margin:'0 auto'}}>
-            {page==='home'      && <HomePage onArticle={openArticle} onNav={nav} posts={posts} loading={newsLoading} fromApi={fromApi}/>}
+            {page==='home'      && <HomePage onArticle={openArticle} onNav={nav} posts={posts} loading={newsLoading} fromApi={fromApi} feedStatus={feedStatus}/>}
             {page==='news'      && <NewsPage onArticle={openArticle}/>}
             {page==='article'   && article && <ArticlePage post={article} onBack={()=>nav('news')} user={user} addToast={addToast}/>}
             {page==='comunidad' && <ComunidadPage user={user} addToast={addToast} onNav={nav}/>}
