@@ -14,8 +14,8 @@
 // SUPABASE — reemplaza Firebase por completo
 // Reemplazá las siguientes variables con tus credenciales reales.
 // ═══════════════════════════════════════════════════════════
-window.SUPABASE_URL  = 'TU_SUPABASE_URL_AQUI';   // ej: https://xyzxyz.supabase.co
-window.SUPABASE_ANON = 'TU_SUPABASE_ANON_KEY';   // clave pública anon
+window.SUPABASE_URL  = 'https://ttinuqxvaquohranlasu.supabase.co';
+window.SUPABASE_ANON = 'sb_publishable_uGtX_3HBT1Aduy4s2N5WrA_3QjonanT';
 
 window.__supabase = null;  // se inicializa cuando cargue el SDK
 
@@ -52,12 +52,11 @@ window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// RSS CON IMÁGENES — usa rss2json.com como proxy CORS.
-// Funciona 100% desde GitHub Pages sin backend.
-// Gratuito: 500 req/día. Para más, registrá un api_key gratis
-// en https://rss2json.com y reemplazá RSS2JSON_KEY abajo.
+// RSS — usa proxies CORS gratuitos + DOMParser nativo.
+// Sin dependencia de rss2json (que bloqueaba con HTTP 422).
 // ═══════════════════════════════════════════════════════════
-// Feeds RSS — fuentes que no bloquean proxies CORS gratuitos
+
+// Feeds que SÍ aceptan proxies CORS gratuitos
 window.RSS_FEEDS = [
   { name: 'BBC Deportes', url: 'https://feeds.bbci.co.uk/sport/rss.xml' },
   { name: 'ESPN',         url: 'https://www.espn.com/espn/rss/news' },
@@ -66,21 +65,18 @@ window.RSS_FEEDS = [
   { name: 'Sky Sports',   url: 'https://www.skysports.com/rss/12040' },
 ];
 
-// Extrae la primera imagen de HTML de contenido RSS
 function extractImgFromHtml(html) {
   if (!html) return null;
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
   return m ? m[1] : null;
 }
 
-// Parsea XML RSS a array de items con el formato interno de la app
 function parseRSSXml(xmlText, sourceName) {
-  const parser = new DOMParser();
-  const xml    = parser.parseFromString(xmlText, 'text/xml');
+  const xml     = new DOMParser().parseFromString(xmlText, 'text/xml');
   const entries = [...xml.querySelectorAll('item')];
   if (!entries.length) throw new Error('sin items en el XML');
   return entries.slice(0, 10).map(item => {
-    const get  = tag => item.querySelector(tag)?.textContent?.trim() || '';
+    const get = tag => item.querySelector(tag)?.textContent?.trim() || '';
     const desc = get('description');
     const img  =
       item.querySelector('enclosure[type^="image"]')?.getAttribute('url') ||
@@ -90,7 +86,7 @@ function parseRSSXml(xmlText, sourceName) {
     return {
       _id:         get('guid') || get('link'),
       title:       get('title'),
-      excerpt:     desc.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0, 200),
+      excerpt:     desc.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0,200),
       publishedAt: get('pubDate') || new Date().toISOString(),
       coverImage:  img,
       cat:         get('category') || 'Deportes',
@@ -100,10 +96,10 @@ function parseRSSXml(xmlText, sourceName) {
   });
 }
 
-// fetchRSSFeed — usa proxies CORS gratuitos + DOMParser (sin rss2json)
+// Tres proxies CORS gratuitos en cascada — sin registro, sin API key
 window.fetchRSSFeed = async function(feedUrl, sourceName) {
   const CACHE_TTL = 15 * 60 * 1000;
-  const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g, '_');
+  const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g,'_');
 
   // 1. Caché fresco
   try {
@@ -117,7 +113,7 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
     }
   } catch(e) {}
 
-  // 2. Proxies CORS gratuitos — se prueban en orden hasta que uno funcione
+  // 2. Proxies en cascada
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
@@ -125,16 +121,14 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
   ];
 
   for (let i = 0; i < proxies.length; i++) {
-    const proxyUrl = proxies[i](feedUrl);
     try {
       const ctrl = new AbortController();
       const tId  = setTimeout(() => ctrl.abort(), 9000);
-      const resp = await fetch(proxyUrl, { signal: ctrl.signal }).finally(() => clearTimeout(tId));
+      const resp = await fetch(proxies[i](feedUrl), { signal: ctrl.signal }).finally(() => clearTimeout(tId));
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      const text  = await resp.text();
-      const items = parseRSSXml(text, sourceName);
+      const items = parseRSSXml(await resp.text(), sourceName);
       try { localStorage.setItem(cacheKey, JSON.stringify({ data: items, ts: Date.now() })); } catch(e) {}
-      console.log(`RSS [${sourceName}] cargado correctamente: ${items.length} noticias (proxy ${i+1})`);
+      console.log(`RSS [${sourceName}] cargado: ${items.length} noticias (proxy ${i+1})`);
       return items;
     } catch(e) {
       console.warn(`RSS [${sourceName}] proxy ${i+1} falló: ${e.message}`);
@@ -1080,79 +1074,258 @@ function ArticlePage({ post, onBack, user, addToast }) {
   );
 }
 
-/* ══════ COMUNIDAD PAGE — restaurada completa ══════ */
+/* ══════ COMUNIDAD PAGE — Supabase: posts, likes, comentarios y puntos ══════ */
+const RANKS = [
+  {min:0,   label:'Hincha',     color:'#6B7280'},
+  {min:50,  label:'Periodista', color:'#3B82F6'},
+  {min:150, label:'Referente',  color:'#8B5CF6'},
+  {min:500, label:'Leyenda',    color:'#F59E0B'},
+];
+function getRank(pts) { return [...RANKS].reverse().find(r => pts >= r.min) || RANKS[0]; }
+function fmtTime(ts) {
+  if (!ts) return 'Ahora';
+  const d = new Date(ts), diff = Date.now() - d.getTime();
+  if (diff < 60000)    return 'Hace un momento';
+  if (diff < 3600000)  return `Hace ${Math.floor(diff/60000)}min`;
+  if (diff < 86400000) return `Hace ${Math.floor(diff/3600000)}h`;
+  return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+}
+
 function ComunidadPage({ user, addToast, onNav }) {
-  const [tab, setTab]       = useState('feed');
-  const [text, setText]     = useState('');
-  const [posts, setPosts]   = useState(COMMUNITY_POSTS);
-  const [liked, setLiked]   = useState({});
-  const [chatMsg, setChatMsg] = useState('');
+  const [tab, setTab]           = useState('feed');
+  const [text, setText]         = useState('');
+  const [posts, setPosts]       = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
+  const [likedPosts, setLikedPosts]     = useState(new Set());
+  const [expandedPost, setExpandedPost] = useState(null);
+  const [commentTexts, setCommentTexts] = useState({});
+  const [postComments, setPostComments] = useState({});
+  const [sbUser, setSbUser]     = useState(null);
+  const [profile, setProfile]   = useState(null);
+  const [chatMsg, setChatMsg]   = useState('');
   const [chatMsgs, setChatMsgs] = useState([
     {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
-    {id:2,u:'ScrumMaster',text:'¡Increíble! Los Pumas también la rompen 🏉',own:false},
+    {id:2,u:'ScrumMaster',text:'¡Los Pumas también la rompen! 🏉',own:false},
     {id:3,u:'Vos',text:'¡Esto es Tribuna Libre en vivo!',own:true},
   ]);
   const chatRef = useRef();
-  function publish() {
-    if (!text.trim()) return;
-    setPosts(p => [{id:Date.now(),user:user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado',av:(user?.displayName||'I')[0].toUpperCase(),color:'#4A90D9',text,likes:0,time:'Ahora'},...p]);
-    setText('');
-    addToast({msg:'¡Publicado en la comunidad!',type:'ok'});
+  const sb = window.__supabase;
+
+  useEffect(() => {
+    loadPosts();
+    if (!sb) return;
+    sb.auth.getUser().then(({ data }) => {
+      if (!data?.user) return;
+      setSbUser(data.user);
+      loadProfile(data.user);
+      loadUserLikes(data.user.id);
+    });
+  }, []);
+
+  async function loadPosts() {
+    if (!sb) { setPosts(COMMUNITY_POSTS); setLoadingPosts(false); return; }
+    const { data } = await sb.from('community_posts').select('*').order('created_at',{ascending:false}).limit(40);
+    setPosts(data && data.length > 0 ? data : COMMUNITY_POSTS);
+    setLoadingPosts(false);
   }
+
+  async function loadProfile(u) {
+    const username = u.user_metadata?.displayName || u.email?.split('@')[0] || 'Usuario';
+    const { data } = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
+    if (data) { setProfile(data); return; }
+    const np = { id: u.id, username, points: 0, rank: 'Hincha' };
+    await sb.from('profiles').insert(np).catch(() => {});
+    setProfile(np);
+  }
+
+  async function loadUserLikes(uid) {
+    const { data } = await sb.from('post_likes').select('post_id').eq('user_id', uid);
+    if (data) setLikedPosts(new Set(data.map(l => l.post_id)));
+  }
+
+  async function addPoints(delta) {
+    if (!sb || !sbUser || !profile) return;
+    const newPts  = (profile.points || 0) + delta;
+    const newRank = getRank(newPts).label;
+    await sb.from('profiles').update({ points: newPts, rank: newRank }).eq('id', sbUser.id);
+    setProfile(p => ({ ...p, points: newPts, rank: newRank }));
+  }
+
+  async function publish() {
+    if (!text.trim()) return;
+    if (!sbUser) { addToast({msg:'Iniciá sesión para publicar',type:'err'}); return; }
+    const username = sbUser.user_metadata?.displayName || sbUser.email?.split('@')[0] || 'Usuario';
+    const np = { user_id:sbUser.id, username, avatar_letter:username[0].toUpperCase(), avatar_color:'#4A90D9', content:text.trim(), likes_count:0, comments_count:0 };
+    const { data } = await sb.from('community_posts').insert(np).select().single();
+    if (data) {
+      setPosts(p => [data, ...p]);
+      await addPoints(10);
+      addToast({msg:'¡Publicado! +10 puntos 🌟', type:'ok'});
+      setText('');
+    } else { addToast({msg:'Error al publicar',type:'err'}); }
+  }
+
+  async function toggleLike(post) {
+    if (!sbUser) { addToast({msg:'Iniciá sesión para dar likes',type:'err'}); return; }
+    const isLiked = likedPosts.has(post.id);
+    setLikedPosts(prev => { const n=new Set(prev); isLiked?n.delete(post.id):n.add(post.id); return n; });
+    setPosts(prev => prev.map(p => p.id===post.id?{...p,likes_count:(p.likes_count||0)+(isLiked?-1:1)}:p));
+    if (isLiked) {
+      await sb.from('post_likes').delete().eq('user_id',sbUser.id).eq('post_id',post.id);
+      await sb.from('community_posts').update({likes_count:Math.max(0,(post.likes_count||0)-1)}).eq('id',post.id);
+    } else {
+      const { error } = await sb.from('post_likes').insert({user_id:sbUser.id,post_id:post.id});
+      if (error) { setLikedPosts(prev=>{const n=new Set(prev);n.delete(post.id);return n;}); return; }
+      await sb.from('community_posts').update({likes_count:(post.likes_count||0)+1}).eq('id',post.id);
+    }
+  }
+
+  async function toggleComments(postId) {
+    const isOpen = expandedPost === postId;
+    setExpandedPost(isOpen ? null : postId);
+    if (!isOpen && !postComments[postId] && sb) {
+      const { data } = await sb.from('post_comments').select('*').eq('post_id',postId).order('created_at');
+      setPostComments(prev => ({...prev,[postId]:data||[]}));
+    }
+  }
+
+  async function submitComment(post) {
+    const txt = (commentTexts[post.id]||'').trim();
+    if (!txt) return;
+    if (!sbUser) { addToast({msg:'Iniciá sesión para comentar',type:'err'}); return; }
+    const username = sbUser.user_metadata?.displayName || sbUser.email?.split('@')[0] || 'Usuario';
+    const nc = { post_id:post.id, user_id:sbUser.id, username, avatar_letter:username[0].toUpperCase(), avatar_color:'#16A34A', content:txt };
+    const { data } = await sb.from('post_comments').insert(nc).select().single();
+    if (data) {
+      setPostComments(prev => ({...prev,[post.id]:[...(prev[post.id]||[]),data]}));
+      await sb.from('community_posts').update({comments_count:(post.comments_count||0)+1}).eq('id',post.id);
+      setPosts(prev => prev.map(p => p.id===post.id?{...p,comments_count:(p.comments_count||0)+1}:p));
+      await addPoints(1);
+      addToast({msg:'Comentario publicado +1 punto',type:'ok'});
+      setCommentTexts(prev => ({...prev,[post.id]:''}));
+    }
+  }
+
   function sendChat() {
     if (!chatMsg.trim()) return;
     setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
     setChatMsg('');
     setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
   }
-  // THREADS_DATA definido como variable global
+
+  const rank = profile ? getRank(profile.points) : null;
+
   return (
     <div>
-      {/* BANNER COMUNIDAD */}
       <div className="section-banner">
         <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Copilot_20260415_203438%20(1).png"
           alt="Comunidad Tribuna Libre" loading="lazy"
           onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
+
       <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
         <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--cel)'}}>Tribuna Libre</span></h1>
+        {profile && rank && (
+          <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'var(--cel-xl)',border:'1px solid var(--cel-d)22',borderRadius:20}}>
+            <span style={{fontSize:11,fontWeight:700,color:rank.color}}>{rank.label}</span>
+            <span style={{fontSize:10,color:'var(--tx3)'}}>·</span>
+            <span style={{fontSize:11,fontWeight:600,color:'var(--tx2)'}}>⭐ {profile.points} pts</span>
+          </div>
+        )}
       </div>
-      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+
+      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:10,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+
+      <div style={{display:'flex',gap:5,marginBottom:12,flexWrap:'wrap'}}>
+        {RANKS.map(r => (
+          <div key={r.label} style={{fontSize:10,padding:'2px 8px',borderRadius:10,border:`1px solid ${r.color}44`,color:r.color,background:`${r.color}11`}}>
+            {r.label} · {r.min}+ pts
+          </div>
+        ))}
+      </div>
+
+      {!sbUser && (
+        <div style={{background:'rgba(74,144,217,.08)',border:'1px solid var(--cel-d)22',borderRadius:'var(--rs)',padding:'8px 12px',marginBottom:12,fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:8}}>
+          <span>🔐</span><span>Iniciá sesión para publicar, comentar y ganar puntos</span>
+        </div>
+      )}
+
       <div className="tabs">
         {[{id:'feed',l:'Feed'},{id:'chat',l:'Chat en Vivo'},{id:'debates',l:'Debates'}].map(t => (
           <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
         ))}
       </div>
+
       {tab==='feed' && (
         <div>
           <div className="card cp" style={{marginBottom:14}}>
             <div style={{display:'flex',gap:10,marginBottom:9}}>
               <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>
-                {user?.isGuest===false ? (user.displayName||user.username||'V')[0].toUpperCase() : '?'}
+                {sbUser?(sbUser.user_metadata?.displayName||sbUser.email||'U')[0].toUpperCase():'?'}
               </div>
-              <textarea value={text} onChange={e=>setText(e.target.value)} className="fi" placeholder="¿Qué pensás del deporte argentino?" style={{minHeight:60,resize:'none'}}/>
+              <textarea value={text} onChange={e=>setText(e.target.value)} className="fi"
+                placeholder={sbUser?'¿Qué pensás del deporte argentino?':'Iniciá sesión para publicar...'}
+                style={{minHeight:60,resize:'none'}} disabled={!sbUser}/>
             </div>
-            <div style={{display:'flex',justifyContent:'flex-end'}}>
-              <button className="btn btn-c btn-sm" onClick={publish}>Publicar</button>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <span style={{fontSize:10,color:'var(--tx3)'}}>Publicar → <b>+10 pts</b> · Comentar → <b>+1 pt</b></span>
+              <button className="btn btn-c btn-sm" onClick={publish} disabled={!sbUser||!text.trim()}>Publicar</button>
             </div>
           </div>
-          {posts.map(p => (
-            <div key={p.id} className="post-card">
-              <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
-                <div className="post-av" style={{background:p.color}}>{p.av}</div>
-                <div><div className="post-user">{p.user}</div><div className="post-time">{p.time}</div></div>
+
+          {loadingPosts && <div style={{textAlign:'center',padding:20,color:'var(--tx3)',fontSize:13}}>Cargando publicaciones...</div>}
+          {!loadingPosts && posts.map(p => {
+            const isLiked    = likedPosts.has(p.id);
+            const isExpanded = expandedPost === p.id;
+            const pComments  = postComments[p.id] || [];
+            return (
+              <div key={p.id} className="post-card">
+                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
+                  <div className="post-av" style={{background:p.avatar_color||p.color||'#4A90D9'}}>{p.avatar_letter||p.av||'?'}</div>
+                  <div style={{flex:1}}>
+                    <div className="post-user">{p.username||p.user}</div>
+                    <div className="post-time">{fmtTime(p.created_at||p.time)}</div>
+                  </div>
+                </div>
+                <div className="post-body">{p.content||p.text}</div>
+                <div className="post-actions">
+                  <button className={`abt${isLiked?' lk':''}`} onClick={()=>toggleLike(p)}>
+                    <Ic.Heart/> {p.likes_count||p.likes||0}
+                  </button>
+                  <button className="abt" onClick={()=>toggleComments(p.id)}>
+                    <Ic.Comment/> {p.comments_count||0} {isExpanded?'▲':'▼'}
+                  </button>
+                </div>
+                {isExpanded && (
+                  <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--br)'}}>
+                    {pComments.length===0 && <div style={{fontSize:12,color:'var(--tx3)',marginBottom:8}}>Sin comentarios aún. ¡Sé el primero!</div>}
+                    {pComments.map(c => (
+                      <div key={c.id} style={{display:'flex',gap:7,marginBottom:8}}>
+                        <div style={{width:26,height:26,borderRadius:'50%',background:c.avatar_color||'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'white',flexShrink:0}}>{c.avatar_letter||'?'}</div>
+                        <div style={{background:'rgba(0,0,0,.04)',borderRadius:'var(--rs)',padding:'6px 10px',flex:1}}>
+                          <div style={{fontSize:11,fontWeight:600,color:'var(--tx)',marginBottom:2}}>{c.username}</div>
+                          <div style={{fontSize:12,color:'var(--tx2)'}}>{c.content}</div>
+                        </div>
+                      </div>
+                    ))}
+                    {sbUser && (
+                      <div style={{display:'flex',gap:7,marginTop:6}}>
+                        <input className="fi" style={{flex:1,fontSize:12,padding:'6px 10px'}}
+                          placeholder="Comentá... (+1 punto)"
+                          value={commentTexts[p.id]||''}
+                          onChange={e=>setCommentTexts(prev=>({...prev,[p.id]:e.target.value}))}
+                          onKeyDown={e=>e.key==='Enter'&&submitComment(p)}/>
+                        <button className="btn btn-c btn-sm" onClick={()=>submitComment(p)}>Enviar</button>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
-              <div className="post-body">{p.text}</div>
-              <div className="post-actions">
-                <button className={`abt${liked[p.id]?' lk':''}`} onClick={()=>setLiked(l=>({...l,[p.id]:!l[p.id]}))}>
-                  <Ic.Heart/> {p.likes+(liked[p.id]?1:0)}
-                </button>
-                <button className="abt"><Ic.Comment/> Responder</button>
-              </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
+
       {tab==='chat' && (
         <div>
           <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,padding:'9px 12px',background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)'}}>
@@ -1175,9 +1348,8 @@ function ComunidadPage({ user, addToast, onNav }) {
           </div>
         </div>
       )}
-      {tab==='debates' && (
-        <DebatesTab user={user} addToast={addToast}/>
-      )}
+
+      {tab==='debates' && <DebatesTab user={user} addToast={addToast}/>}
     </div>
   );
 }
