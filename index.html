@@ -52,9 +52,12 @@ window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// RSS — usa proxies CORS gratuitos + DOMParser nativo.
-// Sin dependencia de rss2json (que bloqueaba con HTTP 422).
+// RSS CON IMÁGENES — usa rss2json.com como proxy CORS.
+// Funciona 100% desde GitHub Pages sin backend.
+// Gratuito: 500 req/día. Para más, registrá un api_key gratis
+// en https://rss2json.com y reemplazá RSS2JSON_KEY abajo.
 // ═══════════════════════════════════════════════════════════
+window.RSS2JSON_KEY = '';
 
 // Feeds que SÍ aceptan proxies CORS gratuitos
 window.RSS_FEEDS = [
@@ -65,6 +68,7 @@ window.RSS_FEEDS = [
   { name: 'Sky Sports',   url: 'https://www.skysports.com/rss/12040' },
 ];
 
+// Extrae la primera imagen de HTML de contenido RSS
 function extractImgFromHtml(html) {
   if (!html) return null;
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
@@ -96,12 +100,10 @@ function parseRSSXml(xmlText, sourceName) {
   });
 }
 
-// Tres proxies CORS gratuitos en cascada — sin registro, sin API key
+// fetchRSSFeed — tres proxies CORS gratuitos en cascada, sin rss2json
 window.fetchRSSFeed = async function(feedUrl, sourceName) {
   const CACHE_TTL = 15 * 60 * 1000;
   const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g,'_');
-
-  // 1. Caché fresco
   try {
     const raw = localStorage.getItem(cacheKey);
     if (raw) {
@@ -112,14 +114,11 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
       }
     }
   } catch(e) {}
-
-  // 2. Proxies en cascada
   const proxies = [
     url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
     url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
     url => `https://thingproxy.freeboard.io/fetch/${url}`,
   ];
-
   for (let i = 0; i < proxies.length; i++) {
     try {
       const ctrl = new AbortController();
@@ -134,20 +133,10 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
       console.warn(`RSS [${sourceName}] proxy ${i+1} falló: ${e.message}`);
     }
   }
-
-  // 3. Caché vencido como último recurso
   try {
     const raw = localStorage.getItem(cacheKey);
-    if (raw) {
-      const { data } = JSON.parse(raw);
-      if (Array.isArray(data) && data.length > 0) {
-        console.log(`RSS [${sourceName}] usando caché vencido`);
-        return data;
-      }
-    }
+    if (raw) { const { data } = JSON.parse(raw); if (Array.isArray(data) && data.length > 0) return data; }
   } catch(e) {}
-
-  console.warn(`RSS [${sourceName}] todos los proxies fallaron`);
   return [];
 };
 </script>
@@ -235,6 +224,22 @@ img{max-width:100%;height:auto;display:block}
 .bni span{font-size:9px;font-weight:600;font-family:var(--fd);letter-spacing:.3px}
 @media(min-width:860px){.bnav{display:none}}
 @media(max-width:859px){body{padding-bottom:54px}}
+
+/* MOBILE FULL MENU */
+.mobile-menu-overlay{position:fixed;inset:0;background:rgba(26,39,68,.68);z-index:498;animation:mmfadeIn .22s ease;backdrop-filter:blur(5px)}
+@keyframes mmfadeIn{from{opacity:0}to{opacity:1}}
+.mobile-menu-full{position:fixed;bottom:54px;left:0;right:0;background:var(--white);border-top:2px solid var(--cel);border-radius:18px 18px 0 0;z-index:499;padding:0 14px 14px;max-height:82vh;overflow-y:auto;animation:mmslideUp .28s cubic-bezier(.22,.68,0,1.2) both;scrollbar-width:none}
+@keyframes mmslideUp{from{transform:translateY(110%);opacity:.4}to{transform:translateY(0);opacity:1}}
+.mmf-hdl{width:38px;height:4px;background:var(--brm);border-radius:4px;margin:10px auto 14px}
+.mmf-label{font-size:9.5px;font-weight:700;color:var(--tx3);letter-spacing:1.8px;text-transform:uppercase;padding:4px 6px 6px;display:block}
+.mmf-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:4px}
+.mmf-item{display:flex;align-items:center;gap:9px;padding:11px 12px;border-radius:var(--rs);cursor:pointer;color:var(--tx2);font-size:12.5px;font-weight:500;transition:.15s;border:1px solid var(--br);background:var(--white)}
+.mmf-item:active{transform:scale(.97)}
+.mmf-item.on{background:var(--cel);color:white;border-color:var(--cel-d)}
+.mmf-item svg{width:15px;height:15px;flex-shrink:0}
+.mmf-em{font-size:15px;flex-shrink:0;line-height:1}
+.bni-menu-dot{width:5px;height:5px;border-radius:50%;background:var(--cel);position:absolute;top:4px;right:8px;display:none}
+.bni.menu-open .bni-menu-dot{display:block}
 
 /* ATOMS */
 .card{background:var(--white);border-radius:var(--r);border:1px solid var(--br)}
@@ -638,6 +643,7 @@ const Ic = {
   Mic:    p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></svg>,
   Star:   p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>,
   Sparkle:p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"/><path d="M5 17l.75 2.25L8 20l-2.25.75L5 23l-.75-2.25L2 20l2.25-.75L5 17z"/><path d="M19 3l.75 2.25L22 6l-2.25.75L19 9l-.75-2.25L16 6l2.25-.75L19 3z"/></svg>,
+  MenuIcon:p => <svg {...p} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>,
 };
 
 /* ══════════════════════════ HOOKS ══════════════════════════ */
@@ -908,10 +914,10 @@ function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false, fe
       {/* ACCESOS RÁPIDOS */}
       <div style={{display:'grid',gap:10,gridTemplateColumns:'1fr 1fr',marginBottom:18}}>
         {[
-          {id:'comunidad',em:'👥',tit:'Comunidad',sub:'Foro y debates',col:'var(--cel-d)',bg:'var(--cel-xl)'},
-          {id:'streaming',em:'📡',tit:'Streaming',sub:'En vivo ahora',col:'var(--red)',bg:'rgba(192,57,43,.07)'},
-          {id:'prode',em:'🏆',tit:'El Prode',sub:'Participá gratis',col:'#B7770D',bg:'#FFFBEB'},
-          {id:'revista',em:'✏️',tit:'Revista Juvenil',sub:'Para los pibes',col:'#9D174D',bg:'#FDF2F8'},
+          {id:'comunidad',em:'👥',tit:'Comunidad',        sub:'Foro y debates',         col:'var(--cel-d)', bg:'var(--cel-xl)'},
+          {id:'streaming',em:'📡',tit:'Streaming',         sub:'En vivo ahora',          col:'var(--red)',   bg:'rgba(192,57,43,.07)'},
+          {id:'prode',    em:'🏆',tit:'La Tribu Predice', sub:'Pronósticos y desafíos', col:'#B7770D',      bg:'#FFFBEB'},
+          {id:'revista',  em:'🌟',tit:'La Tribu Descubre',sub:'Talentos emergentes',    col:'#9D174D',      bg:'#FDF2F8'},
         ].map(s => (
           <div key={s.id} onClick={()=>onNav(s.id)}
             style={{background:s.bg,border:`1.5px solid ${s.col}22`,borderRadius:'var(--r)',padding:'14px 12px',cursor:'pointer',transition:'.2s',textAlign:'center'}}
@@ -939,11 +945,11 @@ function HomePage({ onArticle, onNav, posts=[], loading=false, fromApi=false, fe
       <div className="sh"><div className="st">Encuesta del Día</div></div>
       <div className="card cp" style={{marginBottom:18}}><Poll poll={STATIC_POLLS[0]}/></div>
 
-      {/* ACCESO RÁPIDO A RED DE PERIODISMO Y PERIODISMO DEPORTIVO */}
+      {/* ACCESO RÁPIDO A RED DE PERIODISMO */}
       <div style={{display:'grid',gap:10,gridTemplateColumns:'1fr 1fr',marginBottom:8}}>
         {[
-          {id:'red',em:'🌐',tit:'Red de Periodismo',sub:'Conectá con colegas',col:'var(--teal)',bg:'rgba(8,145,178,.08)'},
-          {id:'peri',em:'🎙️',tit:'Periodismo Dep.',sub:'Guías y técnicas',col:'var(--purple)',bg:'rgba(139,92,246,.08)'},
+          {id:'red',     em:'🌐',tit:'Red de Periodismo', sub:'Conectá con colegas',  col:'var(--teal)',  bg:'rgba(8,145,178,.08)'},
+          {id:'copa',    em:'🌎',tit:'Copas',             sub:'Mundial y Libertadores',col:'var(--cel-d)',bg:'var(--cel-xl)'},
         ].map(s => (
           <div key={s.id} onClick={()=>onNav(s.id)}
             style={{background:s.bg,border:`1.5px solid ${s.col}22`,borderRadius:'var(--r)',padding:'14px 12px',cursor:'pointer',transition:'.2s',textAlign:'center'}}
@@ -1074,259 +1080,681 @@ function ArticlePage({ post, onBack, user, addToast }) {
   );
 }
 
-/* ══════ COMUNIDAD PAGE — Supabase: posts, likes, comentarios y puntos ══════ */
-const RANKS = [
-  {min:0,   label:'Hincha',     color:'#6B7280'},
-  {min:50,  label:'Periodista', color:'#3B82F6'},
-  {min:150, label:'Referente',  color:'#8B5CF6'},
-  {min:500, label:'Leyenda',    color:'#F59E0B'},
+/* ══════ COMUNIDAD PAGE — restaurada completa ══════ */
+
+// ╔══════════════════════════════════════════════════════════════════╗
+// ║   MÓDULO COMUNIDAD — Sistema completo aislado                   ║
+// ╚══════════════════════════════════════════════════════════════════╝
+
+const CM_THREADS = [
+  {id:1,title:'¿Fue el mejor Superclásico de la última década?',cat:'Fútbol',hot:true,r:218,v:4100,author:'Gonzalo_TL',t:'Hace 2h'},
+  {id:2,title:'Los Pumas: ¿pueden llegar a final del próximo Mundial?',cat:'Rugby',hot:true,r:134,v:2900,author:'ScrumMaster',t:'Hace 3h'},
+  {id:3,title:'Colapinto F1 — ¿cuándo llega al podio?',cat:'F1',hot:false,r:87,v:1800,author:'ColapintoAR',t:'Hace 5h'},
+  {id:4,title:'Debate: ¿Messi o Maradona — quién es más grande?',cat:'Histórico',hot:true,r:512,v:9200,author:'TribunaFan',t:'Hace 1d'},
 ];
-function getRank(pts) { return [...RANKS].reverse().find(r => pts >= r.min) || RANKS[0]; }
-function fmtTime(ts) {
-  if (!ts) return 'Ahora';
-  const d = new Date(ts), diff = Date.now() - d.getTime();
-  if (diff < 60000)    return 'Hace un momento';
-  if (diff < 3600000)  return `Hace ${Math.floor(diff/60000)}min`;
-  if (diff < 86400000) return `Hace ${Math.floor(diff/3600000)}h`;
-  return d.toLocaleDateString('es-AR',{day:'numeric',month:'short'});
+
+const CM_TRIVIA_PREGUNTAS = [
+  {id:1,p:'¿En qué año Argentina ganó su primer Mundial de Fútbol?',opts:['1974','1978','1982','1986'],r:1,exp:'Argentina ganó en 1978 en casa, derrotando a Holanda 3-1 en la final.'},
+  {id:2,p:'¿Quién anotó el "Gol del Siglo" en México 1986?',opts:['Valdano','Burruchaga','Maradona','Caniggia'],r:2,exp:'Diego Maradona en el minuto 55 contra Inglaterra en cuartos de final.'},
+  {id:3,p:'¿Cuántas veces ganó Boca la Copa Libertadores?',opts:['4','5','6','7'],r:2,exp:'Boca Juniors ganó la Libertadores 6 veces: 1977, 1978, 2000, 2001, 2003 y 2007.'},
+  {id:4,p:'¿En qué deporte compiten "Los Pumas"?',opts:['Fútbol','Hockey','Rugby','Básquet'],r:2,exp:'Los Pumas es el seleccionado argentino de rugby union.'},
+  {id:5,p:'¿Cuál es el estadio más grande de Argentina?',opts:['La Bombonera','Monumental de Núñez','Único de La Plata','Kempes'],r:1,exp:'El Estadio Monumental de River Plate tiene capacidad para más de 84.000 personas.'},
+  {id:6,p:'¿Quién fue el primer argentino en ganar un Grand Slam?',opts:['Guillermo Vilas','Gastón Gaudio','David Nalbandian','Del Potro'],r:0,exp:'Guillermo Vilas ganó Roland Garros 1977 y el US Open 1977.'},
+  {id:7,p:'¿Cuántas veces fue campeón olímpico el fútbol argentino?',opts:['1','2','3','0'],r:1,exp:'Argentina ganó el oro olímpico en 2004 (Atenas) y 2008 (Beijing).'},
+  {id:8,p:'¿En qué año se fundó River Plate?',opts:['1900','1901','1905','1908'],r:2,exp:'River Plate fue fundado el 25 de mayo de 1901, pero su acta fundacional oficial es de 1901.'},
+];
+
+const CM_DEPORTES_TAGS = ['⚽ Fútbol','🏉 Rugby','🎾 Tenis','🏀 Básquet','🏎️ F1','🏑 Hockey','🥊 Boxeo','🌐 Todos'];
+const CM_COLORES_AV = ['#E8262A','#16A34A','#F59E0B','#4A90D9','#8B5CF6','#EC4899','#0891B2','#DC2626'];
+
+const CM_PUNTOS_CONFIG = {
+  publicar:10, comentar:1, recibirLike:2, compartir:5,
+  ganarEncuesta:15, triviaCorrecta:5,
+  triviaRacha:(r)=>r>=3?r*2:0, rachaDiaria7:20,
+};
+
+function cmGetPerfil(uid) {
+  try { const r=localStorage.getItem('cm_perfil_'+uid); if(r) return JSON.parse(r); } catch(e){}
+  return {userId:uid,puntos:0,racha:0,ultimaVisita:null,rachaDiaria:0};
+}
+function cmSavePerfil(p) { try { localStorage.setItem('cm_perfil_'+p.userId,JSON.stringify(p)); } catch(e){} }
+
+function useCmPuntos(userId) {
+  const uid = userId||'guest';
+  const [perfil,setPerfil] = useState(()=>cmGetPerfil(uid));
+  const [feedback,setFeedback] = useState(null);
+
+  const sumarPuntos = useCallback((tipo,opts={}) => {
+    const c=CM_PUNTOS_CONFIG;
+    let pts=0;
+    if(tipo==='publicar') pts=c.publicar;
+    else if(tipo==='comentar') pts=c.comentar;
+    else if(tipo==='recibirLike') pts=c.recibirLike;
+    else if(tipo==='compartir') pts=c.compartir;
+    else if(tipo==='ganarEncuesta') pts=c.ganarEncuesta;
+    else if(tipo==='triviaCorrecta') pts=c.triviaCorrecta+c.triviaRacha(opts.racha||0);
+    else if(tipo==='rachaDiaria') pts=c.rachaDiaria7;
+    if(pts===0) return;
+    setPerfil(prev=>{const u={...prev,puntos:(prev.puntos||0)+pts};cmSavePerfil(u);return u;});
+    setFeedback({pts:'+'+pts,key:Date.now()});
+    setTimeout(()=>setFeedback(null),1800);
+  },[uid]);
+
+  useEffect(()=>{
+    const hoy=new Date().toDateString();
+    if(perfil.ultimaVisita!==hoy){
+      const ayer=new Date(Date.now()-86400000).toDateString();
+      const nuevaRacha=perfil.ultimaVisita===ayer?(perfil.rachaDiaria||0)+1:1;
+      const u={...perfil,ultimaVisita:hoy,rachaDiaria:nuevaRacha};
+      if(nuevaRacha>=7){u.puntos=(u.puntos||0)+CM_PUNTOS_CONFIG.rachaDiaria7;setFeedback({pts:'🔥 +20 Racha',key:Date.now()});setTimeout(()=>setFeedback(null),2500);}
+      cmSavePerfil(u); setPerfil(u);
+    }
+  },[]);
+
+  return {perfil,sumarPuntos,feedback};
 }
 
-function ComunidadPage({ user, addToast, onNav }) {
-  const [tab, setTab]           = useState('feed');
-  const [text, setText]         = useState('');
-  const [posts, setPosts]       = useState([]);
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [likedPosts, setLikedPosts]     = useState(new Set());
-  const [expandedPost, setExpandedPost] = useState(null);
-  const [commentTexts, setCommentTexts] = useState({});
-  const [postComments, setPostComments] = useState({});
-  const [sbUser, setSbUser]     = useState(null);
-  const [profile, setProfile]   = useState(null);
-  const [chatMsg, setChatMsg]   = useState('');
-  const [chatMsgs, setChatMsgs] = useState([
-    {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
-    {id:2,u:'ScrumMaster',text:'¡Los Pumas también la rompen! 🏉',own:false},
-    {id:3,u:'Vos',text:'¡Esto es Tribuna Libre en vivo!',own:true},
-  ]);
-  const chatRef = useRef();
-  const sb = window.__supabase;
+function CmPuntosFlotante({feedback}){
+  if(!feedback) return null;
+  return (
+    <div key={feedback.key} style={{position:'fixed',top:80,right:16,zIndex:700,background:'linear-gradient(135deg,var(--cel-d),var(--cel))',color:'white',borderRadius:30,padding:'8px 18px',fontFamily:'var(--fd)',fontSize:16,fontWeight:700,boxShadow:'0 4px 20px rgba(74,144,217,.5)',animation:'tin .3s',pointerEvents:'none'}}>
+      {feedback.pts}
+    </div>
+  );
+}
 
-  useEffect(() => {
-    loadPosts();
-    if (!sb) return;
-    sb.auth.getUser().then(({ data }) => {
-      if (!data?.user) return;
-      setSbUser(data.user);
-      loadProfile(data.user);
-      loadUserLikes(data.user.id);
-    });
-  }, []);
+function CmPuntsBadge({puntos}){
+  return <span style={{display:'inline-flex',alignItems:'center',gap:4,background:'linear-gradient(135deg,var(--sun),#F97316)',color:'white',borderRadius:20,padding:'2px 10px',fontSize:11,fontWeight:700,fontFamily:'var(--fd)'}}>⚡ {puntos} pts</span>;
+}
 
-  async function loadPosts() {
-    if (!sb) { setPosts(COMMUNITY_POSTS); setLoadingPosts(false); return; }
-    const { data } = await sb.from('community_posts').select('*').order('created_at',{ascending:false}).limit(40);
-    setPosts(data && data.length > 0 ? data : COMMUNITY_POSTS);
-    setLoadingPosts(false);
+function CmFeedTab({user,addToast,sumarPuntos}){
+  const [posts,setPosts]=useState(()=>{
+    try{const s=JSON.parse(localStorage.getItem('cm_posts')||'null');if(s)return s;}catch(e){}
+    return COMMUNITY_POSTS.map(p=>({...p,sport:'⚽ Fútbol',tipo:'texto',comentarios:[]}));
+  });
+  const [liked,setLiked]=useState({});
+  const [comentando,setComentando]=useState(null);
+  const [comentTxt,setComentTxt]=useState('');
+  const [filtroSport,setFiltroSport]=useState('🌐 Todos');
+  const [showForm,setShowForm]=useState(false);
+  const [form,setForm]=useState({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});
+
+  const nombreUsuario=user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado';
+  const avLetra=(user?.displayName||user?.username||'I')[0].toUpperCase();
+
+  function guardarPosts(n){setPosts(n);try{localStorage.setItem('cm_posts',JSON.stringify(n.slice(0,30)));}catch(e){}}
+
+  function publicar(){
+    if(!form.texto.trim()){addToast({msg:'Escribí algo antes de publicar',type:'err'});return;}
+    const nuevo={id:Date.now(),user:nombreUsuario,av:avLetra,color:CM_COLORES_AV[Math.floor(Math.random()*CM_COLORES_AV.length)],text:form.texto,likes:0,time:'Ahora',tipo:form.tipo,link:form.link,sport:form.sport,comentarios:[]};
+    guardarPosts([nuevo,...posts]);
+    setForm({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});setShowForm(false);
+    sumarPuntos('publicar');addToast({msg:'¡Publicado! +10 pts 🚀',type:'ok'});
   }
 
-  async function loadProfile(u) {
-    const username = u.user_metadata?.displayName || u.email?.split('@')[0] || 'Usuario';
-    const { data } = await sb.from('profiles').select('*').eq('id', u.id).maybeSingle();
-    if (data) { setProfile(data); return; }
-    const np = { id: u.id, username, points: 0, rank: 'Hincha' };
-    await sb.from('profiles').insert(np).catch(() => {});
-    setProfile(np);
+  function toggleLike(id){
+    const ya=liked[id];
+    setLiked(l=>({...l,[id]:!l[id]}));
+    guardarPosts(posts.map(p=>p.id===id?{...p,likes:p.likes+(ya?-1:1)}:p));
+    if(!ya) sumarPuntos('recibirLike');
   }
 
-  async function loadUserLikes(uid) {
-    const { data } = await sb.from('post_likes').select('post_id').eq('user_id', uid);
-    if (data) setLikedPosts(new Set(data.map(l => l.post_id)));
+  function enviarComentario(postId){
+    if(!comentTxt.trim()) return;
+    guardarPosts(posts.map(p=>p.id===postId?{...p,comentarios:[...(p.comentarios||[]),{id:Date.now(),u:nombreUsuario,txt:comentTxt,time:'Ahora'}]}:p));
+    setComentTxt('');setComentando(null);
+    sumarPuntos('comentar');addToast({msg:'+1 pt por comentar ✓',type:'ok'});
   }
 
-  async function addPoints(delta) {
-    if (!sb || !sbUser || !profile) return;
-    const newPts  = (profile.points || 0) + delta;
-    const newRank = getRank(newPts).label;
-    await sb.from('profiles').update({ points: newPts, rank: newRank }).eq('id', sbUser.id);
-    setProfile(p => ({ ...p, points: newPts, rank: newRank }));
+  function renderMedia(p){
+    if(!p.link) return null;
+    const yt=p.link.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/);
+    if(yt) return <div style={{borderRadius:'var(--rs)',overflow:'hidden',marginBottom:8,aspectRatio:'16/9'}}><iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${yt[1]}`} frameBorder="0" allowFullScreen title="video" style={{display:'block'}}/></div>;
+    return <a href={p.link} target="_blank" rel="noopener noreferrer" style={{display:'flex',alignItems:'center',gap:7,padding:'8px 11px',background:'var(--cel-xl)',borderRadius:'var(--rs)',fontSize:12,color:'var(--cel-d)',fontWeight:600,marginBottom:8,textDecoration:'none',wordBreak:'break-all'}}>🔗 {p.link.slice(0,55)}{p.link.length>55?'…':''}</a>;
   }
 
-  async function publish() {
-    if (!text.trim()) return;
-    if (!sbUser) { addToast({msg:'Iniciá sesión para publicar',type:'err'}); return; }
-    const username = sbUser.user_metadata?.displayName || sbUser.email?.split('@')[0] || 'Usuario';
-    const np = { user_id:sbUser.id, username, avatar_letter:username[0].toUpperCase(), avatar_color:'#4A90D9', content:text.trim(), likes_count:0, comments_count:0 };
-    const { data } = await sb.from('community_posts').insert(np).select().single();
-    if (data) {
-      setPosts(p => [data, ...p]);
-      await addPoints(10);
-      addToast({msg:'¡Publicado! +10 puntos 🌟', type:'ok'});
-      setText('');
-    } else { addToast({msg:'Error al publicar',type:'err'}); }
-  }
-
-  async function toggleLike(post) {
-    if (!sbUser) { addToast({msg:'Iniciá sesión para dar likes',type:'err'}); return; }
-    const isLiked = likedPosts.has(post.id);
-    setLikedPosts(prev => { const n=new Set(prev); isLiked?n.delete(post.id):n.add(post.id); return n; });
-    setPosts(prev => prev.map(p => p.id===post.id?{...p,likes_count:(p.likes_count||0)+(isLiked?-1:1)}:p));
-    if (isLiked) {
-      await sb.from('post_likes').delete().eq('user_id',sbUser.id).eq('post_id',post.id);
-      await sb.from('community_posts').update({likes_count:Math.max(0,(post.likes_count||0)-1)}).eq('id',post.id);
-    } else {
-      const { error } = await sb.from('post_likes').insert({user_id:sbUser.id,post_id:post.id});
-      if (error) { setLikedPosts(prev=>{const n=new Set(prev);n.delete(post.id);return n;}); return; }
-      await sb.from('community_posts').update({likes_count:(post.likes_count||0)+1}).eq('id',post.id);
-    }
-  }
-
-  async function toggleComments(postId) {
-    const isOpen = expandedPost === postId;
-    setExpandedPost(isOpen ? null : postId);
-    if (!isOpen && !postComments[postId] && sb) {
-      const { data } = await sb.from('post_comments').select('*').eq('post_id',postId).order('created_at');
-      setPostComments(prev => ({...prev,[postId]:data||[]}));
-    }
-  }
-
-  async function submitComment(post) {
-    const txt = (commentTexts[post.id]||'').trim();
-    if (!txt) return;
-    if (!sbUser) { addToast({msg:'Iniciá sesión para comentar',type:'err'}); return; }
-    const username = sbUser.user_metadata?.displayName || sbUser.email?.split('@')[0] || 'Usuario';
-    const nc = { post_id:post.id, user_id:sbUser.id, username, avatar_letter:username[0].toUpperCase(), avatar_color:'#16A34A', content:txt };
-    const { data } = await sb.from('post_comments').insert(nc).select().single();
-    if (data) {
-      setPostComments(prev => ({...prev,[post.id]:[...(prev[post.id]||[]),data]}));
-      await sb.from('community_posts').update({comments_count:(post.comments_count||0)+1}).eq('id',post.id);
-      setPosts(prev => prev.map(p => p.id===post.id?{...p,comments_count:(p.comments_count||0)+1}:p));
-      await addPoints(1);
-      addToast({msg:'Comentario publicado +1 punto',type:'ok'});
-      setCommentTexts(prev => ({...prev,[post.id]:''}));
-    }
-  }
-
-  function sendChat() {
-    if (!chatMsg.trim()) return;
-    setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
-    setChatMsg('');
-    setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
-  }
-
-  const rank = profile ? getRank(profile.points) : null;
+  const filtrados=filtroSport==='🌐 Todos'?posts:posts.filter(p=>p.sport===filtroSport);
+  const topHoy=[...posts].sort((a,b)=>b.likes-a.likes).slice(0,3);
 
   return (
     <div>
-      <div className="section-banner">
-        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Copilot_20260415_203438%20(1).png"
-          alt="Comunidad Tribuna Libre" loading="lazy"
-          onError={e=>e.target.parentNode.style.display='none'}/>
+      <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:12,paddingBottom:4,scrollbarWidth:'none'}}>
+        {CM_DEPORTES_TAGS.map(tag=>(
+          <button key={tag} onClick={()=>setFiltroSport(tag)} style={{flexShrink:0,padding:'5px 12px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',border:`1.5px solid ${filtroSport===tag?'var(--cel)':'var(--br)'}`,background:filtroSport===tag?'var(--cel)':'var(--white)',color:filtroSport===tag?'white':'var(--tx2)',transition:'.15s'}}>{tag}</button>
+        ))}
       </div>
 
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10}}>
-        <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--cel)'}}>Tribuna Libre</span></h1>
-        {profile && rank && (
-          <div style={{display:'flex',alignItems:'center',gap:6,padding:'4px 10px',background:'var(--cel-xl)',border:'1px solid var(--cel-d)22',borderRadius:20}}>
-            <span style={{fontSize:11,fontWeight:700,color:rank.color}}>{rank.label}</span>
-            <span style={{fontSize:10,color:'var(--tx3)'}}>·</span>
-            <span style={{fontSize:11,fontWeight:600,color:'var(--tx2)'}}>⭐ {profile.points} pts</span>
+      {topHoy.some(p=>p.likes>0)&&(
+        <div style={{background:'linear-gradient(135deg,rgba(246,180,14,.08),rgba(246,180,14,.03))',border:'1px solid rgba(246,180,14,.3)',borderRadius:'var(--r)',padding:'10px 13px',marginBottom:12}}>
+          <div style={{fontSize:10,fontWeight:700,color:'#B7770D',letterSpacing:'1px',textTransform:'uppercase',marginBottom:7}}>🔥 Lo más likeado hoy</div>
+          {topHoy.filter(p=>p.likes>0).map((p,i)=>(
+            <div key={p.id} style={{display:'flex',alignItems:'center',gap:7,marginBottom:i<2?5:0}}>
+              <span style={{fontFamily:'var(--fd)',fontWeight:700,color:'#B7770D',fontSize:13,width:16}}>{i+1}</span>
+              <span style={{fontSize:12,color:'var(--tx2)',flex:1,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{p.text}</span>
+              <span style={{fontSize:11,color:'#B7770D',fontWeight:700,flexShrink:0}}>❤️ {p.likes}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <div className="card cp" style={{marginBottom:14}}>
+        {!showForm?(
+          <div style={{display:'flex',gap:10,alignItems:'center',cursor:'pointer'}} onClick={()=>setShowForm(true)}>
+            <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>{user?.isGuest===false?avLetra:'?'}</div>
+            <div style={{flex:1,background:'var(--cel-xl)',border:'1.5px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 14px',fontSize:13,color:'var(--tx3)'}}>¿Qué pensás del deporte argentino? 🇦🇷</div>
+          </div>
+        ):(
+          <div>
+            <div style={{display:'flex',gap:7,marginBottom:9,overflowX:'auto',scrollbarWidth:'none'}}>
+              {[['texto','💬 Texto'],['link','🔗 Link'],['imagen','🖼️ Imagen'],['youtube','▶️ YouTube']].map(([t,l])=>(
+                <button key={t} onClick={()=>setForm(f=>({...f,tipo:t}))} style={{flexShrink:0,padding:'4px 11px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',border:`1.5px solid ${form.tipo===t?'var(--cel)':'var(--br)'}`,background:form.tipo===t?'var(--cel)':'var(--white)',color:form.tipo===t?'white':'var(--tx2)',transition:'.15s'}}>{l}</button>
+              ))}
+            </div>
+            <textarea value={form.texto} onChange={e=>setForm(f=>({...f,texto:e.target.value}))} className="fi" placeholder="¿Qué pensás?" style={{minHeight:70,resize:'none',marginBottom:8}}/>
+            {(form.tipo==='link'||form.tipo==='youtube')&&<input className="fi" value={form.link} onChange={e=>setForm(f=>({...f,link:e.target.value}))} placeholder="https://..." style={{marginBottom:8}}/>}
+            {form.tipo==='imagen'&&<input className="fi" value={form.link} onChange={e=>setForm(f=>({...f,link:e.target.value}))} placeholder="URL de imagen" style={{marginBottom:8}}/>}
+            <div style={{display:'flex',alignItems:'center',gap:8,flexWrap:'wrap'}}>
+              <select className="fi" value={form.sport} onChange={e=>setForm(f=>({...f,sport:e.target.value}))} style={{flex:1,minWidth:120,background:'var(--cel-xl)'}}>
+                {CM_DEPORTES_TAGS.filter(t=>t!=='🌐 Todos').map(t=><option key={t}>{t}</option>)}
+              </select>
+              <button className="btn btn-o btn-sm" onClick={()=>setShowForm(false)}>Cancelar</button>
+              <button className="btn btn-c btn-sm" onClick={publicar}>Publicar +10pts</button>
+            </div>
           </div>
         )}
       </div>
 
-      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:10,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+      {filtrados.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:'var(--tx3)',fontSize:13}}>Sin publicaciones en {filtroSport}. ¡Sé el primero! 🏆</div>}
 
-      <div style={{display:'flex',gap:5,marginBottom:12,flexWrap:'wrap'}}>
-        {RANKS.map(r => (
-          <div key={r.label} style={{fontSize:10,padding:'2px 8px',borderRadius:10,border:`1px solid ${r.color}44`,color:r.color,background:`${r.color}11`}}>
-            {r.label} · {r.min}+ pts
+      {filtrados.map(p=>(
+        <div key={p.id} className="post-card">
+          <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
+            <div className="post-av" style={{background:p.color}}>{p.av}</div>
+            <div style={{flex:1}}>
+              <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap'}}>
+                <div className="post-user">{p.user}</div>
+                <span className="badge bc" style={{fontSize:9}}>{p.sport||'⚽ Fútbol'}</span>
+              </div>
+              <div className="post-time">{p.time}</div>
+            </div>
+          </div>
+          {p.tipo==='imagen'&&p.link&&<img src={p.link} alt="post" style={{width:'100%',borderRadius:'var(--rs)',marginBottom:8,maxHeight:220,objectFit:'cover'}} onError={e=>e.target.style.display='none'}/>}
+          {(p.tipo==='link'||p.tipo==='youtube')&&renderMedia(p)}
+          <div className="post-body">{p.text}</div>
+          <div className="post-actions">
+            <button className={`abt${liked[p.id]?' lk':''}`} onClick={()=>toggleLike(p.id)}><Ic.Heart/> {p.likes+(liked[p.id]?1:0)}</button>
+            <button className="abt" onClick={()=>setComentando(comentando===p.id?null:p.id)}><Ic.Comment/> {(p.comentarios||[]).length}</button>
+            <button className="abt" onClick={()=>{sumarPuntos('compartir');addToast({msg:'¡Enlace copiado! +5 pts 🔗',type:'ok'});}}><Ic.Globe/> Compartir</button>
+          </div>
+          {(p.comentarios||[]).length>0&&(
+            <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--br)'}}>
+              {p.comentarios.map(c=>(
+                <div key={c.id} style={{display:'flex',gap:7,marginBottom:6}}>
+                  <div style={{width:24,height:24,borderRadius:'50%',background:'var(--cel-xl)',border:'1px solid var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'var(--cel-d)',flexShrink:0}}>{c.u[0].toUpperCase()}</div>
+                  <div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'5px 9px',flex:1}}>
+                    <div style={{fontSize:10,fontWeight:700,color:'var(--cel-d)',marginBottom:2}}>{c.u}</div>
+                    <div style={{fontSize:12,color:'var(--tx2)'}}>{c.txt}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {comentando===p.id&&(
+            <div style={{display:'flex',gap:7,marginTop:8}}>
+              <input className="fi" value={comentTxt} onChange={e=>setComentTxt(e.target.value)} placeholder="Tu comentario..." style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&enviarComentario(p.id)}/>
+              <button className="btn btn-c btn-sm" onClick={()=>enviarComentario(p.id)}>Enviar</button>
+            </div>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CmEncuestasTab({user,addToast,sumarPuntos}){
+  const [encuestas,setEncuestas]=useState(()=>{
+    try{const s=JSON.parse(localStorage.getItem('cm_encuestas')||'null');if(s)return s;}catch(e){}
+    return STATIC_POLLS.map(p=>({...p,cierre:Date.now()+86400000,autor:'TribunaLibre',votantes:{},comentarios:[]}));
+  });
+  const [votos,setVotos]=useState({});
+  const [showForm,setShowForm]=useState(false);
+  const [pollQ,setPollQ]=useState('');
+  const [pollOpts,setPollOpts]=useState(['','']);
+  const [comentTxt,setComentTxt]=useState({});
+  const [expandida,setExpandida]=useState(null);
+
+  const nombreUsuario=user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado';
+
+  function guardarEncuestas(n){setEncuestas(n);try{localStorage.setItem('cm_encuestas',JSON.stringify(n));}catch(e){}}
+
+  function votar(encId,optIdx){
+    if(votos[encId]!==undefined) return;
+    setVotos(v=>({...v,[encId]:optIdx}));
+    guardarEncuestas(encuestas.map(e=>e.id===encId?{...e,vs:e.vs.map((x,i)=>i===optIdx?x+1:x)}:e));
+    sumarPuntos('comentar');addToast({msg:'¡Voto registrado! ⚡',type:'ok'});
+  }
+
+  function crearEncuesta(e){
+    if(e&&e.preventDefault) e.preventDefault();
+    const q=pollQ.trim();const opts=pollOpts.map(o=>o.trim()).filter(Boolean);
+    if(!q){addToast({msg:'Escribí la pregunta',type:'err'});return;}
+    if(opts.length<2){addToast({msg:'Necesitás al menos 2 opciones',type:'err'});return;}
+    const nueva={id:Date.now(),q,opts,vs:opts.map(()=>0),cierre:Date.now()+86400000,autor:nombreUsuario,votantes:{},comentarios:[]};
+    guardarEncuestas([nueva,...encuestas]);
+    setPollQ('');setPollOpts(['','']);setShowForm(false);
+    sumarPuntos('publicar');addToast({msg:'¡Encuesta creada! +10 pts 🗳️',type:'ok'});
+  }
+
+  function enviarComentEnc(encId){
+    const txt=(comentTxt[encId]||'').trim();if(!txt) return;
+    guardarEncuestas(encuestas.map(e=>e.id===encId?{...e,comentarios:[...(e.comentarios||[]),{id:Date.now(),u:nombreUsuario,txt,time:'Ahora'}]}:e));
+    setComentTxt(c=>({...c,[encId]:''}));sumarPuntos('comentar');
+  }
+
+  function tiempoRestante(cierre){
+    const diff=cierre-Date.now();if(diff<=0)return '⏱ Cerrada';
+    const h=Math.floor(diff/3600000);const m=Math.floor((diff%3600000)/60000);
+    return h>0?`⏱ ${h}h ${m}m`:`⏱ ${m}m`;
+  }
+
+  return (
+    <div>
+      <div className="sh">
+        <div className="st">Encuestas en vivo</div>
+        <button className="btn btn-c btn-sm" onClick={()=>setShowForm(s=>!s)}><Ic.Plus style={{width:11,height:11}}/> Nueva</button>
+      </div>
+      {showForm&&(
+        <div className="card cp" style={{marginBottom:14,border:'1.5px solid var(--cel)'}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,marginBottom:10,color:'var(--cel-d)'}}>🗳️ Nueva encuesta (cierra en 24hs)</div>
+          <div style={{marginBottom:9}}><label className="fl">Pregunta</label><input className="fi" value={pollQ} onChange={e=>setPollQ(e.target.value)} placeholder="¿Cuál es tu pregunta?"/></div>
+          <label className="fl">Opciones</label>
+          {pollOpts.map((opt,i)=>(
+            <div key={i} style={{display:'flex',gap:6,marginBottom:6}}>
+              <input className="fi" style={{flex:1}} value={opt} onChange={e=>setPollOpts(o=>o.map((x,j)=>j===i?e.target.value:x))} placeholder={`Opción ${i+1}`}/>
+              {pollOpts.length>2&&<button onClick={()=>setPollOpts(o=>o.filter((_,j)=>j!==i))} style={{background:'none',border:'none',color:'var(--red)',cursor:'pointer',fontSize:16,padding:'0 4px'}}>×</button>}
+            </div>
+          ))}
+          {pollOpts.length<5&&<button className="btn btn-o btn-sm" style={{marginBottom:10}} onClick={()=>setPollOpts(o=>[...o,''])}><Ic.Plus style={{width:10,height:10}}/> Opción</button>}
+          <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
+            <button className="btn btn-o btn-sm" onClick={()=>setShowForm(false)}>Cancelar</button>
+            <button className="btn btn-c btn-sm" onClick={crearEncuesta}>Publicar +10pts</button>
+          </div>
+        </div>
+      )}
+      {encuestas.map(enc=>{
+        const votado=votos[enc.id];const tot=enc.vs.reduce((a,b)=>a+b,0);const cerrada=enc.cierre<Date.now();const expandir=expandida===enc.id;
+        return (
+          <div key={enc.id} className="card cp" style={{marginBottom:12}}>
+            <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8,marginBottom:8}}>
+              <div className="poll-q" style={{margin:0}}>{enc.q}</div>
+              <span style={{fontSize:10,color:cerrada?'var(--red)':'var(--green)',fontWeight:700,flexShrink:0,whiteSpace:'nowrap'}}>{tiempoRestante(enc.cierre)}</span>
+            </div>
+            {enc.opts.map((o,i)=>{
+              const pct=(votado!==undefined||cerrada)&&tot>0?Math.round(enc.vs[i]/tot*100):null;
+              const win=pct!==null&&enc.vs[i]===Math.max(...enc.vs);
+              return (
+                <div key={i} className={`po${votado===i?' voted':''}`} onClick={()=>!cerrada&&votar(enc.id,i)} style={{cursor:cerrada||votado!==undefined?'default':'pointer'}}>
+                  {pct!==null&&<div className="po-bar" style={{width:pct+'%'}}/>}
+                  <div className="po-row"><span style={{display:'flex',alignItems:'center',gap:5}}>{win&&pct!==null&&<span style={{color:'var(--cel-d)'}}>🏆</span>}{o}</span>{pct!==null&&<span className={`po-pct${win?' win':''}`}>{pct}%</span>}</div>
+                </div>
+              );
+            })}
+            <div className="po-meta" style={{display:'flex',alignItems:'center',justifyContent:'space-between'}}>
+              <span>{tot.toLocaleString()} votos · @{enc.autor}</span>
+              <button className="abt" onClick={()=>setExpandida(expandir?null:enc.id)}><Ic.Comment/> {(enc.comentarios||[]).length}</button>
+            </div>
+            {expandir&&(
+              <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--br)'}}>
+                {(enc.comentarios||[]).map(c=>(
+                  <div key={c.id} style={{display:'flex',gap:7,marginBottom:6}}>
+                    <div style={{width:22,height:22,borderRadius:'50%',background:'var(--cel-xl)',border:'1px solid var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'var(--cel-d)',flexShrink:0}}>{c.u[0]}</div>
+                    <div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'4px 8px',flex:1}}>
+                      <div style={{fontSize:9,fontWeight:700,color:'var(--cel-d)',marginBottom:1}}>{c.u}</div>
+                      <div style={{fontSize:12,color:'var(--tx2)'}}>{c.txt}</div>
+                    </div>
+                  </div>
+                ))}
+                <div style={{display:'flex',gap:7,marginTop:6}}>
+                  <input className="fi" value={comentTxt[enc.id]||''} onChange={e=>setComentTxt(c=>({...c,[enc.id]:e.target.value}))} placeholder="Comentar..." style={{flex:1}} onKeyDown={e=>e.key==='Enter'&&enviarComentEnc(enc.id)}/>
+                  <button className="btn btn-c btn-sm" onClick={()=>enviarComentEnc(enc.id)}><Ic.Send style={{width:12,height:12}}/></button>
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CmTriviaTab({sumarPuntos,addToast}){
+  const [idx,setIdx]=useState(0);
+  const [respondida,setRespondida]=useState(null);
+  const [racha,setRacha]=useState(0);
+  const [ptsTrivia,setPtsTrivia]=useState(0);
+  const [finalizado,setFinalizado]=useState(false);
+  const [historial,setHistorial]=useState([]);
+
+  const pregunta=CM_TRIVIA_PREGUNTAS[idx];
+
+  function responder(optIdx){
+    if(respondida!==null) return;
+    setRespondida(optIdx);
+    const correcto=optIdx===pregunta.r;
+    if(correcto){
+      const nr=racha+1;setRacha(nr);
+      const pts=CM_PUNTOS_CONFIG.triviaCorrecta+CM_PUNTOS_CONFIG.triviaRacha(nr);
+      setPtsTrivia(p=>p+pts);sumarPuntos('triviaCorrecta',{racha:nr});
+      addToast({msg:`✅ ¡Correcto! +${pts} pts${nr>=3?' 🔥 RACHA':''}`,type:'ok'});
+    } else {
+      setRacha(0);addToast({msg:'❌ Incorrecto — '+pregunta.opts[pregunta.r],type:'err'});
+    }
+    setHistorial(h=>[...h,{p:pregunta.p,correcto,racha:correcto?racha+1:0}]);
+  }
+
+  function siguiente(){
+    if(idx+1>=CM_TRIVIA_PREGUNTAS.length){setFinalizado(true);}
+    else{setIdx(i=>i+1);setRespondida(null);}
+  }
+
+  function reiniciar(){setIdx(0);setRespondida(null);setRacha(0);setPtsTrivia(0);setFinalizado(false);setHistorial([]);}
+
+  if(finalizado){
+    const correctas=historial.filter(h=>h.correcto).length;
+    return (
+      <div>
+        <div style={{textAlign:'center',padding:'24px 0 16px'}}>
+          <div style={{fontSize:52,marginBottom:10}}>{correctas>=6?'🏆':correctas>=4?'🥈':'📚'}</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,marginBottom:5}}>{correctas} / {CM_TRIVIA_PREGUNTAS.length} correctas</div>
+          <CmPuntsBadge puntos={ptsTrivia}/>
+          <div style={{fontSize:13,color:'var(--tx2)',marginTop:8}}>{correctas>=6?'¡Sos un crack del deporte argentino! 🇦🇷':correctas>=4?'¡Buen conocimiento deportivo! 💪':'Seguí aprendiendo sobre el deporte nacional 📚'}</div>
+          <button className="btn btn-c" style={{marginTop:16}} onClick={reiniciar}>Jugar de nuevo</button>
+        </div>
+        {historial.map((h,i)=>(
+          <div key={i} style={{display:'flex',gap:9,alignItems:'center',padding:'7px 0',borderBottom:'1px solid var(--br)'}}>
+            <span style={{fontSize:14}}>{h.correcto?'✅':'❌'}</span>
+            <div style={{fontSize:12,color:'var(--tx2)',flex:1,lineHeight:1.3}}>{h.p}</div>
+            {h.correcto&&h.racha>=3&&<span style={{fontSize:10,color:'var(--sun)',fontWeight:700}}>🔥 x{h.racha}</span>}
           </div>
         ))}
       </div>
+    );
+  }
 
-      {!sbUser && (
-        <div style={{background:'rgba(74,144,217,.08)',border:'1px solid var(--cel-d)22',borderRadius:'var(--rs)',padding:'8px 12px',marginBottom:12,fontSize:12,color:'var(--tx2)',display:'flex',alignItems:'center',gap:8}}>
-          <span>🔐</span><span>Iniciá sesión para publicar, comentar y ganar puntos</span>
+  return (
+    <div>
+      <div style={{background:'linear-gradient(135deg,#1a1a2e,#16213e)',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:14,color:'white',position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(139,92,246,.3)',pointerEvents:'none'}}/>
+        <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>🧠 Trivia Deportiva Argentina</div>
+          <CmPuntsBadge puntos={ptsTrivia}/>
+        </div>
+        <div style={{display:'flex',gap:12,fontSize:12,opacity:.8}}>
+          <span>Pregunta {idx+1} / {CM_TRIVIA_PREGUNTAS.length}</span>
+          {racha>=2&&<span>🔥 Racha: {racha}</span>}
+        </div>
+        <div style={{marginTop:8,height:4,background:'rgba(255,255,255,.2)',borderRadius:2,overflow:'hidden'}}>
+          <div style={{height:'100%',width:((idx/CM_TRIVIA_PREGUNTAS.length)*100)+'%',background:'var(--cel-l)',borderRadius:2,transition:'width .4s'}}/>
+        </div>
+      </div>
+      <div className="card cp" style={{marginBottom:12}}>
+        <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:600,lineHeight:1.3,marginBottom:14,color:'var(--tx)'}}>{pregunta.p}</div>
+        {pregunta.opts.map((opt,i)=>{
+          let bg='var(--white)',bc='var(--br)',col='var(--tx2)';
+          if(respondida!==null){
+            if(i===pregunta.r){bg='rgba(39,174,96,.1)';bc='var(--green)';col='#1E8449';}
+            else if(i===respondida){bg='rgba(192,57,43,.08)';bc='var(--red)';col='var(--red)';}
+          }
+          return (
+            <div key={i} onClick={()=>responder(i)} style={{padding:'10px 13px',borderRadius:'var(--rs)',border:`1.5px solid ${bc}`,background:bg,color:col,cursor:respondida!==null?'default':'pointer',marginBottom:7,fontSize:13,fontWeight:500,transition:'.2s',display:'flex',alignItems:'center',gap:8}}>
+              <span style={{width:22,height:22,borderRadius:'50%',background:bc==='var(--br)'?'var(--cel-xl)':bg,border:`1px solid ${bc}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:bc==='var(--br)'?'var(--cel-d)':col,flexShrink:0}}>{String.fromCharCode(65+i)}</span>
+              {opt}
+              {respondida!==null&&i===pregunta.r&&<span style={{marginLeft:'auto'}}>✅</span>}
+              {respondida===i&&i!==pregunta.r&&<span style={{marginLeft:'auto'}}>❌</span>}
+            </div>
+          );
+        })}
+        {respondida!==null&&<div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'9px 12px',fontSize:12,color:'var(--tx2)',lineHeight:1.5,marginTop:4}}>💡 <b>Dato:</b> {pregunta.exp}</div>}
+      </div>
+      {respondida!==null&&<button className="btn btn-c" style={{width:'100%',justifyContent:'center'}} onClick={siguiente}>{idx+1<CM_TRIVIA_PREGUNTAS.length?'Siguiente →':'Ver resultados 🏆'}</button>}
+    </div>
+  );
+}
+
+function CmRankingTab({perfil,userId}){
+  const [periodo,setPeriodo]=useState('semanal');
+  const RANKING_BASE=[
+    {nombre:'ColapintoAR',pts:1420,racha:12,rango:'🥇',badge:true},
+    {nombre:'PumasFan',pts:1280,racha:8,rango:'🥈',badge:false},
+    {nombre:'Gonzalo_TL',pts:1150,racha:7,rango:'🥉',badge:false},
+    {nombre:'ScrumMaster',pts:980,racha:5,rango:'4',badge:false},
+    {nombre:'TribunaFan',pts:870,racha:4,rango:'5',badge:false},
+    {nombre:'LeoFutbolero',pts:760,racha:3,rango:'6',badge:false},
+    {nombre:'ArgentinaF1',pts:640,racha:2,rango:'7',badge:false},
+    {nombre:'Rugbier_BA',pts:510,racha:1,rango:'8',badge:false},
+    {nombre:'TenisAR',pts:430,racha:3,rango:'9',badge:false},
+    {nombre:'BasquetARG',pts:380,racha:1,rango:'10',badge:false},
+  ];
+  const miPerfil={nombre:userId||'Vos',pts:perfil.puntos||0,racha:perfil.rachaDiaria||0,rango:'?',badge:false,esYo:true};
+  const ranking=[...RANKING_BASE];
+  if(!ranking.some(r=>r.nombre===miPerfil.nombre)&&miPerfil.pts>0){
+    ranking.push(miPerfil);ranking.sort((a,b)=>b.pts-a.pts);ranking.forEach((r,i)=>{if(!r.badge)r.rango=String(i+1);});
+  }
+  const getMedal=r=>{
+    if(r==='🥇')return{bg:'linear-gradient(135deg,#F6B40E,#F97316)',col:'white'};
+    if(r==='🥈')return{bg:'linear-gradient(135deg,#9FAEC0,#6B7280)',col:'white'};
+    if(r==='🥉')return{bg:'linear-gradient(135deg,#CD7F32,#A0522D)',col:'white'};
+    return{bg:'var(--cel-xl)',col:'var(--cel-d)'};
+  };
+  return (
+    <div>
+      <div style={{background:'linear-gradient(135deg,var(--cel-d),var(--cel))',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:14,color:'white'}}>
+        <div style={{fontFamily:'var(--fd)',fontSize:17,fontWeight:700,marginBottom:4}}>🏆 Ranking Tribuna Libre</div>
+        <div style={{fontSize:12,opacity:.8,marginBottom:8}}>Los miembros más activos de la comunidad</div>
+        <div style={{display:'flex',gap:6}}>
+          {[['semanal','Semanal'],['mensual','Mensual']].map(([k,l])=>(
+            <button key={k} onClick={()=>setPeriodo(k)} style={{padding:'4px 14px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',border:'1.5px solid rgba(255,255,255,.5)',background:periodo===k?'rgba(255,255,255,.25)':'transparent',color:'white',transition:'.15s'}}>{l}</button>
+          ))}
+        </div>
+      </div>
+      <div style={{background:'var(--cel-xl)',border:'1.5px solid var(--cel)',borderRadius:'var(--r)',padding:'11px 14px',marginBottom:12,display:'flex',alignItems:'center',gap:10}}>
+        <span style={{fontSize:22}}>⚡</span>
+        <div style={{flex:1}}>
+          <div style={{fontSize:11,fontWeight:700,color:'var(--tx3)',textTransform:'uppercase',letterSpacing:'.8px'}}>Tus puntos</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700,color:'var(--cel-d)'}}>{perfil.puntos||0}</div>
+        </div>
+        {(perfil.rachaDiaria||0)>=2&&<div style={{textAlign:'center'}}><div style={{fontSize:18}}>🔥</div><div style={{fontSize:10,fontWeight:700,color:'var(--sun)'}}>Racha {perfil.rachaDiaria}</div></div>}
+      </div>
+      {ranking.slice(0,10).map((r,i)=>{
+        const m=getMedal(r.rango);
+        return (
+          <div key={i} style={{display:'flex',alignItems:'center',gap:10,padding:'10px 13px',background:r.esYo?'var(--cel-xl)':'var(--white)',border:`1px solid ${r.esYo?'var(--cel)':'var(--br)'}`,borderRadius:'var(--r)',marginBottom:7}}>
+            <div style={{width:28,height:28,borderRadius:'50%',display:'flex',alignItems:'center',justifyContent:'center',fontFamily:'var(--fd)',fontSize:13,fontWeight:700,flexShrink:0,background:m.bg,color:m.col}}>{r.rango}</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                <span style={{fontWeight:700,fontSize:13,color:r.esYo?'var(--cel-d)':'var(--tx)'}}>{r.nombre}</span>
+                {r.badge&&periodo==='mensual'&&<span style={{fontSize:14}}>👑</span>}
+                {r.racha>=5&&<span style={{fontSize:11,color:'var(--sun)',fontWeight:700}}>🔥{r.racha}</span>}
+                {r.esYo&&<span style={{fontSize:9,fontWeight:700,color:'var(--cel-d)',background:'rgba(74,144,217,.15)',padding:'1px 6px',borderRadius:8}}>TÚ</span>}
+              </div>
+              <div style={{fontSize:10,color:'var(--tx3)'}}>{r.pts.toLocaleString()} puntos</div>
+            </div>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'var(--cel)'}}>{r.pts.toLocaleString()}</div>
+          </div>
+        );
+      })}
+      {periodo==='mensual'&&<div style={{background:'rgba(246,180,14,.1)',border:'1.5px solid rgba(246,180,14,.4)',borderRadius:'var(--r)',padding:'11px 14px',marginTop:6,display:'flex',alignItems:'center',gap:9}}><span style={{fontSize:22}}>👑</span><div><div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,color:'#B7770D'}}>Badge mensual</div><div style={{fontSize:11,color:'var(--tx2)'}}>El #1 de cada mes recibe un badge especial visible en su perfil</div></div></div>}
+    </div>
+  );
+}
+
+function CmSeccionesTab({user,addToast,sumarPuntos}){
+  const [sub,setSub]=useState('predicciones');
+  const [predicciones,setPredicciones]=useState({});
+  const [clips,setClips]=useState([
+    {id:1,u:'ColapintoAR',url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',desc:'⚽ Golazo de Borja en el Superclásico',likes:34,sport:'⚽ Fútbol',time:'Hace 1h'},
+    {id:2,u:'PumasFan',url:'https://www.youtube.com/watch?v=dQw4w9WgXcQ',desc:'🏉 Try de Matera — histórico',likes:67,sport:'🏉 Rugby',time:'Hace 2h'},
+  ]);
+  const [clipForm,setClipForm]=useState({url:'',desc:'',sport:'⚽ Fútbol'});
+  const [likesClip,setLikesClip]=useState({});
+  const [votoDesafio,setVotoDesafio]=useState(null);
+
+  const PARTIDOS=[{id:1,h:'Argentina 🇦🇷',a:'🇧🇷 Brasil',fecha:'Hoy 21:00'},{id:2,h:'River 🔴',a:'🔵 Boca',fecha:'Dom 17:00'},{id:3,h:'Los Pumas 🏉',a:'🏉 All Blacks',fecha:'Sáb 20:30'}];
+  const DESAFIO={tema:'¿Fue el VAR correcto en el último Superclásico?',posA:'✅ Sí — decisión correcta',posB:'❌ No — error arbitral claro',votosA:1240,votosB:980};
+  const nombreUsuario=user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado';
+
+  function agregarClip(){
+    if(!clipForm.url.trim()){addToast({msg:'Pegá el link del clip',type:'err'});return;}
+    setClips(c=>[{id:Date.now(),u:nombreUsuario,url:clipForm.url,desc:clipForm.desc||'Clip deportivo',likes:0,sport:clipForm.sport,time:'Ahora'},...c]);
+    setClipForm({url:'',desc:'',sport:'⚽ Fútbol'});
+    sumarPuntos('compartir');addToast({msg:'¡Clip compartido! +5 pts 🎬',type:'ok'});
+  }
+
+  return (
+    <div>
+      <div className="tabs" style={{marginBottom:14}}>
+        {[['predicciones','⚡ Predicciones'],['clips','🎬 Clips'],['desafio','🗡️ Desafío']].map(([k,l])=>(
+          <div key={k} className={`tabx${sub===k?' on':''}`} onClick={()=>setSub(k)}>{l}</div>
+        ))}
+      </div>
+
+      {sub==='predicciones'&&(
+        <div>
+          <div style={{background:'rgba(246,180,14,.08)',border:'1px solid rgba(246,180,14,.3)',borderRadius:'var(--rs)',padding:'9px 12px',marginBottom:12,fontSize:12,color:'#B7770D',fontWeight:600}}>⚡ Predicciones express: votá antes del partido</div>
+          {PARTIDOS.map(p=>(
+            <div key={p.id} className="card cp" style={{marginBottom:10}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:9}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600}}>{p.h} vs {p.a}</div>
+                <span style={{fontSize:10,color:'var(--tx3)'}}>{p.fecha}</span>
+              </div>
+              {predicciones[p.id]?(
+                <div style={{textAlign:'center',padding:'8px 0',background:'var(--cel-xl)',borderRadius:'var(--rs)',fontSize:12,fontWeight:700,color:'var(--cel-d)'}}>✅ Predijiste: <b>{predicciones[p.id]}</b></div>
+              ):(
+                <div style={{display:'flex',gap:6}}>
+                  {[['1',p.h.split(' ')[0]],['X','Empate'],['2',p.a.split(' ')[0]]].map(([cod,nm])=>(
+                    <button key={cod} onClick={()=>{setPredicciones(pr=>({...pr,[p.id]:nm}));sumarPuntos('comentar');addToast({msg:`Predicción guardada +1 pt`,type:'ok'});}}
+                      className="btn btn-o btn-sm" style={{flex:1,justifyContent:'center',fontFamily:'var(--fd)'}}>{cod} {nm}</button>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      <div className="tabs">
-        {[{id:'feed',l:'Feed'},{id:'chat',l:'Chat en Vivo'},{id:'debates',l:'Debates'}].map(t => (
-          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
-        ))}
-      </div>
-
-      {tab==='feed' && (
+      {sub==='clips'&&(
         <div>
-          <div className="card cp" style={{marginBottom:14}}>
-            <div style={{display:'flex',gap:10,marginBottom:9}}>
-              <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>
-                {sbUser?(sbUser.user_metadata?.displayName||sbUser.email||'U')[0].toUpperCase():'?'}
-              </div>
-              <textarea value={text} onChange={e=>setText(e.target.value)} className="fi"
-                placeholder={sbUser?'¿Qué pensás del deporte argentino?':'Iniciá sesión para publicar...'}
-                style={{minHeight:60,resize:'none'}} disabled={!sbUser}/>
-            </div>
-            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-              <span style={{fontSize:10,color:'var(--tx3)'}}>Publicar → <b>+10 pts</b> · Comentar → <b>+1 pt</b></span>
-              <button className="btn btn-c btn-sm" onClick={publish} disabled={!sbUser||!text.trim()}>Publicar</button>
+          <div className="card cp" style={{marginBottom:12,border:'1.5px solid var(--cel)'}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:12,fontWeight:700,marginBottom:8,color:'var(--cel-d)'}}>🎬 Compartir clip</div>
+            <input className="fi" value={clipForm.url} onChange={e=>setClipForm(f=>({...f,url:e.target.value}))} placeholder="URL del video (YouTube, etc.)" style={{marginBottom:7}}/>
+            <input className="fi" value={clipForm.desc} onChange={e=>setClipForm(f=>({...f,desc:e.target.value}))} placeholder="Descripción..." style={{marginBottom:7}}/>
+            <div style={{display:'flex',gap:7,alignItems:'center'}}>
+              <select className="fi" value={clipForm.sport} onChange={e=>setClipForm(f=>({...f,sport:e.target.value}))} style={{flex:1,background:'var(--cel-xl)'}}>{CM_DEPORTES_TAGS.filter(t=>t!=='🌐 Todos').map(t=><option key={t}>{t}</option>)}</select>
+              <button className="btn btn-c btn-sm" onClick={agregarClip}>+5pts Compartir</button>
             </div>
           </div>
-
-          {loadingPosts && <div style={{textAlign:'center',padding:20,color:'var(--tx3)',fontSize:13}}>Cargando publicaciones...</div>}
-          {!loadingPosts && posts.map(p => {
-            const isLiked    = likedPosts.has(p.id);
-            const isExpanded = expandedPost === p.id;
-            const pComments  = postComments[p.id] || [];
+          {clips.map(clip=>{
+            const yt=clip.url.match(/(?:youtu\.be\/|youtube\.com\/watch\?v=)([\w-]+)/);
             return (
-              <div key={p.id} className="post-card">
-                <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
-                  <div className="post-av" style={{background:p.avatar_color||p.color||'#4A90D9'}}>{p.avatar_letter||p.av||'?'}</div>
-                  <div style={{flex:1}}>
-                    <div className="post-user">{p.username||p.user}</div>
-                    <div className="post-time">{fmtTime(p.created_at||p.time)}</div>
-                  </div>
+              <div key={clip.id} className="post-card">
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9}}>
+                  <div style={{width:30,height:30,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:'white',flexShrink:0}}>{clip.u[0]}</div>
+                  <div><div className="post-user">{clip.u}</div><div className="post-time">{clip.time} · {clip.sport}</div></div>
                 </div>
-                <div className="post-body">{p.content||p.text}</div>
+                {yt&&<div style={{borderRadius:'var(--rs)',overflow:'hidden',marginBottom:8,aspectRatio:'16/9'}}><iframe width="100%" height="100%" src={`https://www.youtube.com/embed/${yt[1]}`} frameBorder="0" allowFullScreen title="clip"/></div>}
+                <div className="post-body">{clip.desc}</div>
                 <div className="post-actions">
-                  <button className={`abt${isLiked?' lk':''}`} onClick={()=>toggleLike(p)}>
-                    <Ic.Heart/> {p.likes_count||p.likes||0}
-                  </button>
-                  <button className="abt" onClick={()=>toggleComments(p.id)}>
-                    <Ic.Comment/> {p.comments_count||0} {isExpanded?'▲':'▼'}
-                  </button>
+                  <button className={`abt${likesClip[clip.id]?' lk':''}`} onClick={()=>{setLikesClip(l=>({...l,[clip.id]:!l[clip.id]}));sumarPuntos('recibirLike');}}><Ic.Heart/> {clip.likes+(likesClip[clip.id]?1:0)}</button>
                 </div>
-                {isExpanded && (
-                  <div style={{marginTop:10,paddingTop:10,borderTop:'1px solid var(--br)'}}>
-                    {pComments.length===0 && <div style={{fontSize:12,color:'var(--tx3)',marginBottom:8}}>Sin comentarios aún. ¡Sé el primero!</div>}
-                    {pComments.map(c => (
-                      <div key={c.id} style={{display:'flex',gap:7,marginBottom:8}}>
-                        <div style={{width:26,height:26,borderRadius:'50%',background:c.avatar_color||'#16A34A',display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,color:'white',flexShrink:0}}>{c.avatar_letter||'?'}</div>
-                        <div style={{background:'rgba(0,0,0,.04)',borderRadius:'var(--rs)',padding:'6px 10px',flex:1}}>
-                          <div style={{fontSize:11,fontWeight:600,color:'var(--tx)',marginBottom:2}}>{c.username}</div>
-                          <div style={{fontSize:12,color:'var(--tx2)'}}>{c.content}</div>
-                        </div>
-                      </div>
-                    ))}
-                    {sbUser && (
-                      <div style={{display:'flex',gap:7,marginTop:6}}>
-                        <input className="fi" style={{flex:1,fontSize:12,padding:'6px 10px'}}
-                          placeholder="Comentá... (+1 punto)"
-                          value={commentTexts[p.id]||''}
-                          onChange={e=>setCommentTexts(prev=>({...prev,[p.id]:e.target.value}))}
-                          onKeyDown={e=>e.key==='Enter'&&submitComment(p)}/>
-                        <button className="btn btn-c btn-sm" onClick={()=>submitComment(p)}>Enviar</button>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
             );
           })}
         </div>
       )}
 
-      {tab==='chat' && (
+      {sub==='desafio'&&(
+        <div>
+          <div style={{background:'linear-gradient(135deg,rgba(139,92,246,.08),rgba(91,33,182,.05))',border:'1.5px solid rgba(139,92,246,.3)',borderRadius:'var(--rl)',padding:18,marginBottom:14}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'var(--purple)',marginBottom:5}}>🗡️ Desafío de la Semana</div>
+            <div style={{fontSize:14,color:'var(--tx)',lineHeight:1.5,marginBottom:14,fontWeight:500}}>{DESAFIO.tema}</div>
+            {votoDesafio?(
+              <div>
+                <div style={{textAlign:'center',fontSize:13,fontWeight:700,color:'var(--purple)',marginBottom:12}}>✅ Votaste: {votoDesafio==='A'?DESAFIO.posA:DESAFIO.posB}</div>
+                {[['A',DESAFIO.posA,DESAFIO.votosA],['B',DESAFIO.posB,DESAFIO.votosB]].map(([k,txt,vs])=>{
+                  const tot=DESAFIO.votosA+DESAFIO.votosB+1;const pct=Math.round((vs+(votoDesafio===k?1:0))/tot*100);
+                  return <div key={k} style={{marginBottom:8}}><div style={{display:'flex',justifyContent:'space-between',fontSize:12,marginBottom:3}}><span style={{color:'var(--tx2)'}}>{txt}</span><span style={{fontWeight:700,color:'var(--purple)'}}>{pct}%</span></div><div style={{height:8,background:'var(--cel-xl)',borderRadius:4,overflow:'hidden'}}><div style={{height:'100%',width:pct+'%',background:votoDesafio===k?'var(--purple)':'var(--cel-l)',borderRadius:4,transition:'width .7s'}}/></div></div>;
+                })}
+              </div>
+            ):(
+              <div style={{display:'flex',gap:8,flexDirection:'column'}}>
+                <button className="btn" style={{justifyContent:'center',background:'rgba(39,174,96,.1)',border:'1.5px solid var(--green)',color:'#1E8449'}} onClick={()=>{setVotoDesafio('A');sumarPuntos('ganarEncuesta');addToast({msg:'¡Voto registrado! +15 pts',type:'ok'});}}>{DESAFIO.posA}</button>
+                <button className="btn" style={{justifyContent:'center',background:'rgba(192,57,43,.08)',border:'1.5px solid var(--red)',color:'var(--red)'}} onClick={()=>{setVotoDesafio('B');sumarPuntos('ganarEncuesta');addToast({msg:'¡Voto registrado! +15 pts',type:'ok'});}}>{DESAFIO.posB}</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ComunidadPage({user,addToast,onNav}){
+  const userId=user?.isGuest===false?(user.displayName||user.username||'user'):'guest';
+  const {perfil,sumarPuntos,feedback}=useCmPuntos(userId);
+  const [tab,setTab]=useState('feed');
+  const [chatMsg,setChatMsg]=useState('');
+  const [chatMsgs,setChatMsgs]=useState([
+    {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
+    {id:2,u:'ScrumMaster',text:'¡Increíble! Los Pumas también la rompen 🏉',own:false},
+    {id:3,u:'Vos',text:'¡Esto es Tribuna Libre en vivo!',own:true},
+  ]);
+  const chatRef=useRef();
+
+  function sendChat(){
+    if(!chatMsg.trim()) return;
+    setChatMsgs(m=>[...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
+    setChatMsg('');setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
+  }
+
+  const TABS_COM=[
+    {id:'feed',l:'📰 Feed'},{id:'encuestas',l:'🗳️ Encuestas'},{id:'trivia',l:'🧠 Trivia'},
+    {id:'secciones',l:'⚡ Secciones'},{id:'ranking',l:'🏆 Ranking'},{id:'chat',l:'💬 Chat'},{id:'debates',l:'🔥 Debates'},
+  ];
+
+  return (
+    <div>
+      <CmPuntosFlotante feedback={feedback}/>
+      <div className="section-banner">
+        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Copilot_20260415_203438%20(1).png"
+          alt="Comunidad Tribuna Libre" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
+      </div>
+      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:10,flexWrap:'wrap',gap:8}}>
+        <h1 style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>Comunidad <span style={{color:'var(--cel)'}}>Tribuna Libre</span></h1>
+        {perfil.puntos>0&&<CmPuntsBadge puntos={perfil.puntos}/>}
+      </div>
+      <p style={{fontSize:12,color:'var(--tx2)',marginBottom:14,lineHeight:1.5}}>Debatí, analizá y compartí con miles de fanáticos argentinos 🇦🇷</p>
+
+      <details style={{marginBottom:12}}>
+        <summary style={{cursor:'pointer',fontSize:11,fontWeight:700,color:'var(--cel-d)',padding:'7px 12px',background:'var(--cel-xl)',borderRadius:'var(--rs)',border:'1px solid var(--br)',listStyle:'none',display:'flex',alignItems:'center',gap:6}}>⚡ ¿Cómo ganar puntos?</summary>
+        <div style={{background:'var(--white)',border:'1px solid var(--br)',borderTop:'none',borderRadius:'0 0 var(--rs) var(--rs)',padding:'10px 12px',display:'grid',gridTemplateColumns:'1fr 1fr',gap:'5px 12px'}}>
+          {[['Publicar','⚡ +10'],['Comentar','⚡ +1'],['Recibir like','⚡ +2'],['Compartir link','⚡ +5'],['Ganar encuesta','⚡ +15'],['Trivia correcta','⚡ +5'],['Racha 7 días','⚡ +20 🔥']].map(([a,p])=>(
+            <div key={a} style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'var(--tx2)',padding:'3px 0',borderBottom:'1px solid rgba(74,144,217,.1)'}}>
+              <span>{a}</span><span style={{fontWeight:700,color:'var(--cel-d)'}}>{p}</span>
+            </div>
+          ))}
+        </div>
+      </details>
+
+      <div className="tabs" style={{flexWrap:'nowrap',overflowX:'auto'}}>
+        {TABS_COM.map(t=><div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>)}
+      </div>
+
+      {tab==='feed'&&<CmFeedTab user={user} addToast={addToast} sumarPuntos={sumarPuntos}/>}
+      {tab==='encuestas'&&<CmEncuestasTab user={user} addToast={addToast} sumarPuntos={sumarPuntos}/>}
+      {tab==='trivia'&&<CmTriviaTab sumarPuntos={sumarPuntos} addToast={addToast}/>}
+      {tab==='secciones'&&<CmSeccionesTab user={user} addToast={addToast} sumarPuntos={sumarPuntos}/>}
+      {tab==='ranking'&&<CmRankingTab perfil={perfil} userId={userId}/>}
+      {tab==='chat'&&(
         <div>
           <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:12,padding:'9px 12px',background:'rgba(192,57,43,.07)',border:'1px solid rgba(192,57,43,.2)',borderRadius:'var(--rs)'}}>
             <div className="ldot"/><span style={{fontSize:12,fontWeight:600,color:'var(--red)'}}>Chat en vivo</span>
@@ -1334,9 +1762,9 @@ function ComunidadPage({ user, addToast, onNav }) {
           </div>
           <div className="chat-wrap">
             <div ref={chatRef} className="chat-bd">
-              {chatMsgs.map(m => (
+              {chatMsgs.map(m=>(
                 <div key={m.id} className={`cmsg ${m.own?'own':'other'}`}>
-                  {!m.own && <div className="cmsg-u">{m.u}</div>}
+                  {!m.own&&<div className="cmsg-u">{m.u}</div>}
                   <div>{m.text}</div>
                 </div>
               ))}
@@ -1348,40 +1776,29 @@ function ComunidadPage({ user, addToast, onNav }) {
           </div>
         </div>
       )}
-
-      {tab==='debates' && <DebatesTab user={user} addToast={addToast}/>}
+      {tab==='debates'&&<DebatesTab user={user} addToast={addToast}/>}
     </div>
   );
 }
 
-/* ══════ DEBATES TAB (dentro de ComunidadPage) ══════ */
-function DebatesTab({ user, addToast }) {
-  const [userPolls, setUserPolls] = useState([]);
-  const [showPollForm, setShowPollForm] = useState(false);
-  const [pollQ, setPollQ] = useState('');
-  const [pollOpts, setPollOpts] = useState(['', '']);
+/* ══════ DEBATES TAB (preservado, ahora usa CM_THREADS) ══════ */
+function DebatesTab({user,addToast}){
+  const [userPolls,setUserPolls]=useState([]);
+  const [showPollForm,setShowPollForm]=useState(false);
+  const [pollQ,setPollQ]=useState('');
+  const [pollOpts,setPollOpts]=useState(['','']);
 
-  function addOpt() {
-    if (pollOpts.length < 5) setPollOpts(o => [...o, '']);
-  }
-  function setOpt(i, v) {
-    setPollOpts(o => o.map((x, j) => j === i ? v : x));
-  }
-  function removeOpt(i) {
-    if (pollOpts.length > 2) setPollOpts(o => o.filter((_, j) => j !== i));
-  }
-  function createPoll(e) {
+  function addOpt(){if(pollOpts.length<5)setPollOpts(o=>[...o,'']);}
+  function setOpt(i,v){setPollOpts(o=>o.map((x,j)=>j===i?v:x));}
+  function removeOpt(i){if(pollOpts.length>2)setPollOpts(o=>o.filter((_,j)=>j!==i));}
+  function createPoll(e){
     e.preventDefault();
-    const q = pollQ.trim();
-    const opts = pollOpts.map(o => o.trim()).filter(Boolean);
-    if (!q) { addToast({msg:'Escribí la pregunta de la encuesta', type:'err'}); return; }
-    if (opts.length < 2) { addToast({msg:'Necesitás al menos 2 opciones', type:'err'}); return; }
-    const newPoll = { id: Date.now(), q, opts, vs: opts.map(() => 0) };
-    setUserPolls(p => [newPoll, ...p]);
-    setPollQ('');
-    setPollOpts(['', '']);
-    setShowPollForm(false);
-    addToast({msg:'¡Encuesta creada! 🗳️', type:'ok'});
+    const q=pollQ.trim();const opts=pollOpts.map(o=>o.trim()).filter(Boolean);
+    if(!q){addToast({msg:'Escribí la pregunta de la encuesta',type:'err'});return;}
+    if(opts.length<2){addToast({msg:'Necesitás al menos 2 opciones',type:'err'});return;}
+    setUserPolls(p=>[{id:Date.now(),q,opts,vs:opts.map(()=>0)},...p]);
+    setPollQ('');setPollOpts(['','']);setShowPollForm(false);
+    addToast({msg:'¡Encuesta creada! 🗳️',type:'ok'});
   }
 
   return (
@@ -1390,10 +1807,10 @@ function DebatesTab({ user, addToast }) {
         <div className="st">Hilos activos</div>
         <span className="sl" onClick={()=>addToast({msg:'Función de nuevo hilo próximamente',type:'ok'})}>+ Nuevo hilo</span>
       </div>
-      {THREADS_DATA.map(t => (
+      {CM_THREADS.map(t=>(
         <div key={t.id} className="thread-card">
           <div style={{display:'flex',gap:5,marginBottom:5}}>
-            {t.hot && <span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
+            {t.hot&&<span className="badge br-b" style={{display:'flex',alignItems:'center',gap:2}}><Ic.Fire style={{width:9,height:9}}/>Hot</span>}
             <span className="badge bc" style={{fontSize:9}}>{t.cat}</span>
             <span style={{fontSize:10,color:'var(--tx3)',marginLeft:'auto'}}>{t.t}</span>
           </div>
@@ -1405,58 +1822,38 @@ function DebatesTab({ user, addToast }) {
           </div>
         </div>
       ))}
-
-      {/* ENCUESTAS — existentes + creadas por usuarios */}
       <div className="sh" style={{marginTop:18}}>
         <div className="st">Encuestas</div>
-        <button className="btn btn-c btn-sm" onClick={()=>setShowPollForm(s=>!s)}>
-          <Ic.Plus style={{width:11,height:11}}/> Crear encuesta
-        </button>
+        <button className="btn btn-c btn-sm" onClick={()=>setShowPollForm(s=>!s)}><Ic.Plus style={{width:11,height:11}}/> Crear encuesta</button>
       </div>
-
-      {/* FORMULARIO CREAR ENCUESTA */}
-      {showPollForm && (
+      {showPollForm&&(
         <div className="card cp" style={{marginBottom:14,border:'1.5px solid var(--cel)'}}>
           <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,marginBottom:10,color:'var(--cel-d)'}}>🗳️ Nueva encuesta</div>
-          <div style={{marginBottom:9}}>
-            <label className="fl">Pregunta</label>
-            <input className="fi" value={pollQ} onChange={e=>setPollQ(e.target.value)} placeholder="¿Cuál es tu pregunta?"/>
-          </div>
+          <div style={{marginBottom:9}}><label className="fl">Pregunta</label><input className="fi" value={pollQ} onChange={e=>setPollQ(e.target.value)} placeholder="¿Cuál es tu pregunta?"/></div>
           <label className="fl">Opciones</label>
-          {pollOpts.map((opt, i) => (
+          {pollOpts.map((opt,i)=>(
             <div key={i} style={{display:'flex',gap:6,marginBottom:6}}>
-              <input className="fi" style={{flex:1}} value={opt} onChange={e=>setOpt(i, e.target.value)} placeholder={`Opción ${i+1}`}/>
-              {pollOpts.length > 2 && (
-                <button onClick={()=>removeOpt(i)} style={{background:'none',border:'none',color:'var(--red)',cursor:'pointer',fontSize:16,padding:'0 4px'}}>×</button>
-              )}
+              <input className="fi" style={{flex:1}} value={opt} onChange={e=>setOpt(i,e.target.value)} placeholder={`Opción ${i+1}`}/>
+              {pollOpts.length>2&&<button onClick={()=>removeOpt(i)} style={{background:'none',border:'none',color:'var(--red)',cursor:'pointer',fontSize:16,padding:'0 4px'}}>×</button>}
             </div>
           ))}
-          {pollOpts.length < 5 && (
-            <button className="btn btn-o btn-sm" style={{marginBottom:10}} onClick={addOpt}>
-              <Ic.Plus style={{width:10,height:10}}/> Agregar opción
-            </button>
-          )}
+          {pollOpts.length<5&&<button className="btn btn-o btn-sm" style={{marginBottom:10}} onClick={addOpt}><Ic.Plus style={{width:10,height:10}}/> Agregar opción</button>}
           <div style={{display:'flex',gap:8,justifyContent:'flex-end'}}>
             <button className="btn btn-o btn-sm" onClick={()=>setShowPollForm(false)}>Cancelar</button>
             <button className="btn btn-c btn-sm" onClick={createPoll}>Publicar encuesta</button>
           </div>
         </div>
       )}
-
-      {/* ENCUESTAS ESTÁTICAS */}
-      {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
-
-      {/* ENCUESTAS CREADAS POR USUARIOS */}
-      {userPolls.length > 0 && (
+      {STATIC_POLLS.map(p=><div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
+      {userPolls.length>0&&(
         <>
           <div style={{fontSize:10,fontWeight:700,color:'var(--tx3)',letterSpacing:'1.2px',textTransform:'uppercase',margin:'14px 0 8px'}}>De la comunidad</div>
-          {userPolls.map(p => <div key={p.id} className="card cp" style={{marginBottom:12,border:'1px solid rgba(74,144,217,.3)'}}><Poll poll={p}/></div>)}
+          {userPolls.map(p=><div key={p.id} className="card cp" style={{marginBottom:12,border:'1px solid rgba(74,144,217,.3)'}}><Poll poll={p}/></div>)}
         </>
       )}
     </div>
   );
 }
-
 
 function StreamingPage({ addToast }) {
   const [streamOpen, setStreamOpen] = useState(false);
@@ -1537,56 +1934,214 @@ function StreamingPage({ addToast }) {
   );
 }
 
-/* ══════ PRODE PAGE — restaurada completa ══════ */
+/* ══════ LA TRIBU PREDICE ══════ */
 function ProdePage({ user, addToast }) {
-  const [picks, setPicks] = useState({});
+  const [tab, setTab]       = useState('pronosticos');
+  const [picks, setPicks]   = useState({});
   const [submitted, setSubmitted] = useState(false);
+  const [quinPick, setQuinPick]   = useState({});
+  const [desafio, setDesafio]     = useState(null);
   const totalPicked = Object.keys(picks).length;
-  function pick(id, r) { setPicks(p => ({...p,[id]:r})); }
+
+  function pick(id, r) { if (!submitted) setPicks(p => ({...p,[id]:r})); }
   function submit() {
     if (totalPicked < PRODE_MATCHES.length) { addToast({msg:'Completá todas las predicciones antes de enviar',type:'err'}); return; }
     if (!user || user.isGuest) { addToast({msg:'Necesitás registrarte para guardar tus predicciones 🔒',type:'err'}); return; }
     setSubmitted(true);
     addToast({msg:'¡Predicciones guardadas! ¡Mucha suerte! 🏆',type:'ok'});
   }
+
+  const ACIERTOS = [
+    {u:'El_Pibe_10',pts:87,em:'🥇',color:'#F59E0B'},{u:'PumasFan',pts:74,em:'🥈',color:'#9CA3AF'},
+    {u:'Gonzalo_TL',pts:68,em:'🥉',color:'#B45309'},{u:'ColapintoAR',pts:61,em:'⭐',color:'var(--cel)'},
+    {u:'RiverMiAmor',pts:55,em:'⭐',color:'var(--cel)'},
+  ];
+  const QUINIELA = [
+    {id:'q1',he:'⚽',h:'River',ae:'⚽',a:'Boca',date:'Sab 20:30'},
+    {id:'q2',he:'⚽',h:'Racing',ae:'⚽',a:'Independiente',date:'Dom 18:00'},
+    {id:'q3',he:'🏉',h:'Pumas',ae:'🏉',a:'Wallabies',date:'Sab 16:00'},
+  ];
+
   return (
     <div>
-      <div style={{background:'linear-gradient(135deg,#B7770D,var(--sun))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:18,color:'white',display:'flex',alignItems:'center',gap:12}}>
+      {/* HEADER */}
+      <div style={{background:'linear-gradient(135deg,#B7770D,var(--sun))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:14,color:'white',display:'flex',alignItems:'center',gap:12}}>
         <span style={{fontSize:30}}>🏆</span>
         <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>El Prode de Tribuna Libre</div>
-          <div style={{fontSize:12,opacity:.8}}>100% gratis para todos los usuarios</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>La Tribu Predice</div>
+          <div style={{fontSize:12,opacity:.8}}>Predicciones, pronósticos y desafíos · 100% gratis</div>
         </div>
       </div>
-      {/* BANNER PRODE */}
       <div className="section-banner">
         <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Copilot_20260415_202946%20(1).png"
-          alt="El Prode Tribuna Libre" loading="lazy"
-          onError={e=>e.target.parentNode.style.display='none'}/>
+          alt="La Tribu Predice" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:14,flexWrap:'wrap',gap:8}}>
-        <div style={{fontSize:12,color:'var(--tx2)'}}>Completadas: <b style={{color:'var(--cel-d)'}}>{totalPicked}/{PRODE_MATCHES.length}</b></div>
-        {!submitted ? <button className="btn btn-s btn-sm" onClick={submit}>Enviar predicciones</button>
-          : <span className="badge bg-b" style={{display:'flex',alignItems:'center',gap:4}}><Ic.Check style={{width:10,height:10}}/>Enviado</span>}
+
+      {/* TABS */}
+      <div className="tabs" style={{flexWrap:'wrap'}}>
+        {[{id:'pronosticos',l:'📊 Pronósticos'},{id:'predicciones',l:'🔮 Predicciones'},{id:'jugagana',l:'🎮 Jugá y Ganá'},{id:'aciertos',l:'🏅 Aciertos'},{id:'quiniela',l:'🎰 Quiniela Dep.'},{id:'desafio',l:'⚡ Desafío Dep.'}].map(t => (
+          <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
+        ))}
       </div>
-      {PRODE_MATCHES.map(m => {
-        const p = picks[m.id];
-        return (
-          <div key={m.id} className={`prode-match${submitted?' locked':''}`}>
-            <div className="prode-teams">
-              <div className="prode-team"><span className="prode-em">{m.he}</span><div className="prode-nm">{m.h}</div></div>
-              <div className="prode-vs">vs</div>
-              <div className="prode-team"><span className="prode-em">{m.ae}</span><div className="prode-nm">{m.a}</div></div>
+
+      {/* PRONÓSTICOS */}
+      {tab==='pronosticos' && (
+        <div>
+          <div style={{fontSize:12,color:'var(--tx2)',marginBottom:12,lineHeight:1.5}}>Analizá los partidos y elegí el resultado más probable. Se actualiza cada jornada.</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:12,flexWrap:'wrap',gap:8}}>
+            <div style={{fontSize:12,color:'var(--tx2)'}}>Completadas: <b style={{color:'var(--cel-d)'}}>{totalPicked}/{PRODE_MATCHES.length}</b></div>
+            {!submitted ? <button className="btn btn-s btn-sm" onClick={submit}>Enviar pronósticos</button>
+              : <span className="badge bg-b" style={{display:'flex',alignItems:'center',gap:4}}><Ic.Check style={{width:10,height:10}}/>Enviado</span>}
+          </div>
+          {PRODE_MATCHES.map(m => {
+            const p = picks[m.id];
+            return (
+              <div key={m.id} className={`prode-match${submitted?' locked':''}`}>
+                <div className="prode-teams">
+                  <div className="prode-team"><span className="prode-em">{m.he}</span><div className="prode-nm">{m.h}</div></div>
+                  <div className="prode-vs">vs</div>
+                  <div className="prode-team"><span className="prode-em">{m.ae}</span><div className="prode-nm">{m.a}</div></div>
+                </div>
+                <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8,textAlign:'center'}}>📅 {m.date}</div>
+                <div className="prode-pickers">
+                  <div className={`prode-btn${p==='h'?' sel-h':''}`} onClick={()=>pick(m.id,'h')}>{m.h} gana</div>
+                  <div className={`prode-btn${p==='e'?' sel-e':''}`} onClick={()=>pick(m.id,'e')}>Empate</div>
+                  <div className={`prode-btn${p==='a'?' sel-a':''}`} onClick={()=>pick(m.id,'a')}>{m.a} gana</div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* PREDICCIONES */}
+      {tab==='predicciones' && (
+        <div>
+          <div style={{background:'rgba(245,158,11,.08)',border:'1px solid rgba(245,158,11,.3)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,fontSize:12,color:'var(--tx2)',lineHeight:1.55}}>
+            🔮 <b>Predicciones a largo plazo:</b> ¿Quién ganará la Liga? ¿Los Pumas llegan al podio? Apostá tu reputación.
+          </div>
+          {[
+            {q:'¿Quién gana la Liga Profesional 2025?',opts:['River Plate 🔴','Boca Juniors 🔵','Racing Club ⚡','Otro equipo']},
+            {q:'¿Argentina llega a la Final del Mundial 2026?',opts:['Sí, campeones 🏆','Llega a final pero pierde','Semifinales','Cuartos o antes']},
+            {q:'¿Los Pumas terminan entre los 3 del año?',opts:['Sí, podio 🏉','Top 5','Top 10','No llegan']},
+          ].map((pred,i) => (
+            <div key={i} className="card cp" style={{marginBottom:12}}>
+              <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:10,color:'var(--tx)'}}>{pred.q}</div>
+              {pred.opts.map((o,j) => (
+                <div key={j} className="po" onClick={()=>addToast({msg:`Predicción registrada: ${o}`,type:'ok'})} style={{cursor:'pointer'}}>
+                  <div className="po-row"><span>{o}</span></div>
+                </div>
+              ))}
             </div>
-            <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8,textAlign:'center'}}>📅 {m.date}</div>
-            <div className="prode-pickers">
-              <div className={`prode-btn${p==='h'?' sel-h':''}`} onClick={()=>!submitted&&pick(m.id,'h')}>{m.h} gana</div>
-              <div className={`prode-btn${p==='e'?' sel-e':''}`} onClick={()=>!submitted&&pick(m.id,'e')}>Empate</div>
-              <div className={`prode-btn${p==='a'?' sel-a':''}`} onClick={()=>!submitted&&pick(m.id,'a')}>{m.a} gana</div>
+          ))}
+        </div>
+      )}
+
+      {/* JUGÁ Y GANÁ */}
+      {tab==='jugagana' && (
+        <div>
+          <div style={{background:'linear-gradient(135deg,rgba(183,119,13,.1),rgba(245,158,11,.08))',border:'1.5px solid rgba(183,119,13,.3)',borderRadius:'var(--rl)',padding:16,marginBottom:14}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'#B7770D',marginBottom:6}}>🎮 ¿Cómo funciona?</div>
+            <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.65}}>
+              Completá el prode de cada fecha → acumulá puntos → subí en el ranking → ganás premios digitales exclusivos de Tribuna Libre.
             </div>
           </div>
-        );
-      })}
+          {[
+            {em:'🥇',t:'Premio Semanal',d:'El mejor puntaje de la semana gana una membresía premium por 30 días',pts:'100+ pts'},
+            {em:'🏆',t:'Premio Mensual',d:'El top 3 del mes recibe badge exclusivo "Leyenda de la Tribu" en su perfil',pts:'Top 3'},
+            {em:'⭐',t:'Premio Especial',d:'Quien acierte todos los resultados de una jornada gana mención en el portal',pts:'Pleno'},
+          ].map((p,i) => (
+            <div key={i} className="card cp" style={{marginBottom:10,display:'flex',gap:12,alignItems:'flex-start'}}>
+              <span style={{fontSize:28,flexShrink:0}}>{p.em}</span>
+              <div>
+                <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,marginBottom:3}}>{p.t}</div>
+                <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.5,marginBottom:5}}>{p.d}</div>
+                <span className="badge" style={{background:'rgba(183,119,13,.12)',color:'#B7770D',padding:'2px 8px',borderRadius:8,fontSize:10}}>{p.pts}</span>
+              </div>
+            </div>
+          ))}
+          <button className="btn btn-s" style={{width:'100%',justifyContent:'center',marginTop:4}} onClick={()=>addToast({msg:'¡Inscripto en Jugá y Ganá! 🎉',type:'ok'})}>
+            Participar ahora
+          </button>
+        </div>
+      )}
+
+      {/* ACIERTOS */}
+      {tab==='aciertos' && (
+        <div>
+          <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,marginBottom:12,color:'var(--tx)'}}>🏅 Ranking de Aciertos — Jornada actual</div>
+          {ACIERTOS.map((a,i) => (
+            <div key={i} className="card cp" style={{marginBottom:8,display:'flex',alignItems:'center',gap:12}}>
+              <span style={{fontSize:22,flexShrink:0}}>{a.em}</span>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,color:a.color}}>{a.u}</div>
+                <div style={{fontSize:11,color:'var(--tx3)'}}>Puesto #{i+1} en el ranking</div>
+              </div>
+              <div style={{fontFamily:'var(--fd)',fontSize:18,fontWeight:700,color:a.color}}>{a.pts} pts</div>
+            </div>
+          ))}
+          <div style={{textAlign:'center',marginTop:10,fontSize:12,color:'var(--tx3)'}}>Ranking actualizado al cierre de cada jornada</div>
+        </div>
+      )}
+
+      {/* QUINIELA DEPORTIVA */}
+      {tab==='quiniela' && (
+        <div>
+          <div style={{background:'rgba(139,92,246,.08)',border:'1px solid rgba(139,92,246,.25)',borderRadius:'var(--r)',padding:'10px 14px',marginBottom:14,fontSize:12,color:'var(--tx2)',lineHeight:1.55}}>
+            🎰 <b>Quiniela Deportiva:</b> Elegí ganador, empate o perdedor en cada partido. Se cierra 1h antes del inicio.
+          </div>
+          {QUINIELA.map(m => {
+            const q = quinPick[m.id];
+            return (
+              <div key={m.id} className="prode-match">
+                <div className="prode-teams">
+                  <div className="prode-team"><span className="prode-em">{m.he}</span><div className="prode-nm">{m.h}</div></div>
+                  <div className="prode-vs">vs</div>
+                  <div className="prode-team"><span className="prode-em">{m.ae}</span><div className="prode-nm">{m.a}</div></div>
+                </div>
+                <div style={{fontSize:10,color:'var(--tx3)',marginBottom:8,textAlign:'center'}}>🕐 {m.date}</div>
+                <div className="prode-pickers">
+                  <div className={`prode-btn${q==='h'?' sel-h':''}`} onClick={()=>setQuinPick(p=>({...p,[m.id]:'h'}))}>{m.h}</div>
+                  <div className={`prode-btn${q==='e'?' sel-e':''}`} onClick={()=>setQuinPick(p=>({...p,[m.id]:'e'}))}>X</div>
+                  <div className={`prode-btn${q==='a'?' sel-a':''}`} onClick={()=>setQuinPick(p=>({...p,[m.id]:'a'}))}>{m.a}</div>
+                </div>
+              </div>
+            );
+          })}
+          <button className="btn btn-s btn-sm" style={{marginTop:6}} onClick={()=>addToast({msg:'¡Quiniela enviada! 🎰',type:'ok'})}>
+            Confirmar quiniela
+          </button>
+        </div>
+      )}
+
+      {/* DESAFÍO DEPORTIVO */}
+      {tab==='desafio' && (
+        <div>
+          <div style={{background:'linear-gradient(135deg,rgba(192,57,43,.08),rgba(183,119,13,.06))',border:'1.5px solid rgba(192,57,43,.25)',borderRadius:'var(--rl)',padding:16,marginBottom:14}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'var(--red)',marginBottom:6}}>⚡ Desafío de la Semana</div>
+            <div style={{fontSize:13,color:'var(--tx)',fontWeight:600,marginBottom:5}}>¿Cuántos goles marca River esta jornada?</div>
+            <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6,marginBottom:12}}>Elegí un número del 0 al 5+. Quien más cerca esté suma puntos extra.</div>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              {['0','1','2','3','4','5+'].map(n => (
+                <div key={n} className={`prode-btn${desafio===n?' sel-h':''}`} style={{flex:'1 1 auto',textAlign:'center',minWidth:44}} onClick={()=>{setDesafio(n);addToast({msg:`Desafío registrado: ${n} goles`,type:'ok'});}}>{n}</div>
+              ))}
+            </div>
+          </div>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:10,color:'var(--tx)'}}>Desafíos anteriores</div>
+          {[
+            {t:'¿Ganó Argentina el último partido?',res:'Sí ✅',pts:'+15 pts'},
+            {t:'¿Terminó en empate Boca vs Racing?',res:'No ❌',pts:'+0 pts'},
+          ].map((d,i) => (
+            <div key={i} className="card cs" style={{marginBottom:8,display:'flex',alignItems:'center',gap:10}}>
+              <div style={{flex:1}}>
+                <div style={{fontSize:12,fontWeight:500,color:'var(--tx)',marginBottom:2}}>{d.t}</div>
+                <div style={{fontSize:11,color:'var(--tx3)'}}>Resultado: {d.res}</div>
+              </div>
+              <span style={{fontSize:11,fontWeight:700,color:'var(--green)'}}>{d.pts}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -1647,97 +2202,206 @@ function CopaPage() {
   );
 }
 
-/* ══════ REVISTA PAGE ══════ */
+/* ══════ LA TRIBU DESCUBRE ══════ */
 function RevistaPage({ user, addToast }) {
-  const [tab, setTab]     = useState('notas');
+  const [tab, setTab]       = useState('promesa');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm]   = useState({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
-  function submitNota(e) {
-    e.preventDefault();
-    addToast({msg:'¡Tu nota fue enviada para revisión! 🎉',type:'ok'});
-    setShowForm(false); setForm({titulo:'',texto:'',cat:'Fútbol',nombre:'',edad:''});
+  const [form, setForm]     = useState({nombre:'',edad:'',deporte:'',descripcion:'',contacto:''});
+
+  function submitTalento() {
+    if (!form.nombre.trim() || !form.deporte.trim()) { addToast({msg:'Completá nombre y deporte',type:'err'}); return; }
+    addToast({msg:'¡Talento enviado para revisión! 🌟',type:'ok'});
+    setShowForm(false); setForm({nombre:'',edad:'',deporte:'',descripcion:'',contacto:''});
   }
+
+  const TALENTOS = [
+    {em:'⚽',nombre:'Lucas Ferreyra',edad:16,deporte:'Fútbol',club:'Reserva River',desc:'Mediocampista de 16 años con visión de juego y gol. Promovido recientemente al plantel de reserva.'},
+    {em:'🏉',nombre:'Valentina Ríos',edad:17,deporte:'Rugby',club:'Liceo Naval',desc:'Scrum-half que lidera a su equipo al torneo nacional. Convocada preselección Argentina U18.'},
+    {em:'🎾',nombre:'Tomás Aguirre',edad:15,deporte:'Tenis',club:'Independiente TC',desc:'Finalista del Nacional Juvenil. Su revés a dos manos es ya marca registrada en el circuito.'},
+  ];
+  const ENTREVISTAS = [
+    {em:'🎙️',nombre:'Lara Pérez — Nadadora',subtitulo:'Campeona juvenil 200m libre',extracto:'"El agua es mi lugar en el mundo. Cada pileta me habla diferente"'},
+    {em:'🎙️',nombre:'Mateo Suárez — Básquet',subtitulo:'Base selección U17',extracto:'"Empecé jugando en la vereda con una pelota pinchada. Hoy represento a Argentina"'},
+  ];
+
   return (
     <div>
-      <div style={{background:'linear-gradient(135deg,#9D174D,var(--pink))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:16,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>✏️</span>
+      {/* HEADER */}
+      <div style={{background:'linear-gradient(135deg,#9D174D,var(--pink))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:14,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:30}}>🌟</span>
         <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Revista Tribuna Libre</div>
-          <div style={{fontSize:12,opacity:.8}}>El espacio de los jóvenes periodistas deportivos</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:20,fontWeight:700}}>La Tribu Descubre</div>
+          <div style={{fontSize:12,opacity:.8}}>Talentos emergentes · Promesas del deporte argentino</div>
         </div>
-        <button className="btn btn-sm" style={{marginLeft:'auto',background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}} onClick={()=>setShowForm(true)}>
-          <Ic.Pen style={{width:12,height:12}}/> Publicar
-        </button>
       </div>
-      <div className="tabs">
-        {[{id:'notas',l:'📰 Notas'},{id:'opinion',l:'💬 Opinión'},{id:'tips',l:'💡 Tips'},{id:'enviar',l:'✍️ Publicá'}].map(t => (
+
+      {/* TABS */}
+      <div className="tabs" style={{flexWrap:'wrap'}}>
+        {[
+          {id:'promesa',    l:'⭐ Promesa de la Semana'},
+          {id:'talentos',   l:'🌱 Nuevos Talentos'},
+          {id:'entrevistas',l:'🎙️ Entrevistas'},
+          {id:'deportes',   l:'🏅 Por Deporte'},
+          {id:'seguimiento',l:'📈 Seguimiento'},
+          {id:'sumar',      l:'➕ Sumá un Talento'},
+        ].map(t => (
           <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
         ))}
       </div>
-      {(tab==='notas'||tab==='opinion') && (
-        <div style={{display:'grid',gap:12,gridTemplateColumns:'1fr'}}>
-          {REVISTA_ARTICLES.map(a => (
-            <div key={a.id} className="rev-article">
-              <div className="rev-img"><span>{a.emoji}</span></div>
-              <div className="rev-body">
-                <div style={{marginBottom:7}}><span className="badge bp">{a.cat}</span></div>
-                <div className="rev-tit">{a.title}</div>
-                <div className="rev-exc">{a.excerpt}</div>
-                <div className="rev-ft">
-                  <span>{a.author}</span><span>{a.age} años</span>
-                  <span style={{marginLeft:'auto',display:'flex',alignItems:'center',gap:3}}><Ic.Eye style={{width:11,height:11}}/>{a.reads}</span>
+
+      {/* PROMESA DE LA SEMANA */}
+      {tab==='promesa' && (
+        <div>
+          <div style={{background:'linear-gradient(135deg,rgba(157,23,77,.08),rgba(236,72,153,.06))',border:'1.5px solid rgba(157,23,77,.2)',borderRadius:'var(--rl)',padding:18,marginBottom:14}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:10}}>
+              <span style={{fontSize:32}}>⚽</span>
+              <div>
+                <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'#9D174D'}}>Lucas Ferreyra · 16 años</div>
+                <div style={{fontSize:12,color:'var(--tx2)'}}>Mediocampista · Reserva River Plate</div>
+              </div>
+              <span className="badge" style={{marginLeft:'auto',background:'rgba(157,23,77,.12)',color:'#9D174D',padding:'3px 10px',borderRadius:10,fontSize:11,fontWeight:700}}>⭐ Promesa</span>
+            </div>
+            <p style={{fontSize:13,color:'var(--tx2)',lineHeight:1.65,marginBottom:12}}>
+              Lucas viene de una familia humilde de Florencio Varela. Con 16 años ya entrenó tres veces con el plantel profesional. Su visión de juego y su llegada al gol lo distinguen. El cuerpo técnico lo ve como una apuesta firme para el futuro.
+            </p>
+            <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+              <button className="btn btn-pk btn-sm" onClick={()=>addToast({msg:'¡Siguiendo a Lucas Ferreyra! 🌟',type:'ok'})}>Seguir trayectoria</button>
+              <button className="btn btn-o btn-sm" onClick={()=>addToast({msg:'Nota compartida',type:'ok'})}>Compartir</button>
+            </div>
+          </div>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:10,color:'var(--tx)'}}>Estadísticas este mes</div>
+          {[['Partidos jugados','12'],['Goles','4'],['Asistencias','7'],['Minutos','980']].map(([k,v],i) => (
+            <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 0',borderBottom:'1px solid var(--br)'}}>
+              <span style={{fontSize:12,color:'var(--tx2)'}}>{k}</span>
+              <span style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:700,color:'#9D174D'}}>{v}</span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* NUEVOS TALENTOS */}
+      {tab==='talentos' && (
+        <div>
+          <div style={{fontSize:12,color:'var(--tx2)',marginBottom:12,lineHeight:1.5}}>Jóvenes promesas del deporte argentino seleccionadas por la Tribu.</div>
+          {TALENTOS.map((t,i) => (
+            <div key={i} className="card cp" style={{marginBottom:12,display:'flex',gap:12,alignItems:'flex-start'}}>
+              <span style={{fontSize:30,flexShrink:0}}>{t.em}</span>
+              <div style={{flex:1}}>
+                <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3,flexWrap:'wrap'}}>
+                  <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700}}>{t.nombre}</div>
+                  <span className="badge" style={{background:'rgba(157,23,77,.1)',color:'#9D174D',padding:'1px 7px',borderRadius:8,fontSize:10}}>{t.deporte}</span>
+                </div>
+                <div style={{fontSize:11,color:'var(--tx3)',marginBottom:5}}>{t.edad} años · {t.club}</div>
+                <div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.55}}>{t.desc}</div>
+              </div>
+              <button className="btn btn-pk btn-sm" style={{flexShrink:0}} onClick={()=>addToast({msg:`Siguiendo a ${t.nombre} ✓`,type:'ok'})}>+</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ENTREVISTAS */}
+      {tab==='entrevistas' && (
+        <div>
+          {ENTREVISTAS.map((e,i) => (
+            <div key={i} className="card cp" style={{marginBottom:14}}>
+              <div style={{display:'flex',gap:10,alignItems:'flex-start',marginBottom:10}}>
+                <span style={{fontSize:28,flexShrink:0}}>{e.em}</span>
+                <div>
+                  <div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:700,marginBottom:2}}>{e.nombre}</div>
+                  <div style={{fontSize:11,color:'var(--tx3)'}}>{e.subtitulo}</div>
                 </div>
               </div>
+              <div style={{background:'rgba(157,23,77,.05)',borderLeft:'3px solid var(--pink)',padding:'8px 12px',borderRadius:'0 var(--rs) var(--rs) 0',fontSize:13,color:'var(--tx2)',fontStyle:'italic',lineHeight:1.6,marginBottom:10}}>
+                {e.extracto}
+              </div>
+              <button className="btn btn-pk btn-sm" onClick={()=>addToast({msg:'Abriendo entrevista completa...',type:'ok'})}>Leer entrevista completa</button>
             </div>
           ))}
+          <div className="card cp" style={{textAlign:'center',padding:20,borderStyle:'dashed'}}>
+            <div style={{fontSize:22,marginBottom:8}}>🎙️</div>
+            <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:600,marginBottom:4}}>¿Conocés un talento para entrevistar?</div>
+            <div style={{fontSize:12,color:'var(--tx3)',marginBottom:12}}>Mandanos el contacto y lo sumamos</div>
+            <button className="btn btn-pk btn-sm" onClick={()=>setTab('sumar')}>Proponer entrevista</button>
+          </div>
         </div>
       )}
-      {tab==='tips' && (
+
+      {/* POR DEPORTE */}
+      {tab==='deportes' && (
         <div>
-          {[{em:'🎯',t:'Cómo escribir una crónica deportiva',b:'Contá el partido como si lo estuvieras viendo. Describí las emociones, los momentos clave y las jugadas que definieron el resultado.'},
-            {em:'📊',t:'Analizar táctica sin ser experto',b:'Fijate en las posiciones en el campo, cómo presionan en defensa, y si hay patrones en el ataque. Con ver 3-4 jugadas podés sacar conclusiones.'},
-            {em:'🎙️',t:'Tu primera entrevista a un deportista',b:'Prepará las preguntas antes. Hacé preguntas abiertas con "¿Cómo...?" o "¿Por qué...?". Escuchá activamente y no interrumpas.'},
-          ].map((tip,i) => (
-            <div key={i} className="card cp" style={{marginBottom:10,display:'flex',gap:12}}>
-              <span style={{fontSize:24,flexShrink:0}}>{tip.em}</span>
-              <div><div style={{fontFamily:'var(--fd)',fontSize:14,fontWeight:600,marginBottom:4}}>{tip.t}</div><div style={{fontSize:12,color:'var(--tx2)',lineHeight:1.6}}>{tip.b}</div></div>
+          <div style={{display:'grid',gap:10,gridTemplateColumns:'1fr 1fr'}}>
+            {[
+              {em:'⚽',n:'Fútbol',cant:14,color:'#1E8449'},
+              {em:'🏉',n:'Rugby',cant:6,color:'#7C3AED'},
+              {em:'🎾',n:'Tenis',cant:5,color:'#B45309'},
+              {em:'🏀',n:'Básquet',cant:4,color:'#C0392B'},
+              {em:'🏊',n:'Natación',cant:3,color:'#0891B2'},
+              {em:'🥊',n:'Boxeo',cant:2,color:'#9D174D'},
+              {em:'🏋️',n:'Atletismo',cant:3,color:'#065F46'},
+              {em:'🎿',n:'Otros',cant:8,color:'#6B7280'},
+            ].map((d,i) => (
+              <div key={i} className="card cs" style={{cursor:'pointer',textAlign:'center',padding:'14px 10px',transition:'.2s'}}
+                onClick={()=>addToast({msg:`Talentos de ${d.n}: ${d.cant} perfiles`,type:'ok'})}
+                onMouseEnter={e=>e.currentTarget.style.borderColor=d.color}
+                onMouseLeave={e=>e.currentTarget.style.borderColor='var(--br)'}>
+                <div style={{fontSize:26,marginBottom:5}}>{d.em}</div>
+                <div style={{fontFamily:'var(--fd)',fontSize:12,fontWeight:700,color:d.color,marginBottom:2}}>{d.n}</div>
+                <div style={{fontSize:10,color:'var(--tx3)'}}>{d.cant} talentos</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* SEGUIMIENTO */}
+      {tab==='seguimiento' && (
+        <div>
+          <div style={{fontSize:12,color:'var(--tx2)',marginBottom:14,lineHeight:1.55}}>
+            📈 Seguí la evolución de los talentos que te interesan. Recibís actualizaciones cuando hay novedades.
+          </div>
+          {TALENTOS.map((t,i) => (
+            <div key={i} className="card cs" style={{marginBottom:10,display:'flex',alignItems:'center',gap:10}}>
+              <span style={{fontSize:22}}>{t.em}</span>
+              <div style={{flex:1}}>
+                <div style={{fontFamily:'var(--fd)',fontSize:12,fontWeight:700}}>{t.nombre}</div>
+                <div style={{fontSize:11,color:'var(--tx3)'}}>{t.deporte} · {t.club}</div>
+              </div>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:10,color:'var(--green)',fontWeight:600,marginBottom:2}}>▲ En progreso</div>
+                <button className="btn btn-pk btn-sm" style={{fontSize:10,padding:'3px 9px'}} onClick={()=>addToast({msg:`Siguiendo a ${t.nombre} 📈`,type:'ok'})}>Seguir</button>
+              </div>
             </div>
           ))}
         </div>
       )}
-      {tab==='enviar' && (
+
+      {/* SUMÁ UN TALENTO */}
+      {tab==='sumar' && (
         <div>
           <div style={{background:'linear-gradient(135deg,#FDF2F8,#FCE7F3)',border:'1.5px solid var(--pink)',borderRadius:'var(--rl)',padding:18,marginBottom:16}}>
-            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'#9D174D',marginBottom:5}}>¿Querés publicar en la Revista?</div>
-            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6,marginBottom:12}}>Si tenés entre 10 y 22 años y amás el deporte, este es tu espacio. Mandanos tu nota y te ayudamos a mejorarla.</div>
-            <button className="btn btn-pk" onClick={()=>setShowForm(true)}><Ic.Pen style={{width:13,height:13}}/> Mandar mi nota ahora</button>
-          </div>
-        </div>
-      )}
-      {showForm && (
-        <div className="mbg" onClick={()=>setShowForm(false)}>
-          <div className="mdl" onClick={e=>e.stopPropagation()}>
-            <div className="mdl-h"><div className="mdl-t" style={{color:'#9D174D'}}>✏️ Publicar nota</div><button className="cls" onClick={()=>setShowForm(false)}><Ic.X/></button></div>
-            <div>
-              <div style={{marginBottom:10}}><label className="fl">Tu nombre</label><input className="fi" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Juan o 'El_Pibe_10'"/></div>
-              <div style={{marginBottom:10}}><label className="fl">Tu edad</label><input className="fi" type="number" value={form.edad} onChange={e=>setForm(f=>({...f,edad:e.target.value}))} placeholder="15" min="8" max="25"/></div>
-              <div style={{marginBottom:10}}><label className="fl">Categoría</label>
-                <select className="fi" style={{background:'var(--cel-xl)'}} value={form.cat} onChange={e=>setForm(f=>({...f,cat:e.target.value}))}>
-                  {['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Hockey','Opinión','Crónica','Historia'].map(s=><option key={s}>{s}</option>)}
-                </select>
-              </div>
-              <div style={{marginBottom:10}}><label className="fl">Título</label><input className="fi" value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="El título más llamativo"/></div>
-              <div style={{marginBottom:16}}><label className="fl">Tu nota</label><textarea className="fi" value={form.texto} onChange={e=>setForm(f=>({...f,texto:e.target.value}))} placeholder="Escribí tu nota aquí. Mínimo 3 párrafos." style={{minHeight:100,resize:'vertical'}}/></div>
-              <button className="btn btn-pk" style={{width:'100%',justifyContent:'center'}} onClick={submitNota}>Enviar mi nota 🚀</button>
+            <div style={{fontFamily:'var(--fd)',fontSize:15,fontWeight:700,color:'#9D174D',marginBottom:5}}>➕ Nominar un Talento</div>
+            <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.6}}>
+              ¿Conocés a un joven deportista que merece ser reconocido? Completá el formulario y el equipo de Tribuna Libre lo evalúa.
             </div>
           </div>
+          <div style={{marginBottom:10}}><label className="fl">Nombre del talento</label><input className="fi" value={form.nombre} onChange={e=>setForm(f=>({...f,nombre:e.target.value}))} placeholder="Ej: Mateo López"/></div>
+          <div style={{marginBottom:10}}><label className="fl">Edad</label><input className="fi" type="number" value={form.edad} onChange={e=>setForm(f=>({...f,edad:e.target.value}))} placeholder="16" min="8" max="25"/></div>
+          <div style={{marginBottom:10}}><label className="fl">Deporte</label>
+            <select className="fi" style={{background:'var(--cel-xl)'}} value={form.deporte} onChange={e=>setForm(f=>({...f,deporte:e.target.value}))}>
+              <option value="">Seleccioná un deporte</option>
+              {['Fútbol','Rugby','Tenis','Básquet','Natación','Atletismo','Boxeo','Hockey','Vóley','Otro'].map(s=><option key={s}>{s}</option>)}
+            </select>
+          </div>
+          <div style={{marginBottom:10}}><label className="fl">¿Por qué merece estar en La Tribu Descubre?</label><textarea className="fi" value={form.descripcion} onChange={e=>setForm(f=>({...f,descripcion:e.target.value}))} placeholder="Contanos su historia, logros y potencial..." style={{minHeight:80,resize:'vertical'}}/></div>
+          <div style={{marginBottom:16}}><label className="fl">Contacto (opcional)</label><input className="fi" value={form.contacto} onChange={e=>setForm(f=>({...f,contacto:e.target.value}))} placeholder="Instagram, email o teléfono"/></div>
+          <button className="btn btn-pk" style={{width:'100%',justifyContent:'center'}} onClick={submitTalento}>Enviar nominación 🌟</button>
         </div>
       )}
     </div>
   );
 }
-
-/* ══════ RED DE PERIODISMO — restaurada completa ══════ */
+/* ══════ RED DE PERIODISMO — incluye Periodismo Deportivo como pestaña ══════ */
 function RedPeriodismoPage({ addToast }) {
   const [tab, setTab] = useState('red');
   const [search, setSearch] = useState('');
@@ -1754,7 +2418,7 @@ function RedPeriodismoPage({ addToast }) {
         </div>
       </div>
       <div className="tabs">
-        {[{id:'red',l:'👥 Periodistas'},{id:'medios',l:'📺 Medios'},{id:'unirse',l:'✋ Unirme'}].map(t => (
+        {[{id:'red',l:'👥 Periodistas'},{id:'medios',l:'📺 Medios'},{id:'periodismo',l:'🎙️ Periodismo Dep.'},{id:'unirse',l:'✋ Unirme'}].map(t => (
           <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
         ))}
       </div>
@@ -1824,12 +2488,13 @@ function RedPeriodismoPage({ addToast }) {
           </div>
         </div>
       )}
+      {tab==='periodismo' && <PeriodismoDeportivoSubTab addToast={addToast}/>}
     </div>
   );
 }
 
-/* ══════ PERIODISMO DEPORTIVO PAGE — restaurada completa ══════ */
-function PeriodismoPage({ addToast }) {
+/* ══════ PERIODISMO DEPORTIVO — subcategoría dentro de Red de Periodismo ══════ */
+function PeriodismoDeportivoSubTab({ addToast }) {
   const [tab, setTab] = useState('articulos');
   const [showForm, setShowForm] = useState(false);
   const [nota, setNota] = useState({titulo:'',resumen:'',autor:'',cat:'Coberturas'});
@@ -1840,7 +2505,6 @@ function PeriodismoPage({ addToast }) {
     {id:2,u:'LucasMiró',text:'Excelente análisis táctico del partido',own:false},
   ]);
   const chatRef = useRef();
-
   function sendChat() {
     if (!chatMsg.trim()) return;
     setChatMsgs(m => [...m,{id:Date.now(),u:'Vos',text:chatMsg,own:true}]);
@@ -1848,7 +2512,7 @@ function PeriodismoPage({ addToast }) {
     setTimeout(()=>{if(chatRef.current)chatRef.current.scrollTop=chatRef.current.scrollHeight;},50);
   }
   function submitNota(e) {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!nota.titulo.trim() || !nota.resumen.trim()) { addToast({msg:'Completá título y resumen',type:'err'}); return; }
     const nueva = {id:Date.now(),emoji:'✍️',cat:nota.cat,titulo:nota.titulo,resumen:nota.resumen,autor:nota.autor||'Colaborador',fecha:new Date().toLocaleDateString('es-AR'),lecturas:0};
     setUserNotas(n => [nueva,...n]);
@@ -1856,27 +2520,24 @@ function PeriodismoPage({ addToast }) {
     setShowForm(false);
     addToast({msg:'¡Tu columna fue publicada! 🎉',type:'ok'});
   }
-
   return (
     <div>
-      <div style={{background:'linear-gradient(135deg,#5B21B6,var(--purple))',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:16,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>🎙️</span>
-        <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Periodismo Deportivo</div>
-          <div style={{fontSize:12,opacity:.8}}>Recursos, técnicas y comunidad para periodistas</div>
+      <div style={{background:'linear-gradient(135deg,#5B21B6,var(--purple))',borderRadius:'var(--rl)',padding:'14px 16px',marginBottom:12,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:26}}>🎙️</span>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>Periodismo Deportivo</div>
+          <div style={{fontSize:11,opacity:.8}}>Recursos, técnicas y comunidad para periodistas</div>
         </div>
-        <button className="btn btn-sm" style={{marginLeft:'auto',background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30}} onClick={()=>setShowForm(true)}>
+        <button className="btn btn-sm" style={{background:'rgba(255,255,255,.2)',border:'1.5px solid rgba(255,255,255,.4)',color:'white',borderRadius:30,flexShrink:0}} onClick={()=>setShowForm(true)}>
           <Ic.Pen style={{width:12,height:12}}/> Publicar columna
         </button>
       </div>
-      {/* BANNER PERIODISMO */}
       <div className="section-banner">
         <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/reddeperiodismo.png"
-          alt="Red de Periodismo Deportivo" loading="lazy"
-          onError={e=>e.target.parentNode.style.display='none'}/>
+          alt="Red de Periodismo Deportivo" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
-      <div className="tabs">
-        {[{id:'articulos',l:'📰 Artículos'},{id:'publicar',l:'✍️ Publicar'},{id:'chat_vivo',l:'🎙️ Chat en Vivo'},{id:'recursos',l:'🛠️ Recursos'},{id:'cursos',l:'🎓 Formación'}].map(t => (
+      <div className="tabs" style={{flexWrap:'wrap'}}>
+        {[{id:'articulos',l:'📰 Artículos'},{id:'publicar',l:'✍️ Publicar'},{id:'chat_vivo',l:'🎙️ Chat'},{id:'recursos',l:'🛠️ Recursos'},{id:'cursos',l:'🎓 Formación'}].map(t => (
           <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
         ))}
       </div>
@@ -2276,13 +2937,12 @@ function RightSidebar({ onNav, posts=[] }) {
       <div>
         <div className="sh"><div className="st">Secciones</div></div>
         <div style={{display:'grid',gap:6}}>
-          {[{id:'comunidad',em:'👥',l:'Comunidad',c:'var(--cel-d)',bg:'var(--cel-xl)'},
-            {id:'streaming',em:'📡',l:'Streaming',c:'var(--red)',bg:'rgba(192,57,43,.07)'},
-            {id:'prode',em:'🏆',l:'El Prode',c:'#B7770D',bg:'#FFFBEB'},
-            {id:'copa',em:'🌎',l:'Copa del Mundo',c:'var(--cel-d)',bg:'var(--cel-xl)'},
-            {id:'revista',em:'✏️',l:'Revista Juvenil',c:'#9D174D',bg:'#FDF2F8'},
-            {id:'red',em:'🌐',l:'Red Periodismo',c:'var(--teal)',bg:'rgba(8,145,178,.07)'},
-            {id:'peri',em:'🎙️',l:'Periodismo Dep.',c:'var(--purple)',bg:'rgba(139,92,246,.07)'},
+          {[{id:'comunidad',em:'👥',l:'Comunidad',          c:'var(--cel-d)', bg:'var(--cel-xl)'},
+            {id:'streaming',em:'📡',l:'Streaming',           c:'var(--red)',   bg:'rgba(192,57,43,.07)'},
+            {id:'prode',    em:'🏆',l:'La Tribu Predice',   c:'#B7770D',      bg:'#FFFBEB'},
+            {id:'copa',     em:'🌎',l:'Copa del Mundo',     c:'var(--cel-d)', bg:'var(--cel-xl)'},
+            {id:'revista',  em:'🌟',l:'La Tribu Descubre',  c:'#9D174D',      bg:'#FDF2F8'},
+            {id:'red',      em:'🌐',l:'Red de Periodismo',  c:'var(--teal)',  bg:'rgba(8,145,178,.07)'},
           ].map((s,i) => (
             <div key={i} onClick={()=>onNav(s.id)}
               style={{background:s.bg,border:`1px solid ${s.c}22`,borderRadius:'var(--rs)',padding:'8px 11px',cursor:'pointer',display:'flex',alignItems:'center',gap:8,transition:'.15s'}}
@@ -2333,26 +2993,70 @@ function RightSidebar({ onNav, posts=[] }) {
 
 /* ══════════════════════════ NAV CONFIG ══════════════════════════ */
 const NAV = [
-  {id:'home',      l:'Inicio',              icon:'Home'},
-  {id:'news',      l:'Noticias',            icon:'News'},
-  {id:'comunidad', l:'Comunidad',           icon:'Com'},
-  {id:'streaming', l:'Streaming',           icon:'Stream'},
-  {id:'prode',     l:'El Prode',            icon:'Prode'},
-  {id:'copa',      l:'Copas',               icon:'Copa'},
-  {id:'revista',   l:'Revista Juvenil',     icon:'Rev'},
-  {id:'red',       l:'Red de Periodismo',   icon:'Net'},
-  {id:'peri',      l:'Periodismo Dep.',     icon:'Mic'},
-  {id:'forum',     l:'Debates',             icon:'Forum'},
-  {id:'var',       l:'El VAR',              icon:'Check'},
-  {id:'profile',   l:'Mi perfil',           icon:'Profile'},
+  {id:'home',      l:'Inicio',                icon:'Home'},
+  {id:'news',      l:'Noticias',              icon:'News'},
+  {id:'comunidad', l:'Comunidad',             icon:'Com'},
+  {id:'streaming', l:'Streaming',             icon:'Stream'},
+  {id:'prode',     l:'La Tribu Predice',      icon:'Prode'},
+  {id:'revista',   l:'La Tribu Descubre',     icon:'Rev'},
+  {id:'red',       l:'Red de Periodismo',     icon:'Net'},
+  {id:'var',       l:'El VAR',                icon:'Check'},
+  {id:'profile',   l:'Mi perfil',             icon:'Profile'},
 ];
 const MOBILE_NAV = [
-  {id:'home',      l:'Inicio',    icon:'Home'},
-  {id:'news',      l:'Noticias',  icon:'News'},
-  {id:'comunidad', l:'Comunidad', icon:'Com'},
-  {id:'streaming', l:'Streaming', icon:'Stream'},
-  {id:'profile',   l:'Perfil',    icon:'Profile'},
+  {id:'__menu__',  l:'Menú',     icon:'MenuIcon'},
+  {id:'news',      l:'Noticias', icon:'News'},
+  {id:'comunidad', l:'Comunidad',icon:'Com'},
+  {id:'streaming', l:'Streaming',icon:'Stream'},
+  {id:'profile',   l:'Perfil',   icon:'Profile'},
 ];
+const FULL_MOBILE_MENU = [
+  {id:'home',      l:'Inicio',               em:'🏠', icon:'Home'},
+  {id:'news',      l:'Noticias',             em:'📰', icon:'News'},
+  {id:'comunidad', l:'Comunidad',            em:'👥', icon:'Com'},
+  {id:'streaming', l:'Streaming',            em:'📡', icon:'Stream'},
+  {id:'prode',     l:'El Prode',             em:'🏆', icon:'Prode'},
+  {id:'revista',   l:'Revista Juvenil',      em:'🌟', icon:'Rev'},
+  {id:'red',       l:'Red de Periodismo',    em:'🌐', icon:'Net'},
+  {id:'red',       l:'Periodismo Dep.',      em:'🎙️', icon:'Mic'},
+  {id:'live',      l:'En Vivo',              em:'🔴', icon:'Live'},
+  {id:'var',       l:'Debates',              em:'💬', icon:'Forum'},
+  {id:'profile',   l:'Mi Perfil',            em:'👤', icon:'Profile'},
+];
+
+/* ══════════════════════════ MOBILE FULL MENU COMPONENT ══════════════════════════ */
+function MobileMenuFull({ page, onNav, onClose }) {
+  const MobileMenu = {
+    open()  { /* handled by parent state */ },
+    close() { onClose(); },
+    toggle(){ /* handled by parent */ },
+  };
+  return (
+    <>
+      {/* Overlay backdrop */}
+      <div className="mobile-menu-overlay" onClick={MobileMenu.close}/>
+      {/* Drawer panel */}
+      <div className="mobile-menu-full">
+        <div className="mmf-hdl"/>
+        <div className="mmf-label">Navegación completa</div>
+        <div className="mmf-grid">
+          {FULL_MOBILE_MENU.map((n, i) => {
+            const Icon = Ic[n.icon];
+            const isOn = page === n.id;
+            return (
+              <div key={i} className={`mmf-item${isOn ? ' on' : ''}`}
+                onClick={() => { onNav(n.id); MobileMenu.close(); }}>
+                <span className="mmf-em">{n.em}</span>
+                {Icon && <Icon/>}
+                <span style={{fontSize:11.5,fontWeight:600,lineHeight:1.2}}>{n.l}</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </>
+  );
+}
 
 /* ══════════════════════════ APP ══════════════════════════ */
 function App() {
@@ -2360,6 +3064,7 @@ function App() {
   const [article, setArticle] = useState(null);
   const [user, setUser]     = useState({ isGuest: true });
   const [authOpen, setAuthOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { toasts, add: addToast } = useToasts();
 
   useEffect(() => {
@@ -2427,7 +3132,7 @@ function App() {
               return (
                 <div key={n.id} className={`nl${page===n.id||(page==='article'&&n.id==='news')?' on':''}`} onClick={()=>nav(n.id)}>
                   <Icon/><span>{n.l}</span>
-                  {n.id==='prode'     && <span className="nl-badge" style={{background:'var(--sun)'}}>!</span>}
+                  {n.id==='prode'     && <span className="nl-badge" style={{background:'var(--sun)'}}>🏆</span>}
                   {n.id==='live'      && <span className="nl-badge">3</span>}
                   {n.id==='comunidad' && <span className="nl-badge" style={{background:'var(--cel-d)'}}>●</span>}
                   {n.id==='streaming' && <span className="nl-badge" style={{background:'var(--red)'}}>▶</span>}
@@ -2462,17 +3167,11 @@ function App() {
             {page==='copa'      && <CopaPage/>}
             {page==='revista'   && <RevistaPage user={user} addToast={addToast}/>}
             {page==='red'       && <RedPeriodismoPage addToast={addToast}/>}
-            {page==='peri'      && <PeriodismoPage addToast={addToast}/>}
             {page==='live'      && (
               <div>
                 <div className="sh"><div className="st" style={{color:'var(--red)'}}><div className="ldot"/>En Vivo</div></div>
                 <LiveStrip onNav={nav}/>
                 <div className="card cp" style={{marginTop:14}}><Poll poll={STATIC_POLLS[0]}/></div>
-              </div>
-            )}
-            {page==='forum' && (              <div>
-                <div className="sh"><div className="st">Debates</div></div>
-                {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:12}}><Poll poll={p}/></div>)}
               </div>
             )}
             {page==='var' && (
@@ -2522,13 +3221,37 @@ function App() {
         {MOBILE_NAV.map(n => {
           const Icon = Ic[n.icon];
           if (!Icon) return null;
+          const isMenu = n.id === '__menu__';
+          const isOn   = isMenu ? mobileMenuOpen : (page === n.id);
           return (
-            <div key={n.id} className={`bni${page===n.id?' on':''}`} onClick={()=>nav(n.id)}>
-              <Icon/><span>{n.l}</span>
+            <div
+              key={n.id}
+              className={`bni${isOn ? ' on' : ''}`}
+              style={isMenu && mobileMenuOpen ? {color:'var(--cel-d)',position:'relative'} : {position:'relative'}}
+              onClick={() => {
+                if (isMenu) {
+                  setMobileMenuOpen(o => !o);
+                } else {
+                  setMobileMenuOpen(false);
+                  nav(n.id);
+                }
+              }}
+            >
+              <Icon/>
+              <span>{n.l}</span>
             </div>
           );
         })}
       </div>
+
+      {/* MOBILE FULL MENU DRAWER */}
+      {mobileMenuOpen && (
+        <MobileMenuFull
+          page={page}
+          onNav={(id) => { nav(id); setMobileMenuOpen(false); }}
+          onClose={() => setMobileMenuOpen(false)}
+        />
+      )}
 
       {authOpen && <AuthModal onClose={()=>setAuthOpen(false)} onLogin={setUser} addToast={addToast}/>}
     </>
