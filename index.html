@@ -52,125 +52,110 @@ window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// RSS — proxy dual: allorigins.win (primario, sin límites)
-//                   rss2json.com  (secundario, con caché)
+// RSS CON IMÁGENES — usa rss2json.com como proxy CORS.
+// Funciona 100% desde GitHub Pages sin backend.
+// Gratuito: 500 req/día. Para más, registrá un api_key gratis
+// en https://rss2json.com y reemplazá RSS2JSON_KEY abajo.
 // ═══════════════════════════════════════════════════════════
+// Feeds RSS — fuentes que no bloquean proxies CORS gratuitos
 window.RSS_FEEDS = [
-  { name: 'TyC Sports',   url: 'https://www.tycsports.com/rss.xml' },
-  { name: 'Infobae Dep.', url: 'https://www.infobae.com/feeds/rss/deportes/' },
-  { name: 'Olé',          url: 'https://www.ole.com.ar/rss/home/' },
-  { name: 'Télam Dep.',   url: 'https://www.telam.com.ar/rss/deportes.xml' },
+  { name: 'BBC Deportes', url: 'https://feeds.bbci.co.uk/sport/rss.xml' },
+  { name: 'ESPN',         url: 'https://www.espn.com/espn/rss/news' },
+  { name: 'Marca',        url: 'https://www.marca.com/rss/portada.xml' },
+  { name: 'AS Fútbol',    url: 'https://as.com/rss/tags/futbol.xml' },
+  { name: 'Sky Sports',   url: 'https://www.skysports.com/rss/12040' },
 ];
 
+// Extrae la primera imagen de HTML de contenido RSS
 function extractImgFromHtml(html) {
   if (!html) return null;
   const m = html.match(/<img[^>]+src=["']([^"']+)["']/i);
   return m ? m[1] : null;
 }
 
-// Parsea XML de RSS/Atom con DOMParser
-function parseRSSXML(xmlText, sourceName) {
-  try {
-    const doc = new DOMParser().parseFromString(xmlText, 'text/xml');
-    const items = Array.from(doc.querySelectorAll('item, entry')).slice(0, 20);
-    const get = (el, tag) => {
-      const node = el.querySelector(tag);
-      return node ? (node.textContent || '').trim() : '';
+// Parsea XML RSS a array de items con el formato interno de la app
+function parseRSSXml(xmlText, sourceName) {
+  const parser = new DOMParser();
+  const xml    = parser.parseFromString(xmlText, 'text/xml');
+  const entries = [...xml.querySelectorAll('item')];
+  if (!entries.length) throw new Error('sin items en el XML');
+  return entries.slice(0, 10).map(item => {
+    const get  = tag => item.querySelector(tag)?.textContent?.trim() || '';
+    const desc = get('description');
+    const img  =
+      item.querySelector('enclosure[type^="image"]')?.getAttribute('url') ||
+      item.querySelector('thumbnail')?.getAttribute('url') ||
+      item.querySelector('content')?.getAttribute('url') ||
+      extractImgFromHtml(desc) || null;
+    return {
+      _id:         get('guid') || get('link'),
+      title:       get('title'),
+      excerpt:     desc.replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0, 200),
+      publishedAt: get('pubDate') || new Date().toISOString(),
+      coverImage:  img,
+      cat:         get('category') || 'Deportes',
+      category:    get('category') || 'Deportes',
+      meta:        { sourceName, sourceUrl: get('link') || '#' }
     };
-    const getAttr = (el, selector, attr) => {
-      // CSS escaping for namespaced selectors
-      try { return el.querySelector(selector)?.getAttribute(attr) || null; } catch(e) { return null; }
-    };
-    return items.map(item => {
-      // Extracción de imagen — múltiples fuentes
-      const ns = item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'thumbnail')[0]
-               || item.getElementsByTagNameNS('http://search.yahoo.com/mrss/', 'content')[0];
-      const img = (ns?.getAttribute('url')) ||
-        (item.querySelector('enclosure')?.getAttribute('type')?.startsWith('image') ? item.querySelector('enclosure').getAttribute('url') : null) ||
-        extractImgFromHtml(get(item, 'encoded') || get(item, 'content') || get(item, 'description')) ||
-        null;
-
-      const link  = get(item, 'link') || get(item, 'id') || '#';
-      const desc  = (get(item, 'description') || get(item, 'summary') || '')
-                    .replace(/<[^>]+>/g,'').replace(/&[a-z#0-9]+;/gi,' ').trim().slice(0,200);
-      return {
-        _id:         get(item,'guid') || link,
-        title:       get(item,'title').replace(/\s+/g,' '),
-        excerpt:     desc,
-        publishedAt: get(item,'pubDate') || get(item,'published') || new Date().toISOString(),
-        coverImage:  img,
-        cat:         get(item,'category') || 'Deportes',
-        category:    get(item,'category') || 'Deportes',
-        meta:        { sourceName, sourceUrl: link }
-      };
-    }).filter(i => i.title);
-  } catch(e) { return []; }
+  });
 }
 
+// fetchRSSFeed — usa proxies CORS gratuitos + DOMParser (sin rss2json)
 window.fetchRSSFeed = async function(feedUrl, sourceName) {
-  const CACHE_TTL = 15 * 60 * 1000; // 15 min
-  const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g,'_');
+  const CACHE_TTL = 15 * 60 * 1000;
+  const cacheKey  = 'tl_rss_' + sourceName.replace(/\W/g, '_');
 
-  // 1) Intentar caché fresco
+  // 1. Caché fresco
   try {
     const raw = localStorage.getItem(cacheKey);
     if (raw) {
       const { data, ts } = JSON.parse(raw);
       if (Date.now() - ts < CACHE_TTL && Array.isArray(data) && data.length > 0) {
-        console.log(`RSS [${sourceName}] caché (${data.length})`);
+        console.log(`RSS [${sourceName}] desde caché (${data.length} items)`);
         return data;
       }
     }
   } catch(e) {}
 
-  const save = (items) => {
-    try { localStorage.setItem(cacheKey, JSON.stringify({ data: items, ts: Date.now() })); } catch(e) {}
-  };
-  const abort = (ms) => { const c=new AbortController(); setTimeout(()=>c.abort(),ms); return c; };
+  // 2. Proxies CORS gratuitos — se prueban en orden hasta que uno funcione
+  const proxies = [
+    url => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    url => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+    url => `https://thingproxy.freeboard.io/fetch/${url}`,
+  ];
 
-  // 2) allorigins.win — sin límites, soporta todos los feeds
-  try {
-    const resp = await fetch(
-      `https://api.allorigins.win/raw?url=${encodeURIComponent(feedUrl)}`,
-      { signal: abort(9000).signal }
-    );
-    if (!resp.ok) throw new Error(`allorigins HTTP ${resp.status}`);
-    const text  = await resp.text();
-    const items = parseRSSXML(text, sourceName);
-    if (items.length > 0) { save(items); console.log(`RSS [${sourceName}] allorigins ✓ ${items.length}`); return items; }
-  } catch(e) { console.warn(`RSS [${sourceName}] allorigins falló:`, e.message); }
+  for (let i = 0; i < proxies.length; i++) {
+    const proxyUrl = proxies[i](feedUrl);
+    try {
+      const ctrl = new AbortController();
+      const tId  = setTimeout(() => ctrl.abort(), 9000);
+      const resp = await fetch(proxyUrl, { signal: ctrl.signal }).finally(() => clearTimeout(tId));
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      const text  = await resp.text();
+      const items = parseRSSXml(text, sourceName);
+      try { localStorage.setItem(cacheKey, JSON.stringify({ data: items, ts: Date.now() })); } catch(e) {}
+      console.log(`RSS [${sourceName}] cargado correctamente: ${items.length} noticias (proxy ${i+1})`);
+      return items;
+    } catch(e) {
+      console.warn(`RSS [${sourceName}] proxy ${i+1} falló: ${e.message}`);
+    }
+  }
 
-  // 3) rss2json.com — fallback con imágenes automáticas
-  try {
-    const resp = await fetch(
-      `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&count=20`,
-      { signal: abort(8000).signal }
-    );
-    if (!resp.ok) throw new Error(`rss2json HTTP ${resp.status}`);
-    const data  = await resp.json();
-    if (data.status !== 'ok') throw new Error('rss2json: ' + data.message);
-    const items = data.items.map(item => ({
-      _id:         item.guid || item.link,
-      title:       item.title,
-      excerpt:     (item.description||'').replace(/<[^>]+>/g,'').replace(/&[a-z]+;/gi,' ').trim().slice(0,200),
-      publishedAt: item.pubDate || new Date().toISOString(),
-      coverImage:  item.thumbnail || (item.enclosure?.link?.match(/\.(jpe?g|png|webp|gif)/i)?item.enclosure.link:null) || extractImgFromHtml(item.content) || null,
-      cat:         item.categories?.[0] || 'Deportes',
-      category:    item.categories?.[0] || 'Deportes',
-      meta:        { sourceName, sourceUrl: item.link || '#' }
-    }));
-    if (items.length > 0) { save(items); console.log(`RSS [${sourceName}] rss2json ✓ ${items.length}`); return items; }
-  } catch(e) { console.warn(`RSS [${sourceName}] rss2json falló:`, e.message); }
-
-  // 4) Caché viejo como último recurso
+  // 3. Caché vencido como último recurso
   try {
     const raw = localStorage.getItem(cacheKey);
-    if (raw) { const { data } = JSON.parse(raw); if (Array.isArray(data) && data.length) return data; }
+    if (raw) {
+      const { data } = JSON.parse(raw);
+      if (Array.isArray(data) && data.length > 0) {
+        console.log(`RSS [${sourceName}] usando caché vencido`);
+        return data;
+      }
+    }
   } catch(e) {}
 
+  console.warn(`RSS [${sourceName}] todos los proxies fallaron`);
   return [];
 };
-</script>
 </script>
 
 <style>
@@ -188,7 +173,7 @@ window.fetchRSSFeed = async function(feedUrl, sourceName) {
   --h:60px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
-html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased;padding-top:calc(var(--h) + 5px)}
+html,body{background:var(--bg);color:var(--tx);font-family:var(--fw);min-height:100vh;-webkit-font-smoothing:antialiased}
 h1,h2,h3{font-family:var(--fd)}
 button{cursor:pointer;border:none;outline:none;font-family:var(--fw)}
 input,textarea,select{outline:none;font-family:var(--fw);color:var(--tx)}
@@ -223,7 +208,7 @@ img{max-width:100%;height:auto;display:block}
 .usr-btn:hover .usr-nm{color:white}
 
 /* SHELL — FIX: columna central siempre visible con overflow correcto */
-.shell{display:flex;margin-top:0;min-height:calc(100vh - var(--h) - 5px)}
+.shell{display:flex;margin-top:calc(var(--h)+5px);min-height:calc(100vh - var(--h) - 5px)}
 .lnav{width:200px;flex-shrink:0;position:sticky;top:calc(var(--h)+5px);height:calc(100vh - var(--h) - 5px);overflow-y:auto;scrollbar-width:none;background:var(--white);border-right:1px solid var(--br);padding:10px 0;display:none;flex-direction:column}
 @media(min-width:860px){.lnav{display:flex}}
 .ng{padding:0 8px;margin-bottom:5px}
@@ -534,7 +519,8 @@ img{max-width:100%;height:auto;display:block}
 </style>
 </head>
 <body>
-<div id="root">
+<div id="root" class="" style="padding-top: 68px; padding-bottom: 68px; background-position: initial; background-size: initial; background-repeat: initial; background-attachment: initial; background-origin: initial; background-clip: initial; background-color: rgb(255, 255, 255);"><div class="toasts"></div><div class="flag-stripe"></div><div class="hdr"><div class="logo-w"><img class="logo-img" src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png" alt="Logo" style="width: 49px; height: auto;"><div class="logo-txt"><div class="logo-main">Tribuna Libre</div><div class="logo-sub">Red de Periodismo <b>Deportivo</b></div></div></div><div class="ticker"><div class="tk-tr"><div class="tk-it"><b>RIVER</b>2-1 Racing · 67'</div><div class="tk-it"><b>PUMAS</b>28-20 All Blacks</div><div class="tk-it"><b>COLAPINTO</b>lidera libres Mónaco</div><div class="tk-it"><b>CERÚNDOLO</b>semis Madrid</div><div class="tk-it"><b>MESSI</b>hat-trick en MLS</div><div class="tk-it"><b>VILDOZA</b>campeón Liga Nac.</div><div class="tk-it"><b>RIVER</b>2-1 Racing · 67'</div><div class="tk-it"><b>PUMAS</b>28-20 All Blacks</div><div class="tk-it"><b>COLAPINTO</b>lidera libres Mónaco</div><div class="tk-it"><b>CERÚNDOLO</b>semis Madrid</div><div class="tk-it"><b>MESSI</b>hat-trick en MLS</div><div class="tk-it"><b>VILDOZA</b>campeón Liga Nac.</div></div></div><div class="hdr-r"><button class="sign-btn">Ingresar / Registrarse</button></div></div><div class="shell"><nav class="lnav"><div class="nl-live"><div class="ldot"></div><span class="nl-live-t">EN VIVO</span><span class="nl-live-c">3</span></div><div class="ng"><span class="nlbl">Navegación</span><div class="nl on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg><span>Inicio</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"></path></svg><span>Noticias</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path></svg><span>Comunidad</span><span class="nl-badge" style="background: var(--cel-d);">●</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg><span>Streaming</span><span class="nl-badge" style="background: var(--red);">▶</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"></rect><path d="M9 8l2 2 4-4"></path></svg><span>El Prode</span><span class="nl-badge" style="background: var(--sun);">!</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 21 12 17 16 21"></polyline><line x1="12" y1="17" x2="12" y2="11"></line><path d="M7 4.8A5 5 0 0012 9a5 5 0 005-4.2M4 4h16v2a4 4 0 01-4 4H8a4 4 0 01-4-4z"></path></svg><span>Copas</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"></path><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"></path></svg><span>Revista Juvenil</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87"></path><path d="M16 3.13a4 4 0 010 7.75"></path></svg><span>Red de Periodismo</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"></path><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"></path></svg><span>Periodismo Dep.</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"></circle><path d="M4.93 4.93a10 10 0 000 14.14M19.07 4.93a10 10 0 010 14.14M7.76 7.76a6 6 0 000 8.49M16.24 7.76a6 6 0 010 8.49"></path></svg><span>En Vivo</span><span class="nl-badge">3</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg><span>Debates</span></div><div class="nl"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span>Mi perfil</span></div></div><div class="nav-hr"></div><div class="ng"><span class="nlbl">Equipos</span><div class="nl"><span style="font-size: 14px; width: 20px; text-align: center;">🔴</span>River Plate</div><div class="nl"><span style="font-size: 14px; width: 20px; text-align: center;">🔵</span>Boca Juniors</div><div class="nl"><span style="font-size: 14px; width: 20px; text-align: center;">⚡</span>Racing Club</div><div class="nl"><span style="font-size: 14px; width: 20px; text-align: center;">🏉</span>Los Pumas</div></div></nav><main class="main"><div style="max-width: 760px; margin: 0px auto;"><div><div class="welcome-hero"><img class="welcome-logo" src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/logochico.png" alt="Tribuna Libre" loading="lazy"><div class="welcome-txt"><div class="welcome-badge">⚽ Portal Deportivo Argentino</div><h2>Bienvenidos a tu mundo del deporte argentino</h2><p>Noticias · Streaming · Comunidad · Periodismo 🇦🇷</p></div></div><div style="background: rgba(74, 144, 217, 0.1); border: 1px solid var(--br); border-radius: var(--r); padding: 10px 14px; margin-bottom: 14px; display: flex; align-items: center; gap: 9px; font-size: 12px;"><span style="font-size: 18px;">📡</span><div><b style="color: var(--cel-d);">Modo sin servidor</b><div style="color: var(--tx2);">Mostrando contenido de ejemplo. Las noticias RSS se cargan automáticamente cuando hay conexión.</div></div></div><div class="hero"><div class="hero-bg"><span style="font-size: 80px;">⚽</span></div><div class="hero-ov"><span class="badge bc" style="margin-bottom: 8px; display: inline-block;">Fútbol</span><div class="hero-tit">River aplasta a Boca en el Superclásico más vibrante del año</div><div style="font-size: 12px; color: rgba(255, 255, 255, 0.55);">📡 TyC Sports</div><div style="display: flex; gap: 8px; margin-top: 11px;"><button class="btn btn-c btn-sm">Leer nota</button><button class="btn btn-sm" style="background: rgba(255, 255, 255, 0.15); border: 1.5px solid rgba(255, 255, 255, 0.4); color: white; border-radius: 30px;">Compartir</button></div></div></div><div class="sh"><div class="st" style="color: var(--red);"><div class="ldot"></div>En Vivo</div><span class="sl">Ver todo →</span></div><div class="lstrip"><div class="lmc lv"><div class="lms lv"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse; display: inline-block; margin-right: 3px;"></div>EN VIVO · 70'</div><div class="lmt"><div class="ltm"><span class="lem">⚽</span><div class="lnm">River</div></div><div class="lsc lv">2-1</div><div class="ltm"><span class="lem">⚽</span><div class="lnm">Racing</div></div></div></div><div class="lmc lv"><div class="lms lv"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse; display: inline-block; margin-right: 3px;"></div>EN VIVO · 3T</div><div class="lmt"><div class="ltm"><span class="lem">🏀</span><div class="lnm">Boca</div></div><div class="lsc lv">45-38</div><div class="ltm"><span class="lem">🏀</span><div class="lnm">San L.</div></div></div></div><div class="lmc lv"><div class="lms lv"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse; display: inline-block; margin-right: 3px;"></div>EN VIVO · 55'</div><div class="lmt"><div class="ltm"><span class="lem">🏉</span><div class="lnm">Pumas</div></div><div class="lsc lv">21-14</div><div class="ltm"><span class="lem">🏉</span><div class="lnm">Wallabies</div></div></div></div><div class="lmc"><div class="lms">20:30</div><div class="lmt"><div class="ltm"><span class="lem">⚽</span><div class="lnm">Independiente</div></div><div style="font-family: var(--fd); font-size: 10px; color: var(--tx3); text-align: center;">vs</div><div class="ltm"><span class="lem">⚽</span><div class="lnm">Estudiantes</div></div></div></div></div><div class="home-preview"><div class="home-preview-hd"><div class="home-preview-title"><span>📡</span>Streaming</div><button class="home-preview-btn">Ver todo →</button></div><div class="home-preview-body"><div class="stream-row"><div class="stream-row-em">⚽</div><div class="stream-row-info"><div class="stream-row-title">River vs Racing — Liga Profesional</div><div class="stream-row-ch">ESPN Premium</div></div><div class="stream-viewers"><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse;"></div>14.200</div></div><div class="stream-row"><div class="stream-row-em">🏉</div><div class="stream-row-info"><div class="stream-row-title">Los Pumas vs All Blacks — Análisis</div><div class="stream-row-ch">Rugby Pass TV</div></div><div class="stream-viewers"><div style="width: 6px; height: 6px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse;"></div>8.900</div></div><div class="stream-row"><div class="stream-row-em">🏎️</div><div class="stream-row-info"><div class="stream-row-title">F1 Mónaco — Libres completas</div><div class="stream-row-ch">ESPN F1</div></div></div></div></div><div class="home-preview"><div class="home-preview-hd"><div class="home-preview-title"><span>👥</span>Comunidad</div><button class="home-preview-btn">Ver todo →</button></div><div class="home-preview-body"><div class="com-post-mini"><div class="com-av-mini" style="background: rgb(232, 38, 42);">GT</div><div class="com-post-mini-body"><div class="com-post-mini-user">Gonzalo_TL</div><div class="com-post-mini-txt">¿Alguien más vio el golazo de Borja? Pura magia argentina 🔥⚽</div></div></div><div class="com-post-mini"><div class="com-av-mini" style="background: rgb(22, 163, 74);">PF</div><div class="com-post-mini-body"><div class="com-post-mini-user">PumasFan</div><div class="com-post-mini-txt">Los Pumas hicieron historia. Nunca olvidaré ese try de Matera. Somos grandes 🏉🇦🇷</div></div></div><div class="com-post-mini"><div class="com-av-mini" style="background: rgb(245, 158, 11);">CA</div><div class="com-post-mini-body"><div class="com-post-mini-user">ColapintoAR</div><div class="com-post-mini-txt">Franco Colapinto, el orgullo argentino en la F1! Que sigan los resultados 🏎️</div></div></div></div></div><div style="display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-bottom: 18px;"><div style="background: var(--cel-xl); border: 1.5px solid var(--cel-d)22; border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">👥</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: var(--cel-d); margin-bottom: 2px;">Comunidad</div><div style="font-size: 10px; color: var(--tx3);">Foro y debates</div></div><div style="background: rgba(192, 57, 43, 0.07); border-color: var(--red)22; border-top-style: ; border-top-width: ; border-right-style: ; border-right-width: ; border-bottom-style: ; border-bottom-width: ; border-left-style: ; border-left-width: ; border-image-source: ; border-image-slice: ; border-image-width: ; border-image-outset: ; border-image-repeat: ; border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">📡</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: var(--red); margin-bottom: 2px;">Streaming</div><div style="font-size: 10px; color: var(--tx3);">En vivo ahora</div></div><div style="background: rgb(255, 251, 235); border: 1.5px solid rgba(183, 119, 13, 0.133); border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">🏆</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: rgb(183, 119, 13); margin-bottom: 2px;">El Prode</div><div style="font-size: 10px; color: var(--tx3);">Participá gratis</div></div><div style="background: rgb(253, 242, 248); border: 1.5px solid rgba(157, 23, 77, 0.133); border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">✏️</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: rgb(157, 23, 77); margin-bottom: 2px;">Revista Juvenil</div><div style="font-size: 10px; color: var(--tx3);">Para los pibes</div></div></div><div class="sh"><div class="st">Últimas Noticias</div><span class="sl">Ver todas →</span></div><div class="ng-grid" style="margin-bottom: 18px;"><div class="nc"><div class="nc-img big"><div class="nc-em" style="display: flex;">🏉</div><div class="nc-cat"><span class="badge bc">Rugby</span></div></div><div class="nc-body"><div class="nc-tit">Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina</div><div class="nc-exc">Matera convirtió el try decisivo. Historia pura en el Amalfitani desbordante.</div><div class="nc-ft"><div><div style="color: var(--cel-d); font-weight: 600;">Olé</div><div>Hace 1h</div></div><div class="nc-ac"><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>0</button><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>0</button></div></div></div></div><div class="nc"><div class="nc-img big"><div class="nc-em" style="display: flex;">🎾</div><div class="nc-cat"><span class="badge bc">Tenis</span></div></div><div class="nc-body"><div class="nc-tit">Cerúndolo avanza a semis del Masters de Madrid</div><div class="nc-exc">El bonaerense venció a Alcaraz en tres sets emocionantes.</div><div class="nc-ft"><div><div style="color: var(--cel-d); font-weight: 600;">ESPN</div><div>Hace 2h</div></div><div class="nc-ac"><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>0</button><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>0</button></div></div></div></div><div class="nc"><div class="nc-img big"><div class="nc-em" style="display: flex;">🏎️</div><div class="nc-cat"><span class="badge bc">Automovilismo</span></div></div><div class="nc-body"><div class="nc-tit">Colapinto lidera los libres de Mónaco con tiempo histórico</div><div class="nc-exc">1:10.821 del argentino sacude el paddock de la Fórmula 1.</div><div class="nc-ft"><div><div style="color: var(--cel-d); font-weight: 600;">ESPN</div><div>Hace 3h</div></div><div class="nc-ac"><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>0</button><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>0</button></div></div></div></div><div class="nc"><div class="nc-img big"><div class="nc-em" style="display: flex;">🏀</div><div class="nc-cat"><span class="badge bc">Básquet</span></div></div><div class="nc-body"><div class="nc-tit">Obra gana la Liga Nacional con doble de Vildoza</div><div class="nc-exc">78-77 definitivo en Mar del Plata. Emoción pura.</div><div class="nc-ft"><div><div style="color: var(--cel-d); font-weight: 600;">Olé</div><div>Hace 4h</div></div><div class="nc-ac"><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>0</button><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>0</button></div></div></div></div><div class="nc"><div class="nc-img big"><div class="nc-em" style="display: flex;">⚽</div><div class="nc-cat"><span class="badge bc">Fútbol</span></div></div><div class="nc-body"><div class="nc-tit">Messi renovaría con Inter Miami hasta 2027</div><div class="nc-exc">El rosarino seguiría en la MLS al menos dos temporadas más.</div><div class="nc-ft"><div><div style="color: var(--cel-d); font-weight: 600;">ESPN</div><div>Hace 5h</div></div><div class="nc-ac"><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"></path></svg>0</button><button class="abt"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path></svg>0</button></div></div></div></div></div><div class="sh"><div class="st">Encuesta del Día</div></div><div class="card cp" style="margin-bottom: 18px;"><div><div class="poll-q">¿Fue penal el derribo de Almada en el Superclásico?</div><div class="po"><div class="po-row"><span>Sí, penal claro</span></div></div><div class="po"><div class="po-row"><span>No era nada</span></div></div><div class="po"><div class="po-row"><span>Muy dudoso</span></div></div><div class="po-meta">2.540 votos</div></div></div><div style="display: grid; gap: 10px; grid-template-columns: 1fr 1fr; margin-bottom: 8px;"><div style="background: rgba(8, 145, 178, 0.08); border: 1.5px solid var(--teal)22; border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">🌐</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: var(--teal); margin-bottom: 2px;">Red de Periodismo</div><div style="font-size: 10px; color: var(--tx3);">Conectá con colegas</div></div><div style="background: rgba(139, 92, 246, 0.08); border: 1.5px solid var(--purple)22; border-radius: var(--r); padding: 14px 12px; cursor: pointer; transition: 0.2s; text-align: center;"><div style="font-size: 26px; margin-bottom: 5px;">🎙️</div><div style="font-family: var(--fd); font-size: 13px; font-weight: 700; color: var(--purple); margin-bottom: 2px;">Periodismo Dep.</div><div style="font-size: 10px; color: var(--tx3);">Guías y técnicas</div></div></div></div></div></main><aside class="rsb"><div style="display: flex; flex-direction: column; gap: 15px;"><div><div class="sh"><div class="st" style="color: var(--purple);">IA del Día</div></div><div class="ia-module"><div class="ia-badge"><div class="ia-dot"></div><span>IA · Tribuna Libre</span></div><div class="ia-title">📰 Dato del Día</div><div class="ia-body">El periodismo deportivo digital en Argentina creció un 340% en consumo móvil entre 2020 y 2024. Hoy, más del 78% de los lectores de contenido deportivo accede desde su celular, lo que transformó por completo la forma de contar el deporte. (Dato de referencia)</div><div style="display: flex; align-items: center; justify-content: space-between; margin-top: 4px;"><span class="ia-tag">🕐 07:48 a.&nbsp;m.</span><button class="ia-refresh"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 10px; height: 10px;"><path d="M12 3l1.5 4.5L18 9l-4.5 1.5L12 15l-1.5-4.5L6 9l4.5-1.5L12 3z"></path><path d="M5 17l.75 2.25L8 20l-2.25.75L5 23l-.75-2.25L2 20l2.25-.75L5 17z"></path><path d="M19 3l.75 2.25L22 6l-2.25.75L19 9l-.75-2.25L16 6l2.25-.75L19 3z"></path></svg>Nuevo</button></div></div></div><div><div class="sh"><div class="st">Más recientes</div></div><div class="card cs"><div style="padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--br);"><div style="display: flex; gap: 6px; margin-bottom: 3px;"><span style="font-family: var(--fd); font-weight: 700; color: var(--tx3); font-size: 13px; width: 18px;">1</span><div style="font-size: 12px; font-weight: 500; color: var(--tx); line-height: 1.25;">River aplasta a Boca en el Superclásico más vibrante del año</div></div><div style="font-size: 10px; color: var(--tx3); padding-left: 24px;">📡 TyC Sports</div></div><div style="padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--br);"><div style="display: flex; gap: 6px; margin-bottom: 3px;"><span style="font-family: var(--fd); font-weight: 700; color: var(--tx3); font-size: 13px; width: 18px;">2</span><div style="font-size: 12px; font-weight: 500; color: var(--tx); line-height: 1.25;">Los Pumas hacen historia: primera victoria sobre All Blacks en Argentina</div></div><div style="font-size: 10px; color: var(--tx3); padding-left: 24px;">📡 Olé</div></div><div style="padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--br);"><div style="display: flex; gap: 6px; margin-bottom: 3px;"><span style="font-family: var(--fd); font-weight: 700; color: var(--tx3); font-size: 13px; width: 18px;">3</span><div style="font-size: 12px; font-weight: 500; color: var(--tx); line-height: 1.25;">Cerúndolo avanza a semis del Masters de Madrid</div></div><div style="font-size: 10px; color: var(--tx3); padding-left: 24px;">📡 ESPN</div></div><div style="padding-bottom: 9px; margin-bottom: 9px; border-bottom: 1px solid var(--br);"><div style="display: flex; gap: 6px; margin-bottom: 3px;"><span style="font-family: var(--fd); font-weight: 700; color: var(--tx3); font-size: 13px; width: 18px;">4</span><div style="font-size: 12px; font-weight: 500; color: var(--tx); line-height: 1.25;">Colapinto lidera los libres de Mónaco con tiempo histórico</div></div><div style="font-size: 10px; color: var(--tx3); padding-left: 24px;">📡 ESPN</div></div><div style="padding-bottom: 9px; margin-bottom: 9px; border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor;"><div style="display: flex; gap: 6px; margin-bottom: 3px;"><span style="font-family: var(--fd); font-weight: 700; color: var(--tx3); font-size: 13px; width: 18px;">5</span><div style="font-size: 12px; font-weight: 500; color: var(--tx); line-height: 1.25;">Obra gana la Liga Nacional con doble de Vildoza</div></div><div style="font-size: 10px; color: var(--tx3); padding-left: 24px;">📡 Olé</div></div></div></div><div><div class="sh"><div class="st">Secciones</div></div><div style="display: grid; gap: 6px;"><div style="background: var(--cel-xl); border: 1px solid var(--cel-d)22; border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">👥</span><span style="font-size: 12px; font-weight: 600; color: var(--cel-d);">Comunidad</span></div><div style="background: rgba(192, 57, 43, 0.07); border: 1px solid var(--red)22; border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">📡</span><span style="font-size: 12px; font-weight: 600; color: var(--red);">Streaming</span></div><div style="background: rgb(255, 251, 235); border: 1px solid rgba(183, 119, 13, 0.133); border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">🏆</span><span style="font-size: 12px; font-weight: 600; color: rgb(183, 119, 13);">El Prode</span></div><div style="background: var(--cel-xl); border: 1px solid var(--cel-d)22; border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">🌎</span><span style="font-size: 12px; font-weight: 600; color: var(--cel-d);">Copa del Mundo</span></div><div style="background: rgb(253, 242, 248); border: 1px solid rgba(157, 23, 77, 0.133); border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">✏️</span><span style="font-size: 12px; font-weight: 600; color: rgb(157, 23, 77);">Revista Juvenil</span></div><div style="background: rgba(8, 145, 178, 0.07); border: 1px solid var(--teal)22; border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">🌐</span><span style="font-size: 12px; font-weight: 600; color: var(--teal);">Red Periodismo</span></div><div style="background: rgba(139, 92, 246, 0.07); border: 1px solid var(--purple)22; border-radius: var(--rs); padding: 8px 11px; cursor: pointer; display: flex; align-items: center; gap: 8px; transition: 0.15s;"><span style="font-size: 14px;">🎙️</span><span style="font-size: 12px; font-weight: 600; color: var(--purple);">Periodismo Dep.</span></div></div></div><div><div class="sh"><div class="st">El VAR</div></div><div class="card cp"><div><div class="poll-q">¿Fue penal el derribo de Almada en el Superclásico?</div><div class="po"><div class="po-row"><span>Sí, penal claro</span></div></div><div class="po"><div class="po-row"><span>No era nada</span></div></div><div class="po"><div class="po-row"><span>Muy dudoso</span></div></div><div class="po-meta">2.540 votos</div></div></div></div><div><div class="sh"><div class="st" style="color: var(--red);"><div class="ldot"></div>En Vivo</div></div><div class="card cs" style="margin-bottom: 7px; cursor: pointer;"><div style="font-size: 9px; font-weight: 700; color: var(--red); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse;"></div>EN VIVO · 67'</div><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 12px; font-weight: 500;">⚽ River</span><span style="font-family: var(--fd); font-size: 16px; font-weight: 700; color: var(--red);">2-1</span><span style="font-size: 12px; font-weight: 500;">Racing</span></div></div><div class="card cs" style="margin-bottom: 7px; cursor: pointer;"><div style="font-size: 9px; font-weight: 700; color: var(--red); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse;"></div>EN VIVO · 3T</div><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 12px; font-weight: 500;">🏀 Boca</span><span style="font-family: var(--fd); font-size: 16px; font-weight: 700; color: var(--red);">45-38</span><span style="font-size: 12px; font-weight: 500;">San L.</span></div></div><div class="card cs" style="margin-bottom: 7px; cursor: pointer;"><div style="font-size: 9px; font-weight: 700; color: var(--red); margin-bottom: 4px; display: flex; align-items: center; gap: 4px;"><div style="width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: 1.4s ease 0s infinite normal none running pulse;"></div>EN VIVO · 55'</div><div style="display: flex; align-items: center; justify-content: space-between;"><span style="font-size: 12px; font-weight: 500;">🏉 Pumas</span><span style="font-family: var(--fd); font-size: 16px; font-weight: 700; color: var(--red);">21-14</span><span style="font-size: 12px; font-weight: 500;">Wallabies</span></div></div></div><div><div class="sh"><div class="st">Trending</div></div><div class="card cs"><div class="tri"><div class="trnum hot">#1</div><div><div class="trn">#Superclásico2025 🔥</div><div class="trc">7000 posts</div></div></div><div class="tri"><div class="trnum hot">#2</div><div><div class="trn">#LosPumas 🔥</div><div class="trc">6200 posts</div></div></div><div class="tri"><div class="trnum">#3</div><div><div class="trn">#Colapinto2025</div><div class="trc">5400 posts</div></div></div><div class="tri"><div class="trnum">#4</div><div><div class="trn">#LigaProfesional</div><div class="trc">4600 posts</div></div></div><div class="tri"><div class="trnum">#5</div><div><div class="trn">#Copa26</div><div class="trc">3800 posts</div></div></div></div></div></div></aside></div><div class="bnav"><div class="bni on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"></path><polyline points="9,22 9,12 15,12 15,22"></polyline></svg><span>Inicio</span></div><div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h7"></path></svg><span>Noticias</span></div><div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"></path></svg><span>Comunidad</span></div><div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg><span>Streaming</span></div><div class="bni"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg><span>Perfil</span></div></div></div>
+
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
@@ -597,13 +583,6 @@ const COMMUNITY_POSTS = [
   {id:1,user:'Gonzalo_TL',av:'GT',color:'#E8262A',text:'¿Alguien más vio el golazo de Borja? Pura magia argentina 🔥⚽',likes:89,time:'Hace 30m'},
   {id:2,user:'PumasFan',av:'PF',color:'#16A34A',text:'Los Pumas hicieron historia. Nunca olvidaré ese try de Matera. Somos grandes 🏉🇦🇷',likes:156,time:'Hace 1h'},
   {id:3,user:'ColapintoAR',av:'CA',color:'#F59E0B',text:'Franco Colapinto, el orgullo argentino en la F1! Que sigan los resultados 🏎️',likes:234,time:'Hace 2h'},
-];
-const THREADS_DATA = [
-  {id:1,hot:true, cat:'Fútbol',   title:'¿Fue penal el derribo de Almada en el Superclásico? El debate que no para',     r:312, v:8400, author:'Gonzalo_TL',  t:'Hace 2h'},
-  {id:2,hot:true, cat:'Rugby',    title:'Los Pumas vs All Blacks: ¿pueden repetir la hazaña en el próximo test match?',    r:198, v:5200, author:'ScrumMaster', t:'Hace 4h'},
-  {id:3,hot:false,cat:'F1',       title:'Colapinto en Williams: ¿tiene chances reales de quedarse para 2026?',             r:145, v:4700, author:'VelocidadAR',  t:'Hace 6h'},
-  {id:4,hot:false,cat:'Básquet',  title:'Liga Nacional: ¿Obra o San Lorenzo para la próxima final?',                      r:89,  v:2300, author:'TriplePBA',    t:'Hace 8h'},
-  {id:5,hot:false,cat:'Selección','title':'Scaloni confirmado hasta 2026 — ¿cuál sería el 11 ideal para el Mundial?',     r:267, v:7100, author:'AlbicelesteFan',t:'Ayer'},
 ];
 const STREAMS = [
   {id:1,tit:'River vs Racing — Liga Profesional',ch:'ESPN Premium',viewers:14200,live:true,em:'⚽'},
@@ -1899,29 +1878,74 @@ function PeriodismoPage({ addToast }) {
   );
 }
 
-/* ══════ MÓDULO IA — contenido diario sobre deporte y periodismo ══════ */
+/* ══════ MÓDULO IA — genera contenido diario sobre deporte y periodismo ══════ */
 function IAModuleWidget() {
-  const ITEMS = [
-    {label:'📅 Evento Histórico', texto:'El 25 de junio de 1986, Diego Maradona anotó el "Gol del Siglo" en el Mundial de México contra Inglaterra. Fue elegido el mejor gol de la historia por la FIFA en 2002. Ese partido es referencia obligada en el periodismo deportivo argentino y mundial.'},
-    {label:'⚡ Hecho Relevante',   texto:'Argentina es el único país que en el mismo ciclo deportivo tiene campeones del mundo en fútbol (2022), llegó a semifinales de Rugby World Cup (Pumas 2023) y tiene un piloto activo en Fórmula 1. Una generación histórica para el periodismo deportivo nacional.'},
-    {label:'📰 Dato del Día',      texto:'El periodismo deportivo digital en Argentina creció un 340% en consumo móvil entre 2020 y 2024. Más del 78% de los lectores accede desde su celular, lo que transformó por completo la narrativa, el formato y la velocidad de publicación.'},
-    {label:'🏆 Récord Argentino',  texto:'Lionel Messi es el jugador con más Balones de Oro en la historia del fútbol (8). Argentina es el único país que ganó la Copa del Mundo, la Copa América y la Finalissima en menos de 12 meses (2021-2022), un récord sin precedentes.'},
-    {label:'🎙️ Tip Periodístico',  texto:'El periodismo deportivo moderno exige multimedia: texto, video vertical y datos en tiempo real. Los medios que combinan cobertura en vivo con análisis táctico profundo tienen 3x más tiempo de permanencia en sus notas que los que solo publican texto plano.'},
-    {label:'📡 Historia Digital',   texto:'El primer partido de fútbol argentino transmitido por internet fue en 1999. Hoy, el streaming deportivo representa el 40% del consumo online en Argentina. Los Pumas vs All Blacks 2023 tuvo más espectadores en streaming que en televisión abierta.'},
-  ];
-  const [idx, setIdx] = React.useState(() => Math.floor(Math.random() * ITEMS.length));
-  const [time, setTime] = React.useState(() => new Date());
-  const next = () => { setIdx(i => (i+1) % ITEMS.length); setTime(new Date()); };
-  const item = ITEMS[idx];
+  const [content, setContent] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [lastFetch, setLastFetch] = useState(null);
+
+  const TIPOS = ['evento_historico','noticia_dia','hecho_relevante'];
+  const TIPO_LABELS = {evento_historico:'📅 Evento Histórico',noticia_dia:'📰 Noticia del Día',hecho_relevante:'⚡ Hecho Relevante'};
+
+  const fetchIA = useCallback(async () => {
+    setLoading(true);
+    const tipo = TIPOS[Math.floor(Math.random()*TIPOS.length)];
+    const hoy = new Date().toLocaleDateString('es-AR',{day:'numeric',month:'long',year:'numeric'});
+    const prompts = {
+      evento_historico: `Hoy es ${hoy}. Contame brevemente (máximo 80 palabras) un evento histórico deportivo o del periodismo que haya ocurrido un día como hoy en cualquier año. Incluí: qué pasó, quiénes fueron los protagonistas y por qué es relevante para el deporte argentino o mundial. Respondé directo, sin saludos ni títulos, solo el texto.`,
+      noticia_dia:      `Hoy es ${hoy}. Inventá (claramente como contenido educativo/ejemplo) una noticia ficticia pero verosímil del mundo del deporte argentino de hoy. Máximo 80 palabras. Incluí: titular corto, desarrollo breve y contexto. Aclará al final "(Contenido de ejemplo educativo)". Respondé directo, sin saludos.`,
+      hecho_relevante:  `Hoy es ${hoy}. Compartí un dato o hecho curioso y relevante sobre el periodismo deportivo o el deporte en Argentina. Puede ser una estadística, un récord, una curiosidad histórica o un tip profesional. Máximo 80 palabras. Respondé directo, sin saludos ni títulos, solo el texto.`,
+    };
+    try {
+      const ctrl = new AbortController();
+      const tId = setTimeout(() => ctrl.abort(), 10000);
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 200,
+          messages: [{ role: 'user', content: prompts[tipo] }],
+        })
+      }).finally(() => clearTimeout(tId));
+      const data = await resp.json();
+      const texto = data.content?.[0]?.text || 'No se pudo cargar el contenido.';
+      setContent({ tipo, texto, label: TIPO_LABELS[tipo] });
+      setLastFetch(new Date());
+    } catch(e) {
+      if (e.name === 'AbortError') { setLoading(false); return; }
+      const fallbacks = [
+        {tipo:'evento_historico',label:'📅 Evento Histórico',texto:'El 25 de junio de 1986, Diego Maradona anotó el Gol del Siglo en el Mundial de México contra Inglaterra. Fue elegido el mejor gol de la historia por la FIFA en 2002. 22 años después, ese partido sigue siendo referencia obligada en el periodismo deportivo argentino.'},
+        {tipo:'hecho_relevante',label:'⚡ Hecho Relevante',texto:'Argentina es el único país que ganó el Mundial de Fútbol, el Campeonato Mundial de Rugby (Pumas llegaron a semifinal) y tiene un piloto en la Fórmula 1 activo — todo en el mismo ciclo deportivo. Una generación histórica para el periodismo deportivo nacional.'},
+        {tipo:'noticia_dia',label:'📰 Dato del Día',texto:'El periodismo deportivo digital en Argentina creció un 340% en consumo móvil entre 2020 y 2024. Hoy, más del 78% de los lectores de contenido deportivo accede desde su celular, lo que transformó por completo la forma de contar el deporte. (Dato de referencia)'},
+      ];
+      setContent(fallbacks[Math.floor(Math.random()*fallbacks.length)]);
+      setLastFetch(new Date());
+    }
+    setLoading(false);
+  }, []);
+
+  useEffect(() => { fetchIA(); }, [fetchIA]);
+
   return (
     <div className="ia-module">
       <div className="ia-badge"><div className="ia-dot"/><span>IA · Tribuna Libre</span></div>
-      <div className="ia-title">{item.label}</div>
-      <div className="ia-body">{item.texto}</div>
-      <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
-        <span className="ia-tag">🕐 {time.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>
-        <button className="ia-refresh" onClick={next}><Ic.Sparkle style={{width:10,height:10}}/>Nuevo</button>
-      </div>
+      {loading ? (
+        <div className="ia-loading">
+          <div className="ia-spinner"/>
+          <span>Generando contenido...</span>
+        </div>
+      ) : content ? (
+        <>
+          <div className="ia-title">{content.label}</div>
+          <div className="ia-body">{content.texto}</div>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginTop:4}}>
+            {lastFetch && <span className="ia-tag">🕐 {lastFetch.toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})}</span>}
+            <button className="ia-refresh" onClick={fetchIA}><Ic.Sparkle style={{width:10,height:10}}/>Nuevo</button>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }
