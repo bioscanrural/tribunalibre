@@ -1168,40 +1168,152 @@ function CmPuntsBadge({puntos}){
 }
 
 function CmFeedTab({user,addToast,sumarPuntos}){
-  const [posts,setPosts]=useState(()=>{
-    try{const s=JSON.parse(localStorage.getItem('cm_posts')||'null');if(s)return s;}catch(e){}
-    return COMMUNITY_POSTS.map(p=>({...p,sport:'⚽ Fútbol',tipo:'texto',comentarios:[]}));
-  });
-  const [liked,setLiked]=useState({});
-  const [comentando,setComentando]=useState(null);
-  const [comentTxt,setComentTxt]=useState('');
-  const [filtroSport,setFiltroSport]=useState('🌐 Todos');
-  const [showForm,setShowForm]=useState(false);
-  const [form,setForm]=useState({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});
+  const sb = window.__supabase;
+  const esAutenticado = user?.isGuest === false;
+  const nombreUsuario = esAutenticado ? (user.displayName||user.username||'Usuario') : 'Invitado';
+  const avLetra = (user?.displayName||user?.username||'I')[0].toUpperCase();
+  const colorAv = CM_COLORES_AV[Math.floor(Math.random()*CM_COLORES_AV.length)];
 
-  const nombreUsuario=user?.isGuest===false?(user.displayName||user.username||'Vos'):'Invitado';
-  const avLetra=(user?.displayName||user?.username||'I')[0].toUpperCase();
+  const [posts,setPosts]           = useState([]);
+  const [liked,setLiked]           = useState({});
+  const [comentando,setComentando] = useState(null);
+  const [comentTxt,setComentTxt]   = useState('');
+  const [filtroSport,setFiltroSport]= useState('🌐 Todos');
+  const [showForm,setShowForm]     = useState(false);
+  const [form,setForm]             = useState({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});
+  const [cargando,setCargando]     = useState(true);
+  const [enviando,setEnviando]     = useState(false);
 
-  function guardarPosts(n){setPosts(n);try{localStorage.setItem('cm_posts',JSON.stringify(n.slice(0,30)));}catch(e){}}
+  /* ── Cargar posts desde Supabase (o fallback localStorage) ── */
+  useEffect(()=>{
+    async function cargar(){
+      setCargando(true);
+      if(sb){
+        try{
+          const {data,error}=await sb
+            .from('community_posts')
+            .select('*, post_comments(id,username,avatar_letter,avatar_color,content,created_at)')
+            .order('created_at',{ascending:false})
+            .limit(40);
+          if(error) throw error;
+          const mapped=(data||[]).map(p=>({
+            id:p.id, user:p.username, av:p.avatar_letter||p.username?.[0]?.toUpperCase()||'?',
+            color:p.avatar_color||'#4A90D9', text:p.content, likes:p.likes_count||0,
+            time:formatTime(p.created_at), sport:'⚽ Fútbol', tipo:'texto', link:'',
+            comentarios:(p.post_comments||[]).map(c=>({
+              id:c.id, u:c.username, txt:c.content,
+              av:c.avatar_letter||c.username?.[0]?.toUpperCase()||'?',
+              color:c.avatar_color||'#16A34A', time:formatTime(c.created_at)
+            }))
+          }));
+          setPosts(mapped);
+          /* cargar likes del usuario actual */
+          if(esAutenticado && sb.auth){
+            const {data:sess}=await sb.auth.getSession();
+            if(sess?.session?.user){
+              const {data:lks}=await sb.from('post_likes').select('post_id').eq('user_id',sess.session.user.id);
+              if(lks){const m={};lks.forEach(l=>m[l.post_id]=true);setLiked(m);}
+            }
+          }
+          setCargando(false);return;
+        }catch(e){console.warn('Supabase feed error:',e.message);}
+      }
+      /* fallback: localStorage */
+      try{const s=JSON.parse(localStorage.getItem('cm_posts')||'null');if(s){setPosts(s);setCargando(false);return;}}catch(e){}
+      setPosts(COMMUNITY_POSTS.map(p=>({...p,sport:'⚽ Fútbol',tipo:'texto',comentarios:[]})));
+      setCargando(false);
+    }
+    cargar();
+  },[]);
 
-  function publicar(){
+  function formatTime(iso){
+    if(!iso) return 'Ahora';
+    const diff=Math.floor((Date.now()-new Date(iso))/60000);
+    if(diff<1) return 'Ahora';
+    if(diff<60) return `Hace ${diff}m`;
+    if(diff<1440) return `Hace ${Math.floor(diff/60)}h`;
+    return new Date(iso).toLocaleDateString('es-AR');
+  }
+
+  /* ── Publicar nuevo post ── */
+  async function publicar(){
     if(!form.texto.trim()){addToast({msg:'Escribí algo antes de publicar',type:'err'});return;}
-    const nuevo={id:Date.now(),user:nombreUsuario,av:avLetra,color:CM_COLORES_AV[Math.floor(Math.random()*CM_COLORES_AV.length)],text:form.texto,likes:0,time:'Ahora',tipo:form.tipo,link:form.link,sport:form.sport,comentarios:[]};
-    guardarPosts([nuevo,...posts]);
-    setForm({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});setShowForm(false);
-    sumarPuntos('publicar');addToast({msg:'¡Publicado! +10 pts 🚀',type:'ok'});
+    if(!esAutenticado){addToast({msg:'Iniciá sesión para publicar',type:'err'});return;}
+    setEnviando(true);
+    const nuevo={
+      id:Date.now(), user:nombreUsuario, av:avLetra, color:colorAv,
+      text:form.texto, likes:0, time:'Ahora', tipo:form.tipo, link:form.link, sport:form.sport, comentarios:[]
+    };
+    if(sb){
+      try{
+        const {data:sess}=await sb.auth.getSession();
+        const uid=sess?.session?.user?.id;
+        const {data,error}=await sb.from('community_posts').insert({
+          user_id:uid||null, username:nombreUsuario,
+          avatar_letter:avLetra, avatar_color:colorAv, content:form.texto
+        }).select().single();
+        if(error) throw error;
+        nuevo.id=data.id;
+      }catch(e){
+        console.warn('Error publicando:',e.message);
+        addToast({msg:'Error al publicar, guardado local',type:'err'});
+      }
+    }else{
+      /* guardar local si no hay Supabase */
+      try{const prev=JSON.parse(localStorage.getItem('cm_posts')||'[]');localStorage.setItem('cm_posts',JSON.stringify([nuevo,...prev].slice(0,30)));}catch(e){}
+    }
+    setPosts(p=>[nuevo,...p]);
+    setForm({texto:'',tipo:'texto',link:'',sport:'⚽ Fútbol'});
+    setShowForm(false);
+    sumarPuntos('publicar');
+    addToast({msg:'¡Publicado! +10 pts 🚀',type:'ok'});
+    setEnviando(false);
   }
 
-  function toggleLike(id){
-    const ya=liked[id];
-    setLiked(l=>({...l,[id]:!l[id]}));
-    guardarPosts(posts.map(p=>p.id===id?{...p,likes:p.likes+(ya?-1:1)}:p));
-    if(!ya) sumarPuntos('recibirLike');
+  /* ── Like / Unlike ── */
+  async function toggleLike(postId){
+    if(!esAutenticado){addToast({msg:'Iniciá sesión para dar like',type:'err'});return;}
+    const yaLiked=liked[postId];
+    setLiked(l=>({...l,[postId]:!yaLiked}));
+    setPosts(p=>p.map(x=>x.id===postId?{...x,likes:x.likes+(yaLiked?-1:1)}:x));
+    if(sb){
+      try{
+        const {data:sess}=await sb.auth.getSession();
+        const uid=sess?.session?.user?.id;
+        if(!uid) return;
+        if(yaLiked){
+          await sb.from('post_likes').delete().eq('post_id',postId).eq('user_id',uid);
+          await sb.rpc('increment_likes',{post_id:postId,delta:-1});
+        }else{
+          await sb.from('post_likes').insert({post_id:postId,user_id:uid});
+          await sb.rpc('increment_likes',{post_id:postId,delta:1});
+          sumarPuntos('recibirLike');
+        }
+      }catch(e){console.warn('Like error:',e.message);}
+    } else {
+      if(!yaLiked) sumarPuntos('recibirLike');
+    }
   }
 
-  function enviarComentario(postId){
+  /* ── Comentar ── */
+  async function enviarComentario(postId){
     if(!comentTxt.trim()) return;
-    guardarPosts(posts.map(p=>p.id===postId?{...p,comentarios:[...(p.comentarios||[]),{id:Date.now(),u:nombreUsuario,txt:comentTxt,time:'Ahora'}]}:p));
+    if(!esAutenticado){addToast({msg:'Iniciá sesión para comentar',type:'err'});return;}
+    const nuevoC={id:Date.now(),u:nombreUsuario,av:avLetra,color:colorAv,txt:comentTxt,time:'Ahora'};
+    if(sb){
+      try{
+        const {data:sess}=await sb.auth.getSession();
+        const uid=sess?.session?.user?.id;
+        const {data,error}=await sb.from('post_comments').insert({
+          post_id:postId,user_id:uid||null,username:nombreUsuario,
+          avatar_letter:avLetra,avatar_color:colorAv,content:comentTxt
+        }).select().single();
+        if(error) throw error;
+        nuevoC.id=data.id;
+        await sb.rpc('increment_comments',{p_post_id:postId});
+      }catch(e){console.warn('Comentario error:',e.message);}
+    }
+    setPosts(p=>p.map(x=>x.id===postId?{...x,comentarios:[...(x.comentarios||[]),nuevoC]}:x));
     setComentTxt('');setComentando(null);
     sumarPuntos('comentar');addToast({msg:'+1 pt por comentar ✓',type:'ok'});
   }
@@ -1218,6 +1330,14 @@ function CmFeedTab({user,addToast,sumarPuntos}){
 
   return (
     <div>
+      {/* Indicador Supabase */}
+      <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:10,padding:'6px 11px',background:sb?'rgba(39,174,96,.08)':'rgba(246,180,14,.08)',border:`1px solid ${sb?'rgba(39,174,96,.25)':'rgba(246,180,14,.3)'}`,borderRadius:'var(--rs)'}}>
+        <div style={{width:6,height:6,borderRadius:'50%',background:sb?'var(--green)':'var(--sun)',flexShrink:0}}/>
+        <span style={{fontSize:10,fontWeight:600,color:sb?'#1E8449':'#B7770D'}}>
+          {sb ? '🔗 Conectado a Supabase — posts en tiempo real' : '⚠️ Modo local — posts solo en este dispositivo'}
+        </span>
+      </div>
+
       <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:12,paddingBottom:4,scrollbarWidth:'none'}}>
         {CM_DEPORTES_TAGS.map(tag=>(
           <button key={tag} onClick={()=>setFiltroSport(tag)} style={{flexShrink:0,padding:'5px 12px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',border:`1.5px solid ${filtroSport===tag?'var(--cel)':'var(--br)'}`,background:filtroSport===tag?'var(--cel)':'var(--white)',color:filtroSport===tag?'white':'var(--tx2)',transition:'.15s'}}>{tag}</button>
@@ -1240,8 +1360,10 @@ function CmFeedTab({user,addToast,sumarPuntos}){
       <div className="card cp" style={{marginBottom:14}}>
         {!showForm?(
           <div style={{display:'flex',gap:10,alignItems:'center',cursor:'pointer'}} onClick={()=>setShowForm(true)}>
-            <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>{user?.isGuest===false?avLetra:'?'}</div>
-            <div style={{flex:1,background:'var(--cel-xl)',border:'1.5px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 14px',fontSize:13,color:'var(--tx3)'}}>¿Qué pensás del deporte argentino? 🇦🇷</div>
+            <div style={{width:34,height:34,borderRadius:'50%',background:'var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontWeight:700,fontSize:12,color:'white',flexShrink:0}}>{esAutenticado?avLetra:'?'}</div>
+            <div style={{flex:1,background:'var(--cel-xl)',border:'1.5px solid var(--br)',borderRadius:'var(--rs)',padding:'10px 14px',fontSize:13,color:'var(--tx3)'}}>
+              {esAutenticado ? '¿Qué pensás del deporte argentino? 🇦🇷' : 'Iniciá sesión para publicar 🔒'}
+            </div>
           </div>
         ):(
           <div>
@@ -1258,15 +1380,31 @@ function CmFeedTab({user,addToast,sumarPuntos}){
                 {CM_DEPORTES_TAGS.filter(t=>t!=='🌐 Todos').map(t=><option key={t}>{t}</option>)}
               </select>
               <button className="btn btn-o btn-sm" onClick={()=>setShowForm(false)}>Cancelar</button>
-              <button className="btn btn-c btn-sm" onClick={publicar}>Publicar +10pts</button>
+              <button className="btn btn-c btn-sm" onClick={publicar} disabled={enviando}>
+                {enviando?'Publicando...':'Publicar +10pts'}
+              </button>
             </div>
           </div>
         )}
       </div>
 
-      {filtrados.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:'var(--tx3)',fontSize:13}}>Sin publicaciones en {filtroSport}. ¡Sé el primero! 🏆</div>}
+      {cargando&&(
+        <div style={{display:'grid',gap:10}}>
+          {[1,2,3].map(i=>(
+            <div key={i} style={{background:'var(--white)',borderRadius:'var(--r)',border:'1px solid var(--br)',padding:14}}>
+              <div style={{display:'flex',gap:9,marginBottom:10}}>
+                <div className="sk" style={{width:36,height:36,borderRadius:'50%',flexShrink:0}}/>
+                <div style={{flex:1}}><div className="sk" style={{height:12,width:'40%',marginBottom:6}}/><div className="sk" style={{height:10,width:'25%'}}/></div>
+              </div>
+              <div className="sk" style={{height:13,marginBottom:5}}/><div className="sk" style={{height:13,width:'80%'}}/>
+            </div>
+          ))}
+        </div>
+      )}
 
-      {filtrados.map(p=>(
+      {!cargando&&filtrados.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:'var(--tx3)',fontSize:13}}>Sin publicaciones{filtroSport!=='🌐 Todos'?` en ${filtroSport}`:''}. ¡Sé el primero! 🏆</div>}
+
+      {!cargando&&filtrados.map(p=>(
         <div key={p.id} className="post-card">
           <div style={{display:'flex',alignItems:'center',gap:9,marginBottom:9}}>
             <div className="post-av" style={{background:p.color}}>{p.av}</div>
@@ -1290,9 +1428,12 @@ function CmFeedTab({user,addToast,sumarPuntos}){
             <div style={{marginTop:8,paddingTop:8,borderTop:'1px solid var(--br)'}}>
               {p.comentarios.map(c=>(
                 <div key={c.id} style={{display:'flex',gap:7,marginBottom:6}}>
-                  <div style={{width:24,height:24,borderRadius:'50%',background:'var(--cel-xl)',border:'1px solid var(--cel)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'var(--cel-d)',flexShrink:0}}>{c.u[0].toUpperCase()}</div>
+                  <div style={{width:24,height:24,borderRadius:'50%',background:c.color||'var(--cel-xl)',display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,color:'white',flexShrink:0}}>{c.av||c.u?.[0]?.toUpperCase()||'?'}</div>
                   <div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'5px 9px',flex:1}}>
-                    <div style={{fontSize:10,fontWeight:700,color:'var(--cel-d)',marginBottom:2}}>{c.u}</div>
+                    <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+                      <span style={{fontSize:10,fontWeight:700,color:'var(--cel-d)'}}>{c.u}</span>
+                      <span style={{fontSize:9,color:'var(--tx3)'}}>{c.time||'Ahora'}</span>
+                    </div>
                     <div style={{fontSize:12,color:'var(--tx2)'}}>{c.txt}</div>
                   </div>
                 </div>
