@@ -1569,47 +1569,123 @@ function CmEncuestasTab({user,addToast,sumarPuntos}){
 }
 
 function CmTriviaTab({sumarPuntos,addToast}){
-  const [idx,setIdx]=useState(0);
-  const [respondida,setRespondida]=useState(null);
-  const [racha,setRacha]=useState(0);
-  const [ptsTrivia,setPtsTrivia]=useState(0);
-  const [finalizado,setFinalizado]=useState(false);
-  const [historial,setHistorial]=useState([]);
+  const [preguntas,setPreguntas]   = useState([]);
+  const [idx,setIdx]               = useState(0);
+  const [respondida,setRespondida] = useState(null);
+  const [racha,setRacha]           = useState(0);
+  const [ptsTrivia,setPtsTrivia]   = useState(0);
+  const [finalizado,setFinalizado] = useState(false);
+  const [historial,setHistorial]   = useState([]);
+  const [cargando,setCargando]     = useState(false);
+  const [error,setError]           = useState(null);
+  const [categoria,setCategoria]   = useState('mixta');
 
-  const pregunta=CM_TRIVIA_PREGUNTAS[idx];
+  const CATEGORIAS = [
+    {id:'mixta',    l:'🎯 Mixta'},
+    {id:'futbol',   l:'⚽ Fútbol'},
+    {id:'rugby',    l:'🏉 Rugby'},
+    {id:'tenis',    l:'🎾 Tenis'},
+    {id:'basket',   l:'🏀 Básquet'},
+    {id:'formula1', l:'🏎️ F1'},
+  ];
+
+  const TOTAL_PREGUNTAS = 6;
+
+  async function generarTrivia(){
+    setCargando(true); setError(null);
+    setPreguntas([]); setIdx(0); setRespondida(null);
+    setRacha(0); setPtsTrivia(0); setFinalizado(false); setHistorial([]);
+
+    const tematica = {
+      mixta:    'deporte argentino en general (fútbol, rugby, tenis, básquet, automovilismo, hockey)',
+      futbol:   'fútbol argentino (selección, clubes, jugadores, historia, mundiales)',
+      rugby:    'rugby argentino (Los Pumas, Top 14, torneos, jugadores)',
+      tenis:    'tenis argentino (Del Potro, Gaudio, Nalbandian, torneos)',
+      basket:   'básquet argentino (selección, Liga Nacional, jugadores NBA)',
+      formula1: 'automovilismo argentino (Fangio, Colapinto, Fórmula 1, TC2000)',
+    }[categoria];
+
+    const prompt = `Generá exactamente ${TOTAL_PREGUNTAS} preguntas de trivia sobre ${tematica}.
+Respondé SOLO con JSON válido, sin texto extra, sin backticks, sin markdown.
+Formato exacto:
+[
+  {
+    "p": "¿Pregunta aquí?",
+    "opts": ["Opción A","Opción B","Opción C","Opción D"],
+    "r": 0,
+    "exp": "Explicación breve del dato curioso (máx 60 palabras)."
+  }
+]
+Reglas:
+- "r" es el índice (0-3) de la opción correcta
+- Las preguntas deben ser variadas en dificultad
+- Incluí datos curiosos reales en "exp"
+- No repitas preguntas obvias
+- Las opciones incorrectas deben ser verosímiles`;
+
+    try {
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{ role: 'user', content: prompt }]
+        })
+      });
+      const data = await resp.json();
+      const texto = data.content?.[0]?.text || '';
+      const clean = texto.replace(/```json|```/g,'').trim();
+      const parsed = JSON.parse(clean);
+      if(!Array.isArray(parsed) || parsed.length===0) throw new Error('Formato inválido');
+      setPreguntas(parsed);
+    } catch(e) {
+      console.warn('Trivia IA error:',e.message);
+      setError('No se pudieron generar las preguntas. Intentá de nuevo.');
+    }
+    setCargando(false);
+  }
+
+  useEffect(()=>{ generarTrivia(); },[categoria]);
+
+  const pregunta = preguntas[idx];
 
   function responder(optIdx){
-    if(respondida!==null) return;
+    if(respondida!==null || !pregunta) return;
     setRespondida(optIdx);
-    const correcto=optIdx===pregunta.r;
+    const correcto = optIdx === pregunta.r;
     if(correcto){
-      const nr=racha+1;setRacha(nr);
+      const nr=racha+1; setRacha(nr);
       const pts=CM_PUNTOS_CONFIG.triviaCorrecta+CM_PUNTOS_CONFIG.triviaRacha(nr);
-      setPtsTrivia(p=>p+pts);sumarPuntos('triviaCorrecta',{racha:nr});
+      setPtsTrivia(p=>p+pts); sumarPuntos('triviaCorrecta',{racha:nr});
       addToast({msg:`✅ ¡Correcto! +${pts} pts${nr>=3?' 🔥 RACHA':''}`,type:'ok'});
     } else {
-      setRacha(0);addToast({msg:'❌ Incorrecto — '+pregunta.opts[pregunta.r],type:'err'});
+      setRacha(0); addToast({msg:'❌ Incorrecto — '+pregunta.opts[pregunta.r],type:'err'});
     }
     setHistorial(h=>[...h,{p:pregunta.p,correcto,racha:correcto?racha+1:0}]);
   }
 
   function siguiente(){
-    if(idx+1>=CM_TRIVIA_PREGUNTAS.length){setFinalizado(true);}
-    else{setIdx(i=>i+1);setRespondida(null);}
+    if(idx+1>=preguntas.length){ setFinalizado(true); }
+    else { setIdx(i=>i+1); setRespondida(null); }
   }
 
-  function reiniciar(){setIdx(0);setRespondida(null);setRacha(0);setPtsTrivia(0);setFinalizado(false);setHistorial([]);}
-
+  /* ── PANTALLA FINAL ── */
   if(finalizado){
     const correctas=historial.filter(h=>h.correcto).length;
     return (
       <div>
         <div style={{textAlign:'center',padding:'24px 0 16px'}}>
-          <div style={{fontSize:52,marginBottom:10}}>{correctas>=6?'🏆':correctas>=4?'🥈':'📚'}</div>
-          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,marginBottom:5}}>{correctas} / {CM_TRIVIA_PREGUNTAS.length} correctas</div>
+          <div style={{fontSize:52,marginBottom:10}}>{correctas>=5?'🏆':correctas>=3?'🥈':'📚'}</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700,marginBottom:5}}>{correctas} / {preguntas.length} correctas</div>
           <CmPuntsBadge puntos={ptsTrivia}/>
-          <div style={{fontSize:13,color:'var(--tx2)',marginTop:8}}>{correctas>=6?'¡Sos un crack del deporte argentino! 🇦🇷':correctas>=4?'¡Buen conocimiento deportivo! 💪':'Seguí aprendiendo sobre el deporte nacional 📚'}</div>
-          <button className="btn btn-c" style={{marginTop:16}} onClick={reiniciar}>Jugar de nuevo</button>
+          <div style={{fontSize:13,color:'var(--tx2)',marginTop:8,lineHeight:1.5}}>
+            {correctas>=5?'¡Sos un crack del deporte argentino! 🇦🇷':correctas>=3?'¡Buen conocimiento deportivo! 💪':'Seguí aprendiendo sobre el deporte nacional 📚'}
+          </div>
+          <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:16,flexWrap:'wrap'}}>
+            <button className="btn btn-c" onClick={generarTrivia}>🔄 Nuevas preguntas IA</button>
+            <button className="btn btn-o" onClick={()=>{setIdx(0);setRespondida(null);setRacha(0);setPtsTrivia(0);setFinalizado(false);setHistorial([]);}}>↩ Repetir estas</button>
+          </div>
         </div>
         {historial.map((h,i)=>(
           <div key={i} style={{display:'flex',gap:9,alignItems:'center',padding:'7px 0',borderBottom:'1px solid var(--br)'}}>
@@ -1622,22 +1698,65 @@ function CmTriviaTab({sumarPuntos,addToast}){
     );
   }
 
+  /* ── PANTALLA DE CARGA ── */
+  if(cargando){
+    return (
+      <div style={{textAlign:'center',padding:'40px 20px'}}>
+        <div style={{width:48,height:48,border:'3px solid var(--cel-xl)',borderTop:'3px solid var(--cel)',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
+        <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'var(--tx)',marginBottom:6}}>🧠 Generando trivia con IA...</div>
+        <div style={{fontSize:12,color:'var(--tx3)'}}>Preparando preguntas únicas sobre {CATEGORIAS.find(c=>c.id===categoria)?.l}</div>
+      </div>
+    );
+  }
+
+  /* ── PANTALLA DE ERROR ── */
+  if(error){
+    return (
+      <div style={{textAlign:'center',padding:'30px 16px'}}>
+        <div style={{fontSize:40,marginBottom:12}}>😕</div>
+        <div style={{fontSize:14,color:'var(--tx2)',marginBottom:16}}>{error}</div>
+        <button className="btn btn-c" onClick={generarTrivia}>Intentar de nuevo</button>
+      </div>
+    );
+  }
+
+  /* ── SIN PREGUNTAS ── */
+  if(!pregunta) return null;
+
+  /* ── JUEGO ── */
   return (
     <div>
+      {/* Selector de categoría */}
+      <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:12,paddingBottom:4,scrollbarWidth:'none'}}>
+        {CATEGORIAS.map(c=>(
+          <button key={c.id} onClick={()=>setCategoria(c.id)}
+            style={{flexShrink:0,padding:'5px 12px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
+              border:`1.5px solid ${categoria===c.id?'var(--cel)':'var(--br)'}`,
+              background:categoria===c.id?'var(--cel)':'var(--white)',
+              color:categoria===c.id?'white':'var(--tx2)',transition:'.15s'}}>{c.l}</button>
+        ))}
+      </div>
+
+      {/* Header */}
       <div style={{background:'linear-gradient(135deg,#1a1a2e,#16213e)',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:14,color:'white',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(139,92,246,.3)',pointerEvents:'none'}}/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-          <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>🧠 Trivia Deportiva Argentina</div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>🧠 Trivia IA</div>
+            <span style={{fontSize:9,background:'rgba(139,92,246,.4)',border:'1px solid rgba(139,92,246,.6)',borderRadius:20,padding:'2px 8px',color:'#C4B5FD',fontWeight:700}}>IA</span>
+          </div>
           <CmPuntsBadge puntos={ptsTrivia}/>
         </div>
         <div style={{display:'flex',gap:12,fontSize:12,opacity:.8}}>
-          <span>Pregunta {idx+1} / {CM_TRIVIA_PREGUNTAS.length}</span>
+          <span>Pregunta {idx+1} / {preguntas.length}</span>
           {racha>=2&&<span>🔥 Racha: {racha}</span>}
         </div>
         <div style={{marginTop:8,height:4,background:'rgba(255,255,255,.2)',borderRadius:2,overflow:'hidden'}}>
-          <div style={{height:'100%',width:((idx/CM_TRIVIA_PREGUNTAS.length)*100)+'%',background:'var(--cel-l)',borderRadius:2,transition:'width .4s'}}/>
+          <div style={{height:'100%',width:((idx/preguntas.length)*100)+'%',background:'var(--cel-l)',borderRadius:2,transition:'width .4s'}}/>
         </div>
       </div>
+
+      {/* Pregunta */}
       <div className="card cp" style={{marginBottom:12}}>
         <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:600,lineHeight:1.3,marginBottom:14,color:'var(--tx)'}}>{pregunta.p}</div>
         {pregunta.opts.map((opt,i)=>{
@@ -1647,7 +1766,10 @@ function CmTriviaTab({sumarPuntos,addToast}){
             else if(i===respondida){bg='rgba(192,57,43,.08)';bc='var(--red)';col='var(--red)';}
           }
           return (
-            <div key={i} onClick={()=>responder(i)} style={{padding:'10px 13px',borderRadius:'var(--rs)',border:`1.5px solid ${bc}`,background:bg,color:col,cursor:respondida!==null?'default':'pointer',marginBottom:7,fontSize:13,fontWeight:500,transition:'.2s',display:'flex',alignItems:'center',gap:8}}>
+            <div key={i} onClick={()=>responder(i)}
+              style={{padding:'10px 13px',borderRadius:'var(--rs)',border:`1.5px solid ${bc}`,background:bg,color:col,
+                cursor:respondida!==null?'default':'pointer',marginBottom:7,fontSize:13,fontWeight:500,transition:'.2s',
+                display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:22,height:22,borderRadius:'50%',background:bc==='var(--br)'?'var(--cel-xl)':bg,border:`1px solid ${bc}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:bc==='var(--br)'?'var(--cel-d)':col,flexShrink:0}}>{String.fromCharCode(65+i)}</span>
               {opt}
               {respondida!==null&&i===pregunta.r&&<span style={{marginLeft:'auto'}}>✅</span>}
@@ -1655,9 +1777,17 @@ function CmTriviaTab({sumarPuntos,addToast}){
             </div>
           );
         })}
-        {respondida!==null&&<div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'9px 12px',fontSize:12,color:'var(--tx2)',lineHeight:1.5,marginTop:4}}>💡 <b>Dato:</b> {pregunta.exp}</div>}
+        {respondida!==null&&pregunta.exp&&(
+          <div style={{background:'var(--cel-xl)',borderRadius:'var(--rs)',padding:'9px 12px',fontSize:12,color:'var(--tx2)',lineHeight:1.5,marginTop:4}}>
+            💡 <b>Dato:</b> {pregunta.exp}
+          </div>
+        )}
       </div>
-      {respondida!==null&&<button className="btn btn-c" style={{width:'100%',justifyContent:'center'}} onClick={siguiente}>{idx+1<CM_TRIVIA_PREGUNTAS.length?'Siguiente →':'Ver resultados 🏆'}</button>}
+      {respondida!==null&&(
+        <button className="btn btn-c" style={{width:'100%',justifyContent:'center'}} onClick={siguiente}>
+          {idx+1<preguntas.length?'Siguiente →':'Ver resultados 🏆'}
+        </button>
+      )}
     </div>
   );
 }
