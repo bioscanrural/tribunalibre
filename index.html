@@ -17,6 +17,12 @@
 window.SUPABASE_URL  = 'https://ttinuqxvaquohranlasu.supabase.co';
 window.SUPABASE_ANON = 'sb_publishable_uGtX_3HBT1Aduy4s2N5WrA_3QjonanT';
 
+// ═══════════════════════════════════════════════════════════
+// ANTHROPIC API KEY — necesaria para Trivia IA y módulo IA
+// Obtené la tuya en: https://console.anthropic.com/keys
+// ═══════════════════════════════════════════════════════════
+window.ANTHROPIC_KEY = 'TU_API_KEY_AQUI';
+
 window.__supabase = null;  // se inicializa cuando cargue el SDK
 
 (function loadSupabase() {
@@ -1093,16 +1099,66 @@ const CM_THREADS = [
   {id:4,title:'Debate: ¿Messi o Maradona — quién es más grande?',cat:'Histórico',hot:true,r:512,v:9200,author:'TribunaFan',t:'Hace 1d'},
 ];
 
-const CM_TRIVIA_PREGUNTAS = [
-  {id:1,p:'¿En qué año Argentina ganó su primer Mundial de Fútbol?',opts:['1974','1978','1982','1986'],r:1,exp:'Argentina ganó en 1978 en casa, derrotando a Holanda 3-1 en la final.'},
-  {id:2,p:'¿Quién anotó el "Gol del Siglo" en México 1986?',opts:['Valdano','Burruchaga','Maradona','Caniggia'],r:2,exp:'Diego Maradona en el minuto 55 contra Inglaterra en cuartos de final.'},
-  {id:3,p:'¿Cuántas veces ganó Boca la Copa Libertadores?',opts:['4','5','6','7'],r:2,exp:'Boca Juniors ganó la Libertadores 6 veces: 1977, 1978, 2000, 2001, 2003 y 2007.'},
-  {id:4,p:'¿En qué deporte compiten "Los Pumas"?',opts:['Fútbol','Hockey','Rugby','Básquet'],r:2,exp:'Los Pumas es el seleccionado argentino de rugby union.'},
-  {id:5,p:'¿Cuál es el estadio más grande de Argentina?',opts:['La Bombonera','Monumental de Núñez','Único de La Plata','Kempes'],r:1,exp:'El Estadio Monumental de River Plate tiene capacidad para más de 84.000 personas.'},
-  {id:6,p:'¿Quién fue el primer argentino en ganar un Grand Slam?',opts:['Guillermo Vilas','Gastón Gaudio','David Nalbandian','Del Potro'],r:0,exp:'Guillermo Vilas ganó Roland Garros 1977 y el US Open 1977.'},
-  {id:7,p:'¿Cuántas veces fue campeón olímpico el fútbol argentino?',opts:['1','2','3','0'],r:1,exp:'Argentina ganó el oro olímpico en 2004 (Atenas) y 2008 (Beijing).'},
-  {id:8,p:'¿En qué año se fundó River Plate?',opts:['1900','1901','1905','1908'],r:2,exp:'River Plate fue fundado el 25 de mayo de 1901, pero su acta fundacional oficial es de 1901.'},
-];
+// ═══ BANCO DE TRIVIA — 55 preguntas, 6 aleatorias por sesión ═══
+function shuffleArray(arr){ return [...arr].sort(()=>Math.random()-.5); }
+function getTriviaSet(cat){
+  const futbol=[
+    {p:'¿En qué año Argentina ganó su primer Mundial de Fútbol?',opts:['1974','1978','1982','1986'],r:1,exp:'Argentina ganó en 1978 en casa, derrotando a Holanda 3-1 en la final con dos goles de Kempes.'},
+    {p:'¿Quién anotó el "Gol del Siglo" en México 1986?',opts:['Valdano','Burruchaga','Maradona','Caniggia'],r:2,exp:'Diego Maradona el 22 de junio de 1986 contra Inglaterra. Recorrió 60 metros en 10 segundos.'},
+    {p:'¿Cuántas veces ganó Boca la Copa Libertadores?',opts:['4','5','6','7'],r:2,exp:'Boca Juniors ganó la Libertadores 6 veces: 1977, 1978, 2000, 2001, 2003 y 2007.'},
+    {p:'¿Cuál es el estadio más grande de Argentina?',opts:['La Bombonera','Monumental de Núñez','Único de La Plata','Kempes'],r:1,exp:'El Monumental de River tiene capacidad para más de 84.000 personas tras su remodelación.'},
+    {p:'¿Cuántos Mundiales ganó Argentina hasta 2023?',opts:['2','3','4','1'],r:1,exp:'Argentina ganó en 1978, 1986 y 2022 en Qatar, siendo el tercer título mundialista albiceleste.'},
+    {p:'¿Quién fue el goleador del Mundial Qatar 2022?',opts:['Messi','Mbappé','Giroud','Álvarez'],r:1,exp:'Kylian Mbappé marcó 8 goles en Qatar 2022, aunque Francia perdió la final ante Argentina en penales.'},
+    {p:'¿En qué año se fundó River Plate?',opts:['1900','1901','1905','1908'],r:2,exp:'River Plate fue fundado el 25 de mayo de 1901 en el barrio de La Boca, Buenos Aires.'},
+    {p:'¿Cuántos goles marcó Messi en la Copa del Mundo 2022?',opts:['5','6','7','8'],r:2,exp:'Messi marcó 7 goles en Qatar 2022, incluyendo el penal decisivo en la final ante Francia.'},
+    {p:'¿Quién es el máximo goleador histórico de la Selección Argentina?',opts:['Maradona','Batistuta','Messi','Crespo'],r:2,exp:'Lionel Messi superó a Batistuta en 2021 y acumula más de 100 goles con la albiceleste.'},
+    {p:'¿En qué año Boca y River jugaron la final de la Copa Libertadores?',opts:['2016','2017','2018','2019'],r:2,exp:'En 2018 se jugó la primera final 100% argentina de la Libertadores. River ganó 3-1 en Madrid.'},
+    {p:'¿Qué número usaba Maradona en el Mundial 1986?',opts:['7','9','10','11'],r:2,exp:'El 10 fue el número icónico de Maradona. En ese Mundial marcó 5 goles y dio 5 asistencias.'},
+    {p:'¿Con qué club Messi ganó su primera Champions League?',opts:['PSG','Inter Miami','Barcelona','Newell\'s'],r:2,exp:'Messi ganó 4 Champions League con el FC Barcelona: 2006, 2009, 2011 y 2015.'},
+  ];
+  const rugby=[
+    {p:'¿En qué deporte compiten "Los Pumas"?',opts:['Fútbol','Hockey','Rugby','Básquet'],r:2,exp:'Los Pumas es el seleccionado argentino de rugby union, uno de los mejores del mundo.'},
+    {p:'¿Qué puesto obtuvo Argentina en el Mundial de Rugby 2023?',opts:['Campeón','Subcampeón','3er puesto','4to puesto'],r:3,exp:'Los Pumas llegaron al cuarto puesto en Francia 2023, perdiendo el partido por el bronce ante Inglaterra.'},
+    {p:'¿En qué año Los Pumas lograron su mejor resultado mundialista?',opts:['1999','2003','2007','2015'],r:2,exp:'En 2007 Los Pumas obtuvieron el tercer puesto en Francia, su mejor resultado histórico en Mundiales.'},
+    {p:'¿En qué torneo internacional compite Argentina en rugby anualmente?',opts:['Six Nations','The Rugby Championship','Pro14','Super Rugby'],r:1,exp:'Argentina integra The Rugby Championship junto a Nueva Zelanda, Australia y Sudáfrica desde 2012.'},
+    {p:'¿Quién es el máximo anotador histórico de Los Pumas?',opts:['Hugo Porta','Felipe Contepomi','Gonzalo Quesada','Hernández'],r:1,exp:'Felipe Contepomi es el máximo anotador histórico de Los Pumas con más de 600 puntos acumulados.'},
+    {p:'¿Cuántos jugadores tiene un equipo de rugby union en el campo?',opts:['13','14','15','16'],r:2,exp:'El rugby union se juega con 15 jugadores por equipo, a diferencia del rugby league que tiene 13.'},
+  ];
+  const tenis=[
+    {p:'¿Quién fue el primer argentino en ganar un Grand Slam?',opts:['Guillermo Vilas','Gastón Gaudio','David Nalbandian','Del Potro'],r:0,exp:'Guillermo Vilas ganó Roland Garros y el US Open en 1977, primer gran campeón del tenis argentino.'},
+    {p:'¿Qué Grand Slam ganó Gastón Gaudio?',opts:['Wimbledon','Roland Garros','US Open','Australia'],r:1,exp:'Gastón Gaudio ganó Roland Garros 2004 remontando 2 sets abajo ante Guillermo Coria en la final.'},
+    {p:'¿En qué año Del Potro ganó el US Open?',opts:['2007','2008','2009','2010'],r:2,exp:'Juan Martín Del Potro ganó el US Open 2009 derrotando a Roger Federer en una histórica final de 5 sets.'},
+    {p:'¿Cuántos Grand Slams ganó Guillermo Vilas en total?',opts:['2','3','4','5'],r:2,exp:'Vilas ganó 4 Grand Slams: Roland Garros 1977, US Open 1977, Australia 1978 y Australia 1979.'},
+    {p:'¿Qué medalla ganó Del Potro en los Juegos Olímpicos 2016?',opts:['Oro','Plata','Bronce','No participó'],r:1,exp:'Del Potro ganó la medalla de plata en Río 2016, perdiendo la final ante Andy Murray.'},
+    {p:'¿Cuál fue el mejor ranking ATP de David Nalbandian?',opts:['1°','2°','3°','4°'],r:1,exp:'Nalbandian llegó al número 3 del mundo en 2006 y ganó el Masters de Madrid ese mismo año.'},
+  ];
+  const basket=[
+    {p:'¿Cuántas veces fue campeón olímpico el básquet argentino?',opts:['1','2','3','0'],r:0,exp:'Argentina ganó el oro olímpico en Atenas 2004 con la generación dorada: Ginóbili, Pepe Sánchez, Nocioni y más.'},
+    {p:'¿En qué equipo NBA jugó Manu Ginóbili toda su carrera?',opts:['Lakers','Bulls','Spurs','Heat'],r:2,exp:'Manu Ginóbili jugó toda su carrera NBA en San Antonio Spurs (2002-2018) ganando 4 anillos de campeón.'},
+    {p:'¿Cuántos anillos NBA ganó Manu Ginóbili?',opts:['2','3','4','5'],r:2,exp:'Manu Ginóbili ganó 4 anillos con los San Antonio Spurs en 2003, 2005, 2007 y 2014.'},
+    {p:'¿Quién es el máximo anotador argentino en la historia de la NBA?',opts:['Luis Scola','Pepe Sánchez','Manu Ginóbili','Campazzo'],r:2,exp:'Manu Ginóbili acumuló más de 14.000 puntos en la NBA, siendo el argentino más goleador de la historia.'},
+    {p:'¿En qué posición juega Facundo Campazzo?',opts:['Pivot','Alero','Base','Escolta'],r:2,exp:'Campazzo es base, conocido por su visión de juego, sus asistencias y su capacidad para robar balones.'},
+    {p:'¿Con qué apodo se conoce a la generación dorada del básquet argentino?',opts:['Los Gladiadores','La Scaloneta','La Generación Dorada','Los Pumas'],r:2,exp:'Se les llamó "Generación Dorada" al grupo que ganó el oro olímpico en 2004 y el bronce en 2008.'},
+  ];
+  const formula1=[
+    {p:'¿Cuántos títulos mundiales de F1 ganó Juan Manuel Fangio?',opts:['3','4','5','6'],r:2,exp:'Juan Manuel Fangio ganó 5 títulos (1951,1954,1955,1956,1957). Récord que duró 46 años hasta Schumacher.'},
+    {p:'¿En qué equipo debutó Franco Colapinto en la F1?',opts:['Ferrari','Williams','McLaren','Alpine'],r:1,exp:'Franco Colapinto debutó en Williams en el GP de Italia 2024, reemplazando a Logan Sargeant.'},
+    {p:'¿En qué país nació Juan Manuel Fangio?',opts:['Italia','España','Argentina','Uruguay'],r:2,exp:'Juan Manuel Fangio nació en Balcarce, Buenos Aires, Argentina, el 24 de junio de 1911.'},
+    {p:'¿Con qué equipo ganó Fangio su primer título mundial de F1?',opts:['Ferrari','Alfa Romeo','Mercedes','Maserati'],r:1,exp:'Fangio ganó su primer título en 1951 con Alfa Romeo, dominando la temporada con 3 victorias.'},
+    {p:'¿Cuál fue la mejor posición de Colapinto en su debut en F1 en 2024?',opts:['3°','4°','5°','6°'],r:2,exp:'Colapinto terminó 5° en el GP de EE.UU. 2024, su mejor resultado en su temporada debut con Williams.'},
+    {p:'¿En qué ciudad argentina hay un autódromo con nombre de un piloto local?',opts:['Córdoba','Buenos Aires','Balcarce','Rosario'],r:2,exp:'El Autódromo de Balcarce lleva el nombre de Juan Manuel Fangio, oriundo de esa ciudad bonaerense.'},
+  ];
+  const hockey=[
+    {p:'¿Cómo se llama la selección femenina argentina de hockey?',opts:['Las Pumas','Las Leonas','Las Águilas','Las Panteras'],r:1,exp:'Las Leonas son la selección femenina de hockey sobre césped, una de las mejores del mundo.'},
+    {p:'¿Cuántas medallas olímpicas tienen Las Leonas hasta 2024?',opts:['3','4','5','6'],r:2,exp:'Las Leonas ganaron plata en 2000, 2004 y 2012, más bronce en 2008. Son uno de los equipos más ganadores.'},
+    {p:'¿Cómo se llama la selección masculina argentina de hockey?',opts:['Los Leones','Los Pumas','Los Gladiadores','Los Tigres'],r:0,exp:'Los Leones ganaron el oro olímpico en Río 2016, el hito más grande del hockey masculino argentino.'},
+    {p:'¿Qué medalla ganaron Los Leones en los Juegos Olímpicos de Río 2016?',opts:['Oro','Plata','Bronce','No participaron'],r:0,exp:'Los Leones ganaron el oro olímpico en Río 2016 derrotando a Bélgica 4-2 en la final.'},
+  ];
+  const mixta = shuffleArray([...futbol,...rugby,...tenis,...basket,...formula1,...hockey]);
+  const pool = cat==='futbol'?futbol:cat==='rugby'?rugby:cat==='tenis'?tenis:cat==='basket'?basket:cat==='formula1'?formula1:cat==='hockey'?hockey:mixta;
+  return shuffleArray(pool).slice(0,6);
+}
+const CM_TRIVIA_PREGUNTAS = getTriviaSet('mixta');
 
 const CM_DEPORTES_TAGS = ['⚽ Fútbol','🏉 Rugby','🎾 Tenis','🏀 Básquet','🏎️ F1','🏑 Hockey','🥊 Boxeo','🌐 Todos'];
 const CM_COLORES_AV = ['#E8262A','#16A34A','#F59E0B','#4A90D9','#8B5CF6','#EC4899','#0891B2','#DC2626'];
@@ -1569,17 +1625,6 @@ function CmEncuestasTab({user,addToast,sumarPuntos}){
 }
 
 function CmTriviaTab({sumarPuntos,addToast}){
-  const [preguntas,setPreguntas]   = useState([]);
-  const [idx,setIdx]               = useState(0);
-  const [respondida,setRespondida] = useState(null);
-  const [racha,setRacha]           = useState(0);
-  const [ptsTrivia,setPtsTrivia]   = useState(0);
-  const [finalizado,setFinalizado] = useState(false);
-  const [historial,setHistorial]   = useState([]);
-  const [cargando,setCargando]     = useState(false);
-  const [error,setError]           = useState(null);
-  const [categoria,setCategoria]   = useState('mixta');
-
   const CATEGORIAS = [
     {id:'mixta',    l:'🎯 Mixta'},
     {id:'futbol',   l:'⚽ Fútbol'},
@@ -1587,80 +1632,43 @@ function CmTriviaTab({sumarPuntos,addToast}){
     {id:'tenis',    l:'🎾 Tenis'},
     {id:'basket',   l:'🏀 Básquet'},
     {id:'formula1', l:'🏎️ F1'},
+    {id:'hockey',   l:'🏑 Hockey'},
   ];
+  const [categoria,setCategoria] = useState('mixta');
+  const [preguntas,setPreguntas] = useState(()=>getTriviaSet('mixta'));
+  const [idx,setIdx]             = useState(0);
+  const [respondida,setRespondida]= useState(null);
+  const [racha,setRacha]         = useState(0);
+  const [ptsTrivia,setPtsTrivia] = useState(0);
+  const [finalizado,setFinalizado]= useState(false);
+  const [historial,setHistorial] = useState([]);
 
-  const TOTAL_PREGUNTAS = 6;
-
-  async function generarTrivia(){
-    setCargando(true); setError(null);
-    setPreguntas([]); setIdx(0); setRespondida(null);
-    setRacha(0); setPtsTrivia(0); setFinalizado(false); setHistorial([]);
-
-    const tematica = {
-      mixta:    'deporte argentino en general (fútbol, rugby, tenis, básquet, automovilismo, hockey)',
-      futbol:   'fútbol argentino (selección, clubes, jugadores, historia, mundiales)',
-      rugby:    'rugby argentino (Los Pumas, Top 14, torneos, jugadores)',
-      tenis:    'tenis argentino (Del Potro, Gaudio, Nalbandian, torneos)',
-      basket:   'básquet argentino (selección, Liga Nacional, jugadores NBA)',
-      formula1: 'automovilismo argentino (Fangio, Colapinto, Fórmula 1, TC2000)',
-    }[categoria];
-
-    const prompt = `Generá exactamente ${TOTAL_PREGUNTAS} preguntas de trivia sobre ${tematica}.
-Respondé SOLO con JSON válido, sin texto extra, sin backticks, sin markdown.
-Formato exacto:
-[
-  {
-    "p": "¿Pregunta aquí?",
-    "opts": ["Opción A","Opción B","Opción C","Opción D"],
-    "r": 0,
-    "exp": "Explicación breve del dato curioso (máx 60 palabras)."
-  }
-]
-Reglas:
-- "r" es el índice (0-3) de la opción correcta
-- Las preguntas deben ser variadas en dificultad
-- Incluí datos curiosos reales en "exp"
-- No repitas preguntas obvias
-- Las opciones incorrectas deben ser verosímiles`;
-
-    try {
-      const resp = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          model: 'claude-sonnet-4-20250514',
-          max_tokens: 1000,
-          messages: [{ role: 'user', content: prompt }]
-        })
-      });
-      const data = await resp.json();
-      const texto = data.content?.[0]?.text || '';
-      const clean = texto.replace(/```json|```/g,'').trim();
-      const parsed = JSON.parse(clean);
-      if(!Array.isArray(parsed) || parsed.length===0) throw new Error('Formato inválido');
-      setPreguntas(parsed);
-    } catch(e) {
-      console.warn('Trivia IA error:',e.message);
-      setError('No se pudieron generar las preguntas. Intentá de nuevo.');
-    }
-    setCargando(false);
+  function nuevaRonda(cat){
+    const cat2 = cat || categoria;
+    setPreguntas(getTriviaSet(cat2));
+    setIdx(0); setRespondida(null); setRacha(0);
+    setPtsTrivia(0); setFinalizado(false); setHistorial([]);
   }
 
-  useEffect(()=>{ generarTrivia(); },[categoria]);
+  function cambiarCategoria(cat){
+    setCategoria(cat);
+    nuevaRonda(cat);
+  }
 
   const pregunta = preguntas[idx];
 
   function responder(optIdx){
     if(respondida!==null || !pregunta) return;
     setRespondida(optIdx);
-    const correcto = optIdx === pregunta.r;
+    const correcto = optIdx===pregunta.r;
     if(correcto){
       const nr=racha+1; setRacha(nr);
       const pts=CM_PUNTOS_CONFIG.triviaCorrecta+CM_PUNTOS_CONFIG.triviaRacha(nr);
       setPtsTrivia(p=>p+pts); sumarPuntos('triviaCorrecta',{racha:nr});
       addToast({msg:`✅ ¡Correcto! +${pts} pts${nr>=3?' 🔥 RACHA':''}`,type:'ok'});
     } else {
-      setRacha(0); addToast({msg:'❌ Incorrecto — '+pregunta.opts[pregunta.r],type:'err'});
+      setRacha(0);
+      addToast({msg:'❌ Incorrecto — '+pregunta.opts[pregunta.r],type:'err'});
     }
     setHistorial(h=>[...h,{p:pregunta.p,correcto,racha:correcto?racha+1:0}]);
   }
@@ -1683,7 +1691,7 @@ Reglas:
             {correctas>=5?'¡Sos un crack del deporte argentino! 🇦🇷':correctas>=3?'¡Buen conocimiento deportivo! 💪':'Seguí aprendiendo sobre el deporte nacional 📚'}
           </div>
           <div style={{display:'flex',gap:8,justifyContent:'center',marginTop:16,flexWrap:'wrap'}}>
-            <button className="btn btn-c" onClick={generarTrivia}>🔄 Nuevas preguntas IA</button>
+            <button className="btn btn-c" onClick={()=>nuevaRonda()}>🔀 Nuevas preguntas</button>
             <button className="btn btn-o" onClick={()=>{setIdx(0);setRespondida(null);setRacha(0);setPtsTrivia(0);setFinalizado(false);setHistorial([]);}}>↩ Repetir estas</button>
           </div>
         </div>
@@ -1698,38 +1706,14 @@ Reglas:
     );
   }
 
-  /* ── PANTALLA DE CARGA ── */
-  if(cargando){
-    return (
-      <div style={{textAlign:'center',padding:'40px 20px'}}>
-        <div style={{width:48,height:48,border:'3px solid var(--cel-xl)',borderTop:'3px solid var(--cel)',borderRadius:'50%',animation:'spin .8s linear infinite',margin:'0 auto 16px'}}/>
-        <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700,color:'var(--tx)',marginBottom:6}}>🧠 Generando trivia con IA...</div>
-        <div style={{fontSize:12,color:'var(--tx3)'}}>Preparando preguntas únicas sobre {CATEGORIAS.find(c=>c.id===categoria)?.l}</div>
-      </div>
-    );
-  }
-
-  /* ── PANTALLA DE ERROR ── */
-  if(error){
-    return (
-      <div style={{textAlign:'center',padding:'30px 16px'}}>
-        <div style={{fontSize:40,marginBottom:12}}>😕</div>
-        <div style={{fontSize:14,color:'var(--tx2)',marginBottom:16}}>{error}</div>
-        <button className="btn btn-c" onClick={generarTrivia}>Intentar de nuevo</button>
-      </div>
-    );
-  }
-
-  /* ── SIN PREGUNTAS ── */
   if(!pregunta) return null;
 
-  /* ── JUEGO ── */
   return (
     <div>
-      {/* Selector de categoría */}
+      {/* Categorías */}
       <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:12,paddingBottom:4,scrollbarWidth:'none'}}>
         {CATEGORIAS.map(c=>(
-          <button key={c.id} onClick={()=>setCategoria(c.id)}
+          <button key={c.id} onClick={()=>cambiarCategoria(c.id)}
             style={{flexShrink:0,padding:'5px 12px',borderRadius:20,fontSize:11,fontWeight:700,cursor:'pointer',
               border:`1.5px solid ${categoria===c.id?'var(--cel)':'var(--br)'}`,
               background:categoria===c.id?'var(--cel)':'var(--white)',
@@ -1741,15 +1725,13 @@ Reglas:
       <div style={{background:'linear-gradient(135deg,#1a1a2e,#16213e)',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:14,color:'white',position:'relative',overflow:'hidden'}}>
         <div style={{position:'absolute',top:-20,right:-20,width:80,height:80,borderRadius:'50%',background:'rgba(139,92,246,.3)',pointerEvents:'none'}}/>
         <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:6}}>
-          <div style={{display:'flex',alignItems:'center',gap:8}}>
-            <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>🧠 Trivia IA</div>
-            <span style={{fontSize:9,background:'rgba(139,92,246,.4)',border:'1px solid rgba(139,92,246,.6)',borderRadius:20,padding:'2px 8px',color:'#C4B5FD',fontWeight:700}}>IA</span>
-          </div>
+          <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>🧠 Trivia Deportiva</div>
           <CmPuntsBadge puntos={ptsTrivia}/>
         </div>
         <div style={{display:'flex',gap:12,fontSize:12,opacity:.8}}>
           <span>Pregunta {idx+1} / {preguntas.length}</span>
           {racha>=2&&<span>🔥 Racha: {racha}</span>}
+          <span style={{marginLeft:'auto',cursor:'pointer',opacity:.7}} onClick={()=>nuevaRonda()}>🔀 Mezclar</span>
         </div>
         <div style={{marginTop:8,height:4,background:'rgba(255,255,255,.2)',borderRadius:2,overflow:'hidden'}}>
           <div style={{height:'100%',width:((idx/preguntas.length)*100)+'%',background:'var(--cel-l)',borderRadius:2,transition:'width .4s'}}/>
@@ -1763,13 +1745,13 @@ Reglas:
           let bg='var(--white)',bc='var(--br)',col='var(--tx2)';
           if(respondida!==null){
             if(i===pregunta.r){bg='rgba(39,174,96,.1)';bc='var(--green)';col='#1E8449';}
-            else if(i===respondida){bg='rgba(192,57,43,.08)';bc='var(--red)';col='var(--red)';}
+            else if(i===respondida&&i!==pregunta.r){bg='rgba(192,57,43,.08)';bc='var(--red)';col='var(--red)';}
           }
           return (
             <div key={i} onClick={()=>responder(i)}
               style={{padding:'10px 13px',borderRadius:'var(--rs)',border:`1.5px solid ${bc}`,background:bg,color:col,
-                cursor:respondida!==null?'default':'pointer',marginBottom:7,fontSize:13,fontWeight:500,transition:'.2s',
-                display:'flex',alignItems:'center',gap:8}}>
+                cursor:respondida!==null?'default':'pointer',marginBottom:7,fontSize:13,fontWeight:500,
+                transition:'.2s',display:'flex',alignItems:'center',gap:8}}>
               <span style={{width:22,height:22,borderRadius:'50%',background:bc==='var(--br)'?'var(--cel-xl)':bg,border:`1px solid ${bc}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:700,color:bc==='var(--br)'?'var(--cel-d)':col,flexShrink:0}}>{String.fromCharCode(65+i)}</span>
               {opt}
               {respondida!==null&&i===pregunta.r&&<span style={{marginLeft:'auto'}}>✅</span>}
@@ -1783,6 +1765,7 @@ Reglas:
           </div>
         )}
       </div>
+
       {respondida!==null&&(
         <button className="btn btn-c" style={{width:'100%',justifyContent:'center'}} onClick={siguiente}>
           {idx+1<preguntas.length?'Siguiente →':'Ver resultados 🏆'}
@@ -1791,6 +1774,7 @@ Reglas:
     </div>
   );
 }
+
 
 function CmRankingTab({perfil,userId}){
   const [periodo,setPeriodo]=useState('semanal');
@@ -3003,9 +2987,16 @@ function IAModuleWidget() {
     try {
       const ctrl = new AbortController();
       const tId = setTimeout(() => ctrl.abort(), 10000);
+      const apiKey = window.ANTHROPIC_KEY || '';
+      if(!apiKey || apiKey === 'TU_API_KEY_AQUI') throw new Error('sin-key');
       const resp = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
         signal: ctrl.signal,
         body: JSON.stringify({
           model: 'claude-sonnet-4-20250514',
