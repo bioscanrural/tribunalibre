@@ -2228,7 +2228,7 @@ function ProdePage({ user, addToast }) {
         </div>
       </div>
       <div className="section-banner">
-        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Copilot_20260415_202946%20(1).png"
+        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/latribupredice.JPG"
           alt="La Tribu Predice" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
 
@@ -2489,6 +2489,10 @@ function RevistaPage({ user, addToast }) {
           <div style={{fontSize:12,opacity:.8}}>Talentos emergentes · Promesas del deporte argentino</div>
         </div>
       </div>
+      <div className="section-banner">
+        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/Latribudescubre.JPG"
+          alt="La Tribu Descubre" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
+      </div>
 
       {/* TABS */}
       <div className="tabs" style={{flexWrap:'wrap'}}>
@@ -2671,6 +2675,10 @@ function RedPeriodismoPage({ addToast }) {
           <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Red de Periodismo Deportivo</div>
           <div style={{fontSize:12,opacity:.8}}>Conectá, colaborá y crecé con la comunidad</div>
         </div>
+      </div>
+      <div className="section-banner">
+        <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/reddeperiodismo.png"
+          alt="Red de Periodismo Deportivo" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
       <div className="tabs">
         {[{id:'red',l:'👥 Periodistas'},{id:'medios',l:'📺 Medios'},{id:'periodismo',l:'🎙️ Periodismo Dep.'},{id:'unirse',l:'✋ Unirme'}].map(t => (
@@ -3443,6 +3451,10 @@ function App() {
                     <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>El VAR — Encuestas</div>
                     <div style={{fontSize:12,opacity:.8}}>La comunidad decide: ¿fue penal o no?</div>
                   </div>
+                </div>
+                <div className="section-banner">
+                  <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/VAR.JPG"
+                    alt="El VAR" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
                 </div>
                 <div className="sh"><div className="st">Encuestas del momento</div></div>
                 {STATIC_POLLS.map(p => <div key={p.id} className="card cp" style={{marginBottom:14}}><Poll poll={p}/></div>)}
