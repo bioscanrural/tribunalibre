@@ -459,6 +459,86 @@ img{max-width:100%;height:auto;display:block}
 .red-stats{display:flex;gap:10px;margin-top:7px}
 .red-stat{font-size:10px;color:var(--tx3);display:flex;align-items:center;gap:3px}
 
+/* ═══ KARMA / NIVELES ═══ */
+.karma-banner{background:linear-gradient(135deg,#0891B2,#0E7490);border-radius:var(--r);padding:14px 16px;margin-bottom:14px;color:white;display:flex;align-items:center;gap:14px}
+.karma-level-badge{background:rgba(255,255,255,.18);border:1.5px solid rgba(255,255,255,.4);border-radius:30px;padding:4px 12px;font-size:11px;font-weight:700;font-family:var(--fd);letter-spacing:.5px;white-space:nowrap}
+.karma-bar-wrap{flex:1;background:rgba(255,255,255,.2);border-radius:4px;height:6px;overflow:hidden}
+.karma-bar-fill{height:100%;background:white;border-radius:4px;transition:.4s}
+.karma-pts-label{font-size:12px;opacity:.85;margin-top:3px}
+.karma-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-bottom:14px}
+.karma-action{background:var(--white);border:1px solid var(--br);border-radius:var(--rs);padding:8px 10px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:var(--tx2)}
+.karma-pts{font-size:11px;font-weight:700;color:#0891B2;background:rgba(8,145,178,.1);padding:2px 7px;border-radius:10px}
+.karma-levels-row{display:flex;gap:0;border:1px solid var(--br);border-radius:var(--r);overflow:hidden;margin-bottom:14px}
+.karma-lvl{flex:1;padding:7px 4px;text-align:center;border-right:1px solid var(--br);font-size:10px}
+.karma-lvl:last-child{border-right:none}
+.karma-lvl.active{background:rgba(8,145,178,.1)}
+.karma-lvl-name{font-weight:700;color:var(--tx);font-size:11px}
+.karma-lvl-pts{color:var(--tx3)}
+
+/* ═══ FEED DE NOTAS ═══ */
+.nota-card{background:var(--white);border:1px solid var(--br);border-radius:var(--r);padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:.2s}
+.nota-card:hover{border-color:var(--teal);box-shadow:var(--sh)}
+.nota-format-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:10px;background:rgba(8,145,178,.1);color:var(--teal);margin-bottom:6px}
+.nota-title{font-family:var(--fd);font-size:14px;font-weight:600;color:var(--tx);line-height:1.3;margin-bottom:5px}
+.nota-excerpt{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:8px}
+.nota-footer{display:flex;align-items:center;gap:10px;font-size:10px;color:var(--tx3)}
+.nota-author-av{width:20px;height:20px;border-radius:50%;background:var(--teal);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:white;flex-shrink:0}
+.nota-likes{display:flex;align-items:center;gap:3px;margin-left:auto;cursor:pointer}
+.nota-likes:hover{color:var(--red)}
+
+/* ═══ COLABORACIONES ═══ */
+.colab-card{background:var(--white);border:1px solid var(--br);border-radius:var(--r);padding:13px 14px;margin-bottom:10px;transition:.2s}
+.colab-card:hover{border-color:var(--purple);box-shadow:var(--sh)}
+.colab-role-badge{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;padding:2px 8px;border-radius:10px;background:rgba(139,92,246,.1);color:var(--purple);margin-bottom:6px}
+.colab-title{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--tx);margin-bottom:4px}
+.colab-desc{font-size:11px;color:var(--tx2);line-height:1.5;margin-bottom:8px}
+.colab-tags{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+.colab-tag{font-size:10px;padding:2px 8px;border-radius:10px;background:var(--cel-xl);color:var(--cel-d);border:1px solid var(--br)}
+.colab-footer{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--tx3)}
+.colab-urgencia{padding:2px 7px;border-radius:8px;font-size:9px;font-weight:700;text-transform:uppercase}
+.urg-alta{background:rgba(192,57,43,.1);color:var(--red)}
+.urg-media{background:rgba(246,180,14,.15);color:#B7770D}
+.urg-baja{background:rgba(39,174,96,.1);color:var(--green)}
+
+/* ═══ TÓPICOS DEL MOMENTO ═══ */
+.topicos-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+@media(max-width:700px){.topicos-grid{grid-template-columns:1fr}}
+.topico-col{background:var(--white);border:1px solid var(--br);border-radius:var(--r);overflow:hidden}
+.topico-col-hd{padding:9px 12px;font-family:var(--fd);font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.topico-row{display:flex;align-items:flex-start;gap:8px;padding:7px 12px;border-top:1px solid var(--br);cursor:pointer;transition:.15s}
+.topico-row:hover{background:var(--cel-xl)}
+.topico-num{font-family:var(--fd);font-size:15px;font-weight:700;color:var(--tx3);width:18px;flex-shrink:0;line-height:1.3}
+.topico-num.top1{color:var(--teal)}
+.topico-name{font-size:12px;font-weight:600;color:var(--tx);line-height:1.3}
+.topico-meta{font-size:10px;color:var(--tx3);margin-top:1px}
+.topico-heat{color:#B7770D;font-weight:700}
+
+/* ═══ RANKING RED ═══ */
+.red-rank-card{background:var(--white);border:1px solid var(--br);border-radius:var(--r);padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;transition:.2s}
+.red-rank-card:hover{border-color:var(--teal);box-shadow:var(--sh)}
+.red-rank-num{font-family:var(--fd);font-size:20px;font-weight:700;color:var(--tx3);width:28px;text-align:center;flex-shrink:0}
+.red-rank-av{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;border:2px solid var(--teal)}
+.red-rank-info{flex:1;min-width:0}
+.red-rank-name{font-family:var(--fd);font-size:13px;font-weight:600;color:var(--tx)}
+.red-rank-level{font-size:10px;color:var(--teal);font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+.red-rank-pts{font-size:13px;font-weight:700;color:#0891B2;background:rgba(8,145,178,.1);padding:3px 9px;border-radius:10px;white-space:nowrap}
+
+/* ═══ ACTIVIDAD ═══ */
+.act-feed-item{display:flex;align-items:flex-start;gap:10px;padding:8px 0;border-bottom:1px solid var(--br)}
+.act-feed-item:last-child{border-bottom:none}
+.act-av{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:white;flex-shrink:0}
+.act-text{flex:1;font-size:12px;color:var(--tx2);line-height:1.4}
+.act-text b{color:var(--tx)}
+.act-time{font-size:10px;color:var(--tx3);flex-shrink:0;margin-top:1px}
+
+/* ═══ PUBLICAR NOTA FORM ═══ */
+.pub-form{background:var(--white);border:1px solid var(--br);border-radius:var(--r);padding:16px}
+.format-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:14px}
+.format-btn{border:1.5px solid var(--br);border-radius:var(--rs);padding:9px 6px;text-align:center;cursor:pointer;transition:.15s;background:var(--white)}
+.format-btn:hover,.format-btn.sel{border-color:var(--teal);background:rgba(8,145,178,.07)}
+.format-btn .fem{font-size:20px;display:block;margin-bottom:3px}
+.format-btn .fnm{font-size:10px;font-weight:600;color:var(--tx2)}
+
 /* PERIODISMO DEPORTIVO */
 .peri-card{background:var(--white);border-radius:var(--r);border:1px solid var(--br);overflow:hidden;cursor:pointer;transition:.2s}
 .peri-card:hover{border-color:var(--purple);box-shadow:0 8px 30px rgba(139,92,246,.18);transform:translateY(-2px)}
@@ -617,6 +697,92 @@ const PERI_DEPORTIVO = [
   {id:5,emoji:'🌐',cat:'Digital',titulo:'Redes sociales para periodistas deportivos en 2025',resumen:'Estrategias reales para construir audiencia en Instagram, TikTok y X sin perder credibilidad.',autor:'Sofía Berardi',fecha:'3 Jun 2025',lecturas:2900},
   {id:6,emoji:'🎬',cat:'Video',titulo:'El video corto como herramienta periodística',resumen:'Cómo contar una historia deportiva en 60 segundos: narrativa, montaje y distribución.',autor:'Emanuel Ríos',fecha:'1 Jun 2025',lecturas:1650},
 ];
+
+/* ══════════════════════════ RED EXPANDED DATA ══════════════════════════ */
+const RED_NOTAS_INIT = [
+  {id:1,formato:'Columna',em:'✍️',deporte:'Fútbol',titulo:'El ADN táctico del Superclásico: qué cambió Demichelis en el segundo tiempo',resumen:'Un análisis minucioso de los ajustes del entrenador de River que dieron vuelta el partido en los últimos 20 minutos.',autor:'Martina Solís',autorEm:'🎙️',fecha:'hace 12 min',lecturas:210,likes:34,verificado:true},
+  {id:2,formato:'Entrevista',em:'🎤',deporte:'Rugby',titulo:'"El rugby argentino tiene hambre de más" — Agustín Creevy habla sin filtro',resumen:'El ex capitán de Los Pumas y la nueva generación que viene pisando fuerte para el próximo ciclo mundialista.',autor:'Lucas Miró',autorEm:'🎧',fecha:'hace 1 hora',lecturas:880,likes:121,verificado:true},
+  {id:3,formato:'Video',em:'📹',deporte:'Fútbol',titulo:'Los 5 mejores goles de la jornada — Copa Libertadores 2026',resumen:'Racing, Boca y Flamengo protagonizaron las jugadas más brillantes de la fase de grupos. Compilado con análisis.',autor:'Emanuel Ríos',autorEm:'📹',fecha:'hace 2 hs',lecturas:1540,likes:203,verificado:false},
+  {id:4,formato:'Nota',em:'📰',deporte:'Tenis',titulo:'Cerúndolo y el tenis argentino: una camada que llegó para quedarse',resumen:'Francisco y Juan Manuel representan la mejor generación de tenistas criollos desde Gaudio. Sus números lo confirman.',autor:'Sofía Berardi',autorEm:'✍️',fecha:'hace 3 hs',lecturas:670,likes:88,verificado:true},
+  {id:5,formato:'Fotografía',em:'📸',deporte:'Fútbol',titulo:'Galería: el Monumental desde adentro — River 2 vs Racing 1',resumen:'20 imágenes que capturan la intensidad del Clásico de Avellaneda. Desde el túnel hasta el festejo final.',autor:'Rodrigo Peralta',autorEm:'📸',fecha:'hace 5 hs',lecturas:2100,likes:315,verificado:true},
+  {id:6,formato:'Podcast',em:'🎙️',deporte:'Básquet',titulo:'El Vestuario #214 — Liga Nacional: análisis de la gran final',resumen:'78 minutos con los protagonistas, los detalles del juego y una charla exclusiva con el head coach campeón.',autor:'Lucas Miró',autorEm:'🎧',fecha:'hace 6 hs',lecturas:3200,likes:442,verificado:true},
+];
+
+const RED_COLABORACIONES_INIT = [
+  {id:1,rol:'Camarógrafo',em:'📹',titulo:'Busco camarógrafo para cobertura del Superclásico — Sábado en Buenos Aires',desc:'Necesito un camarógrafo con equipo propio para cobertura de 4 horas. Trabajo remunerado. Se requiere experiencia en deportes en vivo.',tags:['Fútbol','Buenos Aires','Remunerado'],urgencia:'alta',autor:'Martina Solís',fecha:'hace 30 min'},
+  {id:2,rol:'Co-autor',em:'🖊️',titulo:'Busco co-autor para investigación sobre financiamiento del fútbol argentino',desc:'Trabajo en un informe de largo aliento sobre el modelo económico de los clubes argentinos. Busco colega con acceso a fuentes AFA.',tags:['Investigación','Fútbol','Datos'],urgencia:'baja',autor:'Valeria Cruz',fecha:'hace 2 hs'},
+  {id:3,rol:'Fotógrafo',em:'📸',titulo:'Fotógrafo acreditado para Copa Argentina — Rosario, próximo jueves',desc:'Evento Copa Argentina en el Gigante de Arroyito. Necesito fotógrafo con acreditación APDA o similar. Publicación en Infobae.',tags:['Fútbol','Rosario','Acreditación'],urgencia:'media',autor:'Sofía Berardi',fecha:'hace 4 hs'},
+  {id:4,rol:'Productor',em:'🎚️',titulo:'Productor para podcast semanal de rugby — trabajo permanente',desc:'Lanzamos podcast de rugby con frecuencia semanal. Buscamos productor de audio con experiencia en edición y publicación en Spotify.',tags:['Rugby','Podcast','Permanente'],urgencia:'media',autor:'Lucas Miró',fecha:'hace 1 día'},
+  {id:5,rol:'Reportero',em:'🎙️',titulo:'Reportero en campo para torneos de tenis del interior — varias fechas',desc:'Cobertura de torneos ITF y ATP Challenger en Córdoba y Mendoza durante julio. Freelance por evento.',tags:['Tenis','Interior','Freelance'],urgencia:'baja',autor:'Emanuel Ríos',fecha:'hace 2 días'},
+];
+
+const RED_RANKING_INIT = [
+  {id:1,em:'🎙️',nombre:'Martina Solís',nivel:'⭐ Referente',pts:480,notas:12,medio:'TyC Sports',colores:['#0891B2','rgba(8,145,178,.15)']},
+  {id:2,em:'📸',nombre:'Rodrigo Peralta',nivel:'🖊️ Editor',pts:390,notas:9,medio:'La Nación',colores:['#4A90D9','rgba(74,144,217,.15)']},
+  {id:3,em:'✍️',nombre:'Sofía Berardi',nivel:'🖊️ Editor',pts:341,notas:8,medio:'Olé',colores:['#8B5CF6','rgba(139,92,246,.15)']},
+  {id:4,em:'🎧',nombre:'Lucas Miró',nivel:'📝 Redactor',pts:280,notas:7,medio:'Deportes 910',colores:['#27AE60','rgba(39,174,96,.15)']},
+  {id:5,em:'📊',nombre:'Valeria Cruz',nivel:'📝 Redactor',pts:210,notas:5,medio:'ESPN Digital',colores:['#F59E0B','rgba(245,158,11,.15)']},
+  {id:6,em:'📹',nombre:'Emanuel Ríos',nivel:'✏️ Cronista',pts:130,notas:3,medio:'Freelance',colores:['#EC4899','rgba(236,72,153,.15)']},
+];
+
+const RED_ACTIVIDAD_INIT = [
+  {id:1,av:'MS',color:'#0891B2',text:'<b>Martina Solís</b> publicó una columna — "El ADN táctico del Superclásico"',tiempo:'12 min',tipo:'nota'},
+  {id:2,av:'LC',color:'#4A90D9',text:'<b>Lucas Miró</b> busca camarógrafo para cobertura del Superclásico 📹',tiempo:'30 min',tipo:'colab'},
+  {id:3,av:'PR',color:'#8B5CF6',text:'<b>Pablo Repetto</b> se unió a la Red de Periodismo 👋',tiempo:'1 hora',tipo:'nuevo'},
+  {id:4,av:'ER',color:'#27AE60',text:'<b>Emanuel Ríos</b> subió a nivel <b>Redactor</b> ⭐',tiempo:'2 hs',tipo:'karma'},
+  {id:5,av:'SB',color:'#EC4899',text:'<b>Sofía Berardi</b> ofreció mentoría a 2 periodistas nuevos',tiempo:'3 hs',tipo:'mentor'},
+  {id:6,av:'VC',color:'#F59E0B',text:'<b>Valeria Cruz</b> publicó entrevista — "Los datos detrás de Los Pumas"',tiempo:'4 hs',tipo:'nota'},
+];
+
+const RED_TOPICOS = [
+  {id:1,nombre:'Copa Libertadores 2026',meta:'42 notas · 8 activos',heat:'🔥'},
+  {id:2,nombre:'Mercado de pases',meta:'29 notas · subiendo',heat:'📈'},
+  {id:3,nombre:'Selección post-Mundial',meta:'21 notas',heat:''},
+  {id:4,nombre:'Rugby: Los Pumas',meta:'18 notas · 5 activos',heat:'🏉'},
+  {id:5,nombre:'Colapinto F1',meta:'14 notas',heat:'🏎️'},
+];
+
+const CM_TOPICOS = [
+  {id:1,nombre:'¿Fue penal? Boca-River',meta:'3.2k debates',heat:'🔥'},
+  {id:2,nombre:'Los Pumas en el Mundial',meta:'1.8k debates · trending',heat:'📈'},
+  {id:3,nombre:'¿Dónde juega Messi 2027?',meta:'980 debates',heat:''},
+  {id:4,nombre:'Colapinto campeón 2025',meta:'840 debates',heat:'🏎️'},
+  {id:5,nombre:'NBA Playoffs 2026',meta:'620 debates',heat:'🏀'},
+];
+
+const KARMA_ACCIONES = [
+  {accion:'Publicar contenido',pts:10},{accion:'Publicación con 10+ likes',pts:15},
+  {accion:'Dar like a un colega',pts:2},{accion:'Ofrecer colaboración',pts:8},
+  {accion:'Completar perfil',pts:20},{accion:'Dar/pedir mentoría',pts:12},
+  {accion:'Nota en tópico trending',pts:25},{accion:'Racha 7 días',pts:30},
+];
+const KARMA_NIVELES = [
+  {nombre:'🎒 Pasante',min:0,max:49},{nombre:'✏️ Cronista',min:50,max:149},
+  {nombre:'📝 Redactor',min:150,max:299},{nombre:'🖊️ Editor',min:300,max:599},
+  {nombre:'⭐ Referente',min:600,max:Infinity},
+];
+function getKarmaLevel(pts){return KARMA_NIVELES.find(l=>pts>=l.min&&pts<=l.max)||KARMA_NIVELES[0];}
+function getKarmaProgress(pts){
+  const l=getKarmaLevel(pts);
+  if(l.max===Infinity) return 100;
+  return Math.round(((pts-l.min)/(l.max-l.min))*100);
+}
+
+function useRedKarma(userId='guest'){
+  const key='red_karma_'+userId;
+  const [karma,setKarma]=useState(()=>{
+    const raw=ls.get(key);
+    return raw?JSON.parse(raw):{pts:0,acciones:[]};
+  });
+  function sumar(accion,pts){
+    setKarma(k=>{
+      const nuevo={pts:k.pts+pts,acciones:[{accion,pts,ts:Date.now()},...k.acciones.slice(0,19)]};
+      ls.set(key,JSON.stringify(nuevo));
+      return nuevo;
+    });
+  }
+  return {karma,sumar};
+}
 
 /* ══════════════════════════ ICONS ══════════════════════════ */
 const Ic = {
@@ -801,6 +967,44 @@ function LiveStrip({ onNav }) {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ══════ TÓPICOS DEL MOMENTO — componente compartido ══════ */
+function TopicosDelMomento({modo='comunidad', onNav}){
+  const [activo, setActivo] = useState(null);
+  const topRed = RED_TOPICOS;
+  const topCom = CM_TOPICOS;
+  const topNoticias = [
+    {id:1,nombre:'AFA vs Conmebol',meta:'📡 BBC Deportes',heat:'🔥'},
+    {id:2,nombre:'Racing campeón Libertadores',meta:'📡 Olé',heat:''},
+    {id:3,nombre:'Messi lesión MLS',meta:'📡 ESPN',heat:'📈'},
+    {id:4,nombre:'Colapinto top 5 F1',meta:'📡 Sky Sports',heat:'🏎️'},
+    {id:5,nombre:'Mundial 2026 sedes ARG',meta:'📡 Marca',heat:''},
+  ];
+  const cols = modo==='red'
+    ? [{titulo:'🔥 Periodismo',color:'var(--teal)',bg:'rgba(8,145,178,.07)',items:topRed},{titulo:'💬 Comunidad',color:'var(--purple)',bg:'rgba(139,92,246,.07)',items:topCom},{titulo:'📡 Noticias',color:'var(--cel-d)',bg:'var(--cel-xl)',items:topNoticias}]
+    : [{titulo:'🔥 Debates',color:'var(--red)',bg:'rgba(192,57,43,.06)',items:topCom},{titulo:'✍️ Red Periodismo',color:'var(--teal)',bg:'rgba(8,145,178,.07)',items:topRed},{titulo:'📡 Noticias',color:'var(--cel-d)',bg:'var(--cel-xl)',items:topNoticias}];
+  return (
+    <div style={{marginBottom:18}}>
+      <div className="sh"><div className="st" style={{color:'var(--red)'}}>🔥 Tópicos del momento</div><span className="sl">Actualizado hace 5 min</span></div>
+      <div className="topicos-grid">
+        {cols.map((col,ci)=>(
+          <div key={ci} className="topico-col">
+            <div className="topico-col-hd" style={{background:col.bg,color:col.color}}>{col.titulo}</div>
+            {col.items.slice(0,5).map((t,i)=>(
+              <div key={t.id} className="topico-row" onClick={()=>setActivo(activo===`${ci}-${i}`?null:`${ci}-${i}`)}>
+                <span className={`topico-num${i===0?' top1':''}`}>{i+1}</span>
+                <div style={{flex:1,minWidth:0}}>
+                  <div className="topico-name">{t.nombre}</div>
+                  <div className="topico-meta">{t.heat&&<span className="topico-heat">{t.heat} </span>}{t.meta}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1956,7 +2160,7 @@ function CmSeccionesTab({user,addToast,sumarPuntos}){
 function ComunidadPage({user,addToast,onNav}){
   const userId=user?.isGuest===false?(user.displayName||user.username||'user'):'guest';
   const {perfil,sumarPuntos,feedback}=useCmPuntos(userId);
-  const [tab,setTab]=useState('feed');
+  const [tab,setTab]=useState('topicos');
   const [chatMsg,setChatMsg]=useState('');
   const [chatMsgs,setChatMsgs]=useState([
     {id:1,u:'Gonzalo_TL',text:'¿Alguien vio el golazo de Borja? 🔥',own:false},
@@ -1972,7 +2176,7 @@ function ComunidadPage({user,addToast,onNav}){
   }
 
   const TABS_COM=[
-    {id:'feed',l:'📰 Feed'},{id:'encuestas',l:'🗳️ Encuestas'},{id:'trivia',l:'🧠 Trivia'},
+    {id:'topicos',l:'🔥 Tópicos'},{id:'feed',l:'📰 Feed'},{id:'encuestas',l:'🗳️ Encuestas'},{id:'trivia',l:'🧠 Trivia'},
     {id:'secciones',l:'⚡ Secciones'},{id:'ranking',l:'🏆 Ranking'},{id:'chat',l:'💬 Chat'},{id:'debates',l:'🔥 Debates'},
   ];
 
@@ -2004,6 +2208,7 @@ function ComunidadPage({user,addToast,onNav}){
         {TABS_COM.map(t=><div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>)}
       </div>
 
+      {tab==='topicos'&&<TopicosDelMomento modo="comunidad"/>}
       {tab==='feed'&&<CmFeedTab user={user} addToast={addToast} sumarPuntos={sumarPuntos}/>}
       {tab==='encuestas'&&<CmEncuestasTab user={user} addToast={addToast} sumarPuntos={sumarPuntos}/>}
       {tab==='trivia'&&<CmTriviaTab sumarPuntos={sumarPuntos} addToast={addToast}/>}
@@ -2660,54 +2865,57 @@ function RevistaPage({ user, addToast }) {
     </div>
   );
 }
-/* ══════ RED DE PERIODISMO — incluye Periodismo Deportivo como pestaña ══════ */
+/* ══════ RED DE PERIODISMO — VERSIÓN COMPLETA ══════ */
 function RedPeriodismoPage({ addToast }) {
-  const [tab, setTab] = useState('red');
-  const [search, setSearch] = useState('');
-  const filtered = RED_PERIODISMO.filter(p =>
-    !search || p.nombre.toLowerCase().includes(search.toLowerCase()) || p.rol.toLowerCase().includes(search.toLowerCase())
-  );
+  const [tab, setTab] = useState('topicos');
+  const {karma, sumar} = useRedKarma('guest');
+  const nivel = getKarmaLevel(karma.pts);
+  const progreso = getKarmaProgress(karma.pts);
+  const nextNivel = KARMA_NIVELES[KARMA_NIVELES.indexOf(nivel)+1];
   return (
     <div>
-      <div style={{background:'linear-gradient(135deg,#0891B2,#06B6D4)',borderRadius:'var(--rl)',padding:'16px 18px',marginBottom:16,color:'white',display:'flex',alignItems:'center',gap:12}}>
-        <span style={{fontSize:30}}>🌐</span>
-        <div>
-          <div style={{fontFamily:'var(--fd)',fontSize:19,fontWeight:700}}>Red de Periodismo Deportivo</div>
-          <div style={{fontSize:12,opacity:.8}}>Conectá, colaborá y crecé con la comunidad</div>
+      <div style={{background:'linear-gradient(135deg,#0891B2,#0E7490)',borderRadius:'var(--rl)',padding:'14px 18px',marginBottom:14,color:'white',display:'flex',alignItems:'center',gap:12}}>
+        <span style={{fontSize:28}}>🌐</span>
+        <div style={{flex:1}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:18,fontWeight:700}}>Red de Periodismo Deportivo</div>
+          <div style={{fontSize:11,opacity:.8}}>Conectá, publicá, colaborá y crecé</div>
+        </div>
+        <div style={{textAlign:'right'}}>
+          <div style={{fontSize:11,opacity:.7,marginBottom:2}}>Tu karma</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:16,fontWeight:700}}>{karma.pts} pts</div>
+          <div style={{fontSize:10,opacity:.8}}>{nivel.nombre}</div>
         </div>
       </div>
+      {karma.pts>0&&(
+        <div className="karma-banner" style={{marginBottom:14}}>
+          <span className="karma-level-badge">{nivel.nombre}</span>
+          <div style={{flex:1}}>
+            <div className="karma-bar-wrap"><div className="karma-bar-fill" style={{width:progreso+'%'}}/></div>
+            <div className="karma-pts-label">{karma.pts} pts{nextNivel?` · faltan ${nextNivel.min-karma.pts} para ${nextNivel.nombre}`:' · ¡Nivel máximo!'}</div>
+          </div>
+        </div>
+      )}
       <div className="section-banner">
         <img src="https://raw.githubusercontent.com/bioscanrural/tribunalibre/refs/heads/main/imagenes/reddeperiodismo.png"
           alt="Red de Periodismo Deportivo" loading="lazy" onError={e=>e.target.parentNode.style.display='none'}/>
       </div>
-      <div className="tabs">
-        {[{id:'red',l:'👥 Periodistas'},{id:'medios',l:'📺 Medios'},{id:'periodismo',l:'🎙️ Periodismo Dep.'},{id:'unirse',l:'✋ Unirme'}].map(t => (
+      <div className="tabs" style={{flexWrap:'nowrap',overflowX:'auto'}}>
+        {[{id:'topicos',l:'🔥 Tópicos'},{id:'feed',l:'📰 Feed'},{id:'publicar',l:'✍️ Publicar'},{id:'colaboraciones',l:'🤝 Colaboraciones'},{id:'ranking',l:'🏆 Ranking'},{id:'red',l:'👥 Periodistas'},{id:'medios',l:'📺 Medios'},{id:'periodismo',l:'🎙️ Period. Dep.'},{id:'karma',l:'⭐ Mi Karma'},{id:'unirse',l:'✋ Unirme'}].map(t=>(
           <div key={t.id} className={`tabx${tab===t.id?' on':''}`} onClick={()=>setTab(t.id)}>{t.l}</div>
         ))}
       </div>
-      {tab==='red' && (
-        <div>
-          <input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar periodistas..." style={{marginBottom:14}}/>
-          {filtered.map(p => (
-            <div key={p.id} className="red-card">
-              <div className="red-avatar" style={{background:'rgba(8,145,178,.1)'}}>{p.em}</div>
-              <div style={{flex:1,minWidth:0}}>
-                <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
-                  <div className="red-name">{p.nombre}</div>
-                  {p.verificado && <span style={{fontSize:14}}>✅</span>}
-                </div>
-                <div className="red-role">{p.rol} · {p.medio}</div>
-                <div className="red-bio">{p.bio}</div>
-                <div className="red-stats">
-                  <span className="red-stat"><Ic.Pen style={{width:10,height:10}}/>{p.notas} notas</span>
-                  <span className="red-stat"><Ic.Com style={{width:10,height:10}}/>{p.seguidores.toLocaleString()} seguidores</span>
-                </div>
-              </div>
-              <button className="btn btn-t btn-sm" onClick={()=>addToast({msg:`Siguiendo a ${p.nombre} ✓`,type:'ok'})}>Seguir</button>
-            </div>
-          ))}
-        </div>
-      )}
+      {tab==='topicos' && <TopicosDelMomento modo="red"/>}
+
+      {tab==='feed' && <RedFeedTab notas={RED_NOTAS_INIT} addToast={addToast} sumar={sumar}/>}
+
+      {tab==='publicar' && <RedPublicarTab addToast={addToast} sumar={sumar}/>}
+
+      {tab==='colaboraciones' && <RedColaboracionesTab addToast={addToast} sumar={sumar}/>}
+
+      {tab==='ranking' && <RedRankingTab karma={karma} nivel={nivel}/>}
+
+      {tab==='red' && <RedPeriodistasTab addToast={addToast}/>}
+
       {tab==='medios' && (
         <div>
           {[
@@ -2717,7 +2925,7 @@ function RedPeriodismoPage({ addToast }) {
             {em:'⚽',n:'Infobae Deportes',t:'Cobertura deportiva del portal de noticias más visitado del país.',seg:'4.2M',url:'infobae.com/deportes'},
             {em:'📻',n:'Radio La Red',t:'La radio deportiva de referencia en Argentina. 24hs de fútbol.',seg:'890K',url:'lared.com.ar'},
             {em:'🎙️',n:'TNT Sports',t:'Transmisiones exclusivas de Copa Libertadores y Champions League.',seg:'1.2M',url:'tntsports.com.ar'},
-          ].map((m,i) => (
+          ].map((m,i)=>(
             <div key={i} className="card cp" style={{marginBottom:10,display:'flex',alignItems:'center',gap:12,cursor:'pointer',transition:'.2s'}}
               onMouseEnter={e=>e.currentTarget.style.borderColor='var(--teal)'}
               onMouseLeave={e=>e.currentTarget.style.borderColor='var(--br)'}>
@@ -2732,6 +2940,8 @@ function RedPeriodismoPage({ addToast }) {
           ))}
         </div>
       )}
+      {tab==='periodismo' && <PeriodismoDeportivoSubTab addToast={addToast}/>}
+      {tab==='karma' && <RedKarmaTab karma={karma} nivel={nivel} progreso={progreso} nextNivel={nextNivel} sumar={sumar} addToast={addToast}/>}
       {tab==='unirse' && (
         <div>
           <div style={{background:'linear-gradient(135deg,rgba(8,145,178,.1),rgba(6,182,212,.08))',border:'1.5px solid rgba(8,145,178,.3)',borderRadius:'var(--rl)',padding:18,marginBottom:16}}>
@@ -2739,19 +2949,297 @@ function RedPeriodismoPage({ addToast }) {
             <div style={{fontSize:13,color:'var(--tx2)',lineHeight:1.65,marginBottom:14}}>
               Somos una red de periodistas deportivos independientes. Si escribís, fotografiás, hacés radio o producís contenido deportivo, este es tu lugar.
             </div>
-            {['Acceso a la comunidad privada de periodistas','Publicar en Tribuna Libre como colaborador','Recibir feedback de periodistas senior','Participar en coberturas colectivas','Acceso a recursos y herramientas gratuitas'].map((b,i) => (
+            {['Acceso a la comunidad privada de periodistas','Publicar en Tribuna Libre como colaborador','Recibir feedback de periodistas senior','Participar en coberturas colectivas','Acceso a recursos y herramientas gratuitas'].map((b,i)=>(
               <div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:8}}>
                 <Ic.Check style={{width:14,height:14,color:'var(--teal)',flexShrink:0}}/>
                 <span style={{fontSize:13,color:'var(--tx2)'}}>{b}</span>
               </div>
             ))}
-            <button className="btn btn-t" style={{marginTop:14}} onClick={()=>addToast({msg:'¡Solicitud enviada! Te contactamos pronto 🎉',type:'ok'})}>
+            <button className="btn btn-t" style={{marginTop:14}} onClick={()=>{addToast({msg:'¡Solicitud enviada! Te contactamos pronto 🎉',type:'ok'});sumar('unirse',20);}}>
               <Ic.Net style={{width:14,height:14}}/> Solicitar acceso
             </button>
           </div>
         </div>
       )}
-      {tab==='periodismo' && <PeriodismoDeportivoSubTab addToast={addToast}/>}
+    </div>
+  );
+}
+
+/* ══════ RED FEED TAB ══════ */
+function RedFeedTab({notas, addToast, sumar}){
+  const [items, setItems] = useState(notas);
+  const [filtro, setFiltro] = useState('Todos');
+  const formatos = ['Todos','Nota','Entrevista','Video','Columna','Fotografía','Podcast'];
+  const filtrados = filtro==='Todos'?items:items.filter(n=>n.formato===filtro);
+  function like(id){
+    setItems(it=>it.map(n=>n.id===id?{...n,likes:n.likes+1}:n));
+    sumar('like',2);
+    addToast({msg:'👍 Like sumado · +2 karma',type:'ok'});
+  }
+  return (
+    <div>
+      <div style={{display:'flex',gap:6,overflowX:'auto',marginBottom:14,scrollbarWidth:'none',paddingBottom:4}}>
+        {formatos.map(f=>(
+          <button key={f} onClick={()=>setFiltro(f)}
+            style={{flexShrink:0,padding:'4px 11px',borderRadius:20,background:filtro===f?'var(--teal)':'var(--white)',border:`1.5px solid ${filtro===f?'var(--teal)':'var(--br)'}`,color:filtro===f?'white':'var(--tx2)',fontSize:11,fontWeight:600,cursor:'pointer',transition:'.15s'}}>
+            {f}
+          </button>
+        ))}
+      </div>
+      {filtrados.map(n=>(
+        <div key={n.id} className="nota-card">
+          <div className="nota-format-badge">{n.em} {n.formato} · {n.deporte}</div>
+          <div className="nota-title">{n.titulo}</div>
+          <div className="nota-excerpt">{n.resumen}</div>
+          <div className="nota-footer">
+            <div className="nota-author-av">{n.autorEm}</div>
+            <span style={{fontWeight:600,color:'var(--tx2)'}}>{n.autor}</span>
+            {n.verificado&&<span>✅</span>}
+            <span>·</span><span>{n.fecha}</span>
+            <span>·</span><Ic.Eye style={{width:10,height:10}}/><span>{n.lecturas.toLocaleString()}</span>
+            <div className="nota-likes" onClick={()=>like(n.id)}>
+              <Ic.Heart style={{width:11,height:11}}/><span>{n.likes}</span>
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════ RED PUBLICAR TAB ══════ */
+function RedPublicarTab({addToast, sumar}){
+  const [formato, setFormato] = useState('');
+  const [form, setForm] = useState({titulo:'',resumen:'',deporte:'Fútbol',autor:''});
+  const [publicadas, setPublicadas] = useState([]);
+  const formatos = [{em:'📰',n:'Nota'},{em:'🎤',n:'Entrevista'},{em:'📹',n:'Video'},{em:'✍️',n:'Columna'},{em:'📸',n:'Fotografía'},{em:'🎙️',n:'Podcast'}];
+  function publicar(){
+    if(!formato){addToast({msg:'Elegí un formato primero',type:'err'});return;}
+    if(!form.titulo.trim()||!form.resumen.trim()){addToast({msg:'Completá título y resumen',type:'err'});return;}
+    const nueva={id:Date.now(),formato,em:formatos.find(f=>f.n===formato)?.em||'📰',deporte:form.deporte,titulo:form.titulo,resumen:form.resumen,autor:form.autor||'Vos',fecha:'ahora',lecturas:0,likes:0};
+    setPublicadas(p=>[nueva,...p]);
+    setForm({titulo:'',resumen:'',deporte:'Fútbol',autor:''});
+    setFormato('');
+    sumar('publicar',10);
+    addToast({msg:'¡Nota publicada! +10 karma 🚀',type:'ok'});
+  }
+  return (
+    <div>
+      <div className="sh"><div className="st">Elegí el formato</div></div>
+      <div className="format-grid">
+        {formatos.map(f=>(
+          <div key={f.n} className={`format-btn${formato===f.n?' sel':''}`} onClick={()=>setFormato(f.n)}>
+            <span className="fem">{f.em}</span><span className="fnm">{f.n}</span>
+          </div>
+        ))}
+      </div>
+      <div className="pub-form">
+        <div style={{marginBottom:10}}><label className="fl">Título</label><input className="fi" value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="El título más llamativo de tu nota"/></div>
+        <div style={{marginBottom:10}}><label className="fl">Deporte</label>
+          <select className="fi" style={{background:'var(--cel-xl)'}} value={form.deporte} onChange={e=>setForm(f=>({...f,deporte:e.target.value}))}>
+            {['Fútbol','Rugby','Tenis','Básquet','Automovilismo','Hockey','Boxeo','Vóley','Otro'].map(d=><option key={d}>{d}</option>)}
+          </select>
+        </div>
+        <div style={{marginBottom:10}}><label className="fl">Resumen / Contenido</label><textarea className="fi" value={form.resumen} onChange={e=>setForm(f=>({...f,resumen:e.target.value}))} placeholder="Contá de qué se trata tu nota, entrevista o cobertura..." style={{minHeight:90,resize:'vertical'}}/></div>
+        <div style={{marginBottom:14}}><label className="fl">Tu nombre (opcional)</label><input className="fi" value={form.autor} onChange={e=>setForm(f=>({...f,autor:e.target.value}))} placeholder="@tu_usuario"/></div>
+        <button className="btn btn-t" style={{width:'100%',justifyContent:'center',padding:'11px'}} onClick={publicar}>Publicar {formato||'contenido'} 🚀</button>
+      </div>
+      {publicadas.length>0&&(
+        <div style={{marginTop:18}}>
+          <div className="sh"><div className="st" style={{color:'var(--green)'}}>✅ Tus publicaciones</div></div>
+          {publicadas.map(n=>(
+            <div key={n.id} className="nota-card">
+              <div className="nota-format-badge">{n.em} {n.formato} · {n.deporte}</div>
+              <div className="nota-title">{n.titulo}</div>
+              <div className="nota-excerpt">{n.resumen}</div>
+              <div className="nota-footer"><span>{n.autor}</span><span>· {n.fecha}</span></div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ══════ RED COLABORACIONES TAB ══════ */
+function RedColaboracionesTab({addToast, sumar}){
+  const [items, setItems] = useState(RED_COLABORACIONES_INIT);
+  const [showForm, setShowForm] = useState(false);
+  const [form, setForm] = useState({rol:'Camarógrafo',titulo:'',desc:'',urgencia:'media'});
+  const roles = ['Camarógrafo','Reportero','Fotógrafo','Productor','Co-autor','Asistente','Editor de video','Community Manager'];
+  function publicarColab(){
+    if(!form.titulo.trim()||!form.desc.trim()){addToast({msg:'Completá título y descripción',type:'err'});return;}
+    const nueva={id:Date.now(),rol:form.rol,em:'🤝',titulo:form.titulo,desc:form.desc,tags:[form.rol],urgencia:form.urgencia,autor:'Vos',fecha:'ahora'};
+    setItems(i=>[nueva,...i]);
+    setForm({rol:'Camarógrafo',titulo:'',desc:'',urgencia:'media'});
+    setShowForm(false);
+    sumar('colaboracion',8);
+    addToast({msg:'¡Búsqueda publicada! +8 karma 🤝',type:'ok'});
+  }
+  const urgLabel={alta:'Urgente',media:'Esta semana',baja:'Sin urgencia'};
+  const urgClass={alta:'urg-alta',media:'urg-media',baja:'urg-baja'};
+  return (
+    <div>
+      <div className="sh">
+        <div className="st">Colaboraciones</div>
+        <button className="btn btn-t btn-sm" onClick={()=>setShowForm(s=>!s)}><Ic.Plus style={{width:12,height:12}}/> Publicar búsqueda</button>
+      </div>
+      {showForm&&(
+        <div className="pub-form" style={{marginBottom:16,border:'1.5px solid var(--purple)'}}>
+          <div style={{fontFamily:'var(--fd)',fontSize:13,fontWeight:700,color:'var(--purple)',marginBottom:12}}>🤝 Nueva búsqueda de colaboración</div>
+          <div style={{marginBottom:9}}><label className="fl">Rol que buscás</label>
+            <select className="fi" style={{background:'var(--cel-xl)'}} value={form.rol} onChange={e=>setForm(f=>({...f,rol:e.target.value}))}>
+              {roles.map(r=><option key={r}>{r}</option>)}
+            </select>
+          </div>
+          <div style={{marginBottom:9}}><label className="fl">Título del aviso</label><input className="fi" value={form.titulo} onChange={e=>setForm(f=>({...f,titulo:e.target.value}))} placeholder="Ej: Busco fotógrafo para cobertura del sábado en Córdoba"/></div>
+          <div style={{marginBottom:9}}><label className="fl">Descripción del trabajo</label><textarea className="fi" value={form.desc} onChange={e=>setForm(f=>({...f,desc:e.target.value}))} placeholder="Contá de qué se trata, si es remunerado, fechas y dónde..." style={{minHeight:70,resize:'vertical'}}/></div>
+          <div style={{marginBottom:14}}><label className="fl">Urgencia</label>
+            <select className="fi" style={{background:'var(--cel-xl)'}} value={form.urgencia} onChange={e=>setForm(f=>({...f,urgencia:e.target.value}))}>
+              <option value="alta">Urgente</option><option value="media">Esta semana</option><option value="baja">Sin urgencia</option>
+            </select>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button className="btn btn-o btn-sm" onClick={()=>setShowForm(false)}>Cancelar</button>
+            <button className="btn btn-t btn-sm" style={{flex:1,justifyContent:'center'}} onClick={publicarColab}>Publicar búsqueda</button>
+          </div>
+        </div>
+      )}
+      {items.map(c=>(
+        <div key={c.id} className="colab-card">
+          <div className="colab-role-badge">{c.em} {c.rol}</div>
+          <div style={{display:'flex',alignItems:'flex-start',justifyContent:'space-between',gap:8}}>
+            <div className="colab-title">{c.titulo}</div>
+            <span className={`colab-urgencia ${urgClass[c.urgencia]}`}>{urgLabel[c.urgencia]}</span>
+          </div>
+          <div className="colab-desc">{c.desc}</div>
+          <div className="colab-tags">{c.tags.map((t,i)=><span key={i} className="colab-tag">{t}</span>)}</div>
+          <div className="colab-footer">
+            <span>@{c.autor.replace(' ','_')}</span><span>·</span><span>{c.fecha}</span>
+            <button className="btn btn-t btn-sm" style={{marginLeft:'auto'}} onClick={()=>{addToast({msg:`Mensaje enviado a @${c.autor.replace(' ','_')} ✓`,type:'ok'});sumar('contactar',3);}}>Contactar</button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════ RED RANKING TAB ══════ */
+function RedRankingTab({karma, nivel}){
+  const ranking = RED_RANKING_INIT;
+  return (
+    <div>
+      <div className="sh"><div className="st">🏆 Ranking semanal</div><span style={{fontSize:11,color:'var(--tx3)'}}>Semana actual</span></div>
+      {ranking.map((p,i)=>(
+        <div key={p.id} className="red-rank-card">
+          <span className="red-rank-num" style={{color:i<3?['var(--sun)','var(--tx3)','#CD7F32'][i]:'var(--tx3)'}}>{i+1}</span>
+          <div className="red-rank-av" style={{background:p.colores[1]}}>{p.em}</div>
+          <div className="red-rank-info">
+            <div className="red-rank-name">{p.nombre}</div>
+            <div className="red-rank-level">{p.nivel} · {p.medio}</div>
+            <div style={{fontSize:10,color:'var(--tx3)',marginTop:2}}>{p.notas} notas esta semana</div>
+          </div>
+          <span className="red-rank-pts">{p.pts} pts</span>
+        </div>
+      ))}
+      <div className="sh" style={{marginTop:18}}><div className="st">📊 Tu posición</div></div>
+      <div className="red-rank-card" style={{border:'2px solid var(--teal)'}}>
+        <span className="red-rank-num">—</span>
+        <div className="red-rank-av" style={{background:'rgba(8,145,178,.15)',fontSize:14}}>👤</div>
+        <div className="red-rank-info">
+          <div className="red-rank-name">Tu perfil</div>
+          <div className="red-rank-level">{nivel.nombre}</div>
+        </div>
+        <span className="red-rank-pts">{karma.pts} pts</span>
+      </div>
+      <div className="sh" style={{marginTop:18}}><div className="st">📋 Actividad reciente</div></div>
+      <div className="card cp">
+        {RED_ACTIVIDAD_INIT.map((a,i)=>(
+          <div key={i} className="act-feed-item">
+            <div className="act-av" style={{background:a.color}}>{a.av}</div>
+            <div className="act-text" dangerouslySetInnerHTML={{__html:a.text}}/>
+            <span className="act-time">{a.tiempo}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ══════ RED PERIODISTAS TAB ══════ */
+function RedPeriodistasTab({addToast}){
+  const [search, setSearch] = useState('');
+  const filtered = RED_PERIODISMO.filter(p=>!search||p.nombre.toLowerCase().includes(search.toLowerCase())||p.rol.toLowerCase().includes(search.toLowerCase()));
+  return (
+    <div>
+      <input className="fi" value={search} onChange={e=>setSearch(e.target.value)} placeholder="Buscar periodistas..." style={{marginBottom:14}}/>
+      {filtered.map(p=>(
+        <div key={p.id} className="red-card">
+          <div className="red-avatar" style={{background:'rgba(8,145,178,.1)'}}>{p.em}</div>
+          <div style={{flex:1,minWidth:0}}>
+            <div style={{display:'flex',alignItems:'center',gap:6,marginBottom:2}}>
+              <div className="red-name">{p.nombre}</div>
+              {p.verificado&&<span style={{fontSize:14}}>✅</span>}
+            </div>
+            <div className="red-role">{p.rol} · {p.medio}</div>
+            <div className="red-bio">{p.bio}</div>
+            <div className="red-stats">
+              <span className="red-stat"><Ic.Pen style={{width:10,height:10}}/>{p.notas} notas</span>
+              <span className="red-stat"><Ic.Com style={{width:10,height:10}}/>{p.seguidores.toLocaleString()} seguidores</span>
+            </div>
+          </div>
+          <button className="btn btn-t btn-sm" onClick={()=>addToast({msg:`Siguiendo a ${p.nombre} ✓`,type:'ok'})}>Seguir</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ══════ RED KARMA TAB ══════ */
+function RedKarmaTab({karma, nivel, progreso, nextNivel, sumar, addToast}){
+  return (
+    <div>
+      <div className="karma-banner">
+        <div>
+          <div style={{fontSize:11,opacity:.75,marginBottom:3}}>Tu nivel actual</div>
+          <div style={{fontFamily:'var(--fd)',fontSize:22,fontWeight:700}}>{nivel.nombre}</div>
+          <div className="karma-pts-label">{karma.pts} puntos acumulados</div>
+        </div>
+        <div style={{flex:1,marginLeft:16}}>
+          <div className="karma-bar-wrap" style={{height:8}}><div className="karma-bar-fill" style={{width:progreso+'%'}}/></div>
+          <div className="karma-pts-label" style={{marginTop:5}}>{nextNivel?`Faltan ${nextNivel.min-karma.pts} pts para ${nextNivel.nombre}`:'¡Nivel máximo alcanzado! ⭐'}</div>
+        </div>
+      </div>
+      <div className="sh"><div className="st">📋 Cómo ganar puntos</div></div>
+      <div className="karma-actions">
+        {KARMA_ACCIONES.map((a,i)=>(
+          <div key={i} className="karma-action">{a.accion}<span className="karma-pts">+{a.pts}</span></div>
+        ))}
+      </div>
+      <div className="sh"><div className="st">🏅 Niveles</div></div>
+      <div className="karma-levels-row">
+        {KARMA_NIVELES.map((l,i)=>(
+          <div key={i} className={`karma-lvl${getKarmaLevel(karma.pts).nombre===l.nombre?' active':''}`}>
+            <div className="karma-lvl-name">{l.nombre}</div>
+            <div className="karma-lvl-pts">{l.max===Infinity?`${l.min}+`:`${l.min}–${l.max}`}</div>
+          </div>
+        ))}
+      </div>
+      {karma.acciones.length>0&&(
+        <>
+          <div className="sh"><div className="st">⚡ Historial reciente</div></div>
+          <div className="card cp">
+            {karma.acciones.slice(0,8).map((a,i)=>(
+              <div key={i} style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'5px 0',borderBottom:'1px solid var(--br)',fontSize:12,color:'var(--tx2)'}}>
+                <span>{a.accion}</span><span style={{fontWeight:700,color:'var(--teal)'}}>+{a.pts}</span>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+      <button className="btn btn-t" style={{marginTop:14,width:'100%',justifyContent:'center'}} onClick={()=>{sumar('test',5);addToast({msg:'¡+5 karma de prueba! ⭐',type:'ok'});}}>
+        Ganar 5 puntos de prueba ⭐
+      </button>
     </div>
   );
 }
